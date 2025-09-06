@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/remixicon@3.2.0/fonts/remixicon.css'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="../Css/CadastroColaborador.css">
+    <link rel="stylesheet" href="../Css/Sidebar.css">
+    <link rel="shortcut icon" href="../../Assets/logo_Multclinics_branca_sem_nome.png" type="image/x-icon">
+    <title>Multiclinics | Atualizar dados do Colaborador</title>
+</head>
+
+<body>
+    <i id="hamburger-menu" class="fa-solid fa-bars"></i>
+
+    <div id="menu-overlay" class="menu-overlay">
+        <ul>
+            <li><a href="homePosLoginMedico.html">Home</a></li>
+            <li><a href="calendario.html">Agendamento</a></li>
+            <li><a href="listagemColaborador.html">Colaborador</a></li>
+            <li><a href="listagemPaciente.html">Paciente</a></li>
+            <li><a href="dashboards.html">Dashboards</a></li>
+            <li><a href="listagemLead.html">Leads</a></li>
+        </ul>
+    </div>
+    <nav id="sidebar">
+        <div id="sidebar_content">
+            <div id="user">
+                <img src="../Assets/perfil.jpeg" id="user_avatar" alt="Avatar">
+
+                <p id="user_infos">
+                    <span id="user_nome" class="item-description">Silvia</span>
+                    <span id="user_permissao" class="item-description">ADM</span>
+                </p>
+            </div>
+
+            <ul id="side_items">
+                <li class="side-item">
+                    <a href="homePosLoginMedico.html">
+                        <i class="fa-solid fa-home"></i>
+                        <span class="item-description">
+                            Home
+                        </span>
+                    </a>
+                </li>
+
+                <li class="side-item">
+                    <a href="calendario.html">
+                        <i class="fa-solid fa-calendar"></i>
+                        <span class="item-description">
+                            Agendamento
+                        </span>
+                    </a>
+                </li>
+
+                <li class="side-item active">
+                    <a href="listagemColaborador.html">
+                        <i class="fa-solid fa-user"></i>
+                        <span class="item-description">
+                            Colaborador
+                        </span>
+                    </a>
+                </li>
+
+                <li class="side-item">
+                    <a href="listagemPaciente.html">
+                        <i class="fa-solid fa-hospital-user"></i>
+                        <span class="item-description">
+                            Paciente
+                        </span>
+                    </a>
+                </li>
+
+                <li class="side-item">
+                    <a href="dashboards.html">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span class="item-description">
+                            Dashboards
+                        </span>
+                    </a>
+                </li>
+
+        <li id="Lead" class="side-item">
+                    <a href="listagemLead.html">
+                        <i class="fa-solid fa-filter"></i>
+                        <span class="item-description">
+                            Leads
+                        </span>
+                    </a>
+                </li>
+            </ul>
+
+            <button id="open_btn">
+                <i id="open_btn_icon" class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <div id="logout">
+            <button onclick="deslogar()" id="logout_btn">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="item-description">
+                    Logout
+                </span>
+            </button>
+        </div>
+    </nav>
+
+    <main>
+        <div class="ContainerCadastro">
+            <h1>Atualize os dados do seu <span class="equipe">Colaborador</span></h1><br><br>
+            <label class="picture" for="picture__input" tabIndex="0">
+                <span class="picture__image"></span>
+            </label>
+
+            <input type="file" name="picture__input" id="picture__input">
+            <div class="inputs_Container">
+                <div class="inputs_login_esquerda">
+                    <div class="input">
+                        <input class="input__field" id="nome" type="text" required />
+                        <label for="nome" class="input__label">Nome</label>
+                        <small class="error" id="error-nome"></small>
+                    </div>
+
+                    <div class="input">
+                        <input class="input__field" id="sobrenome" type="text" required />
+                        <label for="sobrenome" class="input__label">Sobrenome</label>
+                        <small class="error" id="error-sobrenome"></small>
+                    </div>
+
+                    <div class="input">
+                        <input class="input__field" id="email" type="email" required />
+                        <label for="email" class="input__label">E-mail</label>
+                        <small class="error" id="error-email"></small>
+                    </div>
+
+                    <div class="input">
+                        <input class="input__field" id="telefone" type="tel" required />
+                        <label for="telefone" class="input__label">Telefone</label>
+                        <small class="error" id="error-telefone"></small>
+                    </div>
+
+                </div>
+
+                <div class="inputs_login_esquerda">
+                    <div class="input">
+                        <input class="input__field" id="cpf" type="text" required />
+                        <label for="cpf" class="input__label">CPF</label>
+                        <small class="error" id="error-cpf"></small>
+                    </div>
+                    <div class="input">
+                        <select class="input__field" id="especificacao" required>
+                            <option value=""></option>
+                        </select>
+                        <label for="especificacao" class="input__label">Especificação</label>
+                        <small class="error" id="error-especificacao"></small>
+                    </div>
+                    <div class="input">
+                        <input class="input__field" id="dataNascimento" type="date" required />
+                        <label for="dataNascimento" class="input__labelDate">Data de Nascimento</label>
+                        <small class="error" id="error-dataNascimento"></small>
+                    </div>
+                    <div class="input">
+                        <input class="input__field" id="carteirinha" type="text" required />
+                        <label for="carteirinha" class="input__label">Carteirinha</label>
+                        <small class="error" id="error-carteirinha"></small>
+                    </div>
+                </div>
+
+                <div class="inputs_login_direita">
+
+                    <div class="input">
+                        <input class="input__field" id="password" type="password" required />
+                        <label for="password" class="input__label">Senha</label>
+                        <span class="input__icon-wrapper">
+                            <i class="input__icon ri-eye-off-line"></i>
+                        </span>
+                        <small class="error" id="error-password"></small>
+                    </div>
+
+                    <div class="input">
+                        <input class="input__field" id="confirmedPassword" type="password" required />
+                        <label for="confirmedPassword" class="input__label">Confirmar Senha</label>
+                        <span class="input__icon-wrapper">
+                            <i class="input__icon2 ri-eye-off-line"></i>
+                        </span>
+                        <small class="error" id="error-confirmedPassword"></small>
+                    </div>
+
+                    <div class="input">
+                        <select class="input__field" id="nivelAcesso" required>
+                            <option value=""></option>
+                            <option value="Admin">Admin</option>
+                            <option value="Supervisor">Supervisor</option>
+                            <option value="Médico">Médico</option>
+                        </select>
+                        <label for="nivelAcesso" class="input__label">Nível de Acesso</label>
+                        <small class="error" id="error-nivelAcesso"></small>
+                    </div>
+                    <div>
+                        <Button class="registrar" onclick="atualizarColaborador()">
+                            Atualizar
+                        </Button>
+                        <small class="success-message" id="success-message"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="../Js/atualizarColaborador.js"></script>
+    <script src="../Js/funcoesPadroes.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../Js/sessao.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiClinics | Home</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="shortcut icon" href="../Assets/logo_Multclinics_branca_sem_nome.png" type="image/x-icon">
+    <link rel="stylesheet" href="../Css/index.css">
+</head>
+
+<body>
+
+    <div vw class="enabled">
+        <div vw-access-button class="active"></div>
+        <div vw-plugin-wrapper>
+          <div class="vw-plugin-top-wrapper"></div>
+        </div>
+      </div>
+      <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+      <script>
+        new window.VLibras.Widget('https://vlibras.gov.br/app');
+      </script>
+    <div id="inicio" class="paiCabecalho">
+        <div class="filhoCabecalho">
+
+            <div class="esquerdaCabecalho">
+                <img class="imgEsquerdaCabecalho" src="../Assets/logo_Multclinics_branca_verde_sem_nome.png"
+                    onclick="home()">
+                <span>MultiClinics</span>
+            </div>
+
+            <div class="direitaCabecalho">
+                <div class="pCabecalho">
+                    <a href="#Div_servicos">Serviços</a>
+                </div>
+                <div class="pCabecalho">
+                    <a href="#div_sobrenos">Sobre nós</a>
+                </div>
+                <div class="pCabecalho">
+                    <a href="#Div_beneficios">Benefícios</a>
+                </div>
+                <div class="pCabecalho">
+                    <a href="#div_faleconosco">Fale Conosco</a>
+                </div>
+                <div class="pCabecalho">
+                    <Button class="registrar">
+                        <a href="../Html/login.html">Login</a>
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                    </Button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Banner -->
+
+    <!-- começo do banner -->
+    <div id="inicio" class="espacamento"></div>
+    <div class="fundoBanner">
+        <div class="paiBanner">
+            <video playsinline="playsinline" autoplay="autoplay" muted="muted" loop="loop">
+                <source src="../Assets/_import_6064a7ce1e8005.54725258_720p_5000br.mp4" type="video/mp4">
+            </video>
+            <div class="divBoxTextoBanner">
+
+                <div class="tituloBanner">
+                    <p class="pTituloBannerc">O controle é</p>
+                    <p class="pTituloBannerv">todo seu.</p>
+                </div>
+
+                <div class="textoBanner">
+                    <p>Transforme sua clínica com nossa plataforma, personalizando nossas funcionalidades para atender
+                        melhor. Uma experiência de cuidado de saúde excepcional e abrangente.
+                    </p>
+                </div>
+
+                <div class="divBoxBotaoBanner">
+                    <div class="wrapper">
+                        <a href="#div_faleconosco"><span>Fale Conosco</span></a>
+                    </div>
+                </div>
+
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Servicos -->
+
+    <div class="Div_servicos" id="Div_servicos">
+        <div class="Div_filtro_servicos">
+            <div class="Tit_servicos">
+                <h1>Gerenciando seus agendamentos e equipe em uma única plataforma.</h1>
+                <span>Por que nós?</span><br>
+            </div>
+            <div class="Cards_servicos">
+                <div class="card_servicos">
+                    <div class="foto">
+                        <img src="../assets/calendario.png" alt="">
+                        <div class="nomes">
+                            <span>Sistema de agendamento</span><br>
+                        </div>
+                    </div>
+                    <p>Seu calendário inteiro de agendamentos com fácil visualização, descubra horários, profissionais e
+                        clientes. Agende como deseja sem dificuldade.
+                    </p>
+                </div>
+                <div class="card_servicos">
+                    <div class="foto">
+                        <img src="../assets/prontuario-medico.png" alt="">
+                        <div class="nomes">
+                            <span>Prontuários Eletrônicos</span><br>
+                        </div>
+                    </div>
+                    <p>Tenha a versão virtual e acessível dos prontuários de seus pacientes, provendo um atendimento
+                        mais eficiente para garantir sua melhor perfomace no trabalho.
+                    </p>
+                </div>
+                <div class="card_servicos">
+                    <div class="foto">
+                        <img src="../assets/analise.png" alt="">
+                        <div class="nomes">
+                            <span>Proteção de dados</span><br>
+                        </div>
+                    </div>
+                    <p>A MultiClinics não tem acesso a qualquer informação de seus pacientes, respeitando a lei LGPD e
+                        garantindo a privacidade dos dados médicos assim como a lei prêve.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- about us -->
+
+    <div class="sobrenos" id="div_sobrenos">
+        <div class="nos1">
+            <div class="titulo_about">About Us</div>
+            <div class="titulo_about_verde">Sobre nós!</div>
+            <div class="subtitulo_about">Queremos te ajudar ao máximo!</div>
+            <div class="desc_nos">Desenvolvemos nossa plataforma com o objetivo de alcançar um beneficiário específico.
+                Após um estudo aprofundado dos conteúdos dos Objetivos de Desenvolvimento Sustentável (ODS), percebemos
+                que poderíamos fazer a diferença na área da saúde. Identificamos um beneficiário próximo a nós, com
+                necessidades e desafios que poderíamos ajudar a resolver.
+            </div>
+            <div class="sobrev">Equipe MultiClinics</div>
+            <div class="sobrec">Gabriel Sanchez - Jonathan Alborguetti - Lívia Lanes - Marcos Feu - Pedro Barbieline
+            </div>
+        </div>
+        <div class="nos">
+            <img class="icon_nos" src="../Assets/7809433-removebg-preview.png" alt="">
+        </div>
+    </div>
+
+    <!-- Servicos -->
+
+    <div class="Div_beneficios" id="Div_beneficios">
+        <div class="Div_filtro_beneficios">
+            <div class="Tit_beneficios">
+                <h1>Seu negócio na palma da mão</h1>
+                <span>Saiba um pouco mais das funcionalidades que podemos te oferecer, tudo isso e muito mais para você
+                    poder gerenciar sua clínica do seu jeito, desde seus funcionários até seu horários!</span><br>
+            </div>
+            <div class="Cards_beneficios">
+                <div class="card_beneficios1">
+                    <div class="boxTexto">
+                        <span>Aplicação dísponivel e adaptável para seu PC, Notebook, Tablet e até Celular.</span><br>
+                    </div>
+                </div>
+                <div class="card_beneficios2">
+                    <div class="boxTexto">
+                        <span>Dashboards de diferentes pontos de vista para você analisar todos os dados que
+                            precisar.</span><br>
+                    </div>
+                </div>
+                <div class="card_beneficios3">
+                    <div class="boxTexto">
+                        <span>O calendário virtual completo, todos os agendamentos de todas especialidades.</span><br>
+                    </div>
+                </div>
+            </div>
+            <div class="Cards_beneficios2">
+                <div class="card_beneficios4">
+                    <div class="boxTexto">
+                        <span>Crie, leia, altere e apague, dê permissões aos seus funcinários da forma que mais te
+                            favorecer.</span><br>
+                    </div>
+                </div>
+                <div class="card_beneficios5">
+                    <div class="boxTexto">
+                        <span>Demonstrativo completo de cada agendamento, desde os horários até o relátorio de cada
+                            consulta.</span><br>
+                    </div>
+                </div>
+                <div class="card_beneficios6">
+                    <div class="boxTexto">
+                        <span>Tenha uma equipe mais próxima e alinhada para entregar o melhor para seus
+                            pacientes.</span><br>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- about us -->
+
+    <!-- Nosso time -->
+
+    <section class="container">
+        <h2 class="title">
+            <span class="primary">Conheça o nosso time</span>
+            <span class="secondary">
+                Cada um cooperando para o funcionamento da Multiclinics
+            </span>
+        </h2>
+        <div class="gallery-wrapper">
+            <figure class="gallery-item">
+                <img src="../Assets/marcos.jpeg" alt="" class="item-image" />
+                <figcaption class="item-description">
+                    <h2 class="name">Marcos Feu</h2>
+                    <span class="role">Desing UX</span>
+                </figcaption>
+            </figure>
+            <figure class="gallery-item">
+                <img src="../Assets/sanchez.jpeg" alt="" class="item-image" />
+                <figcaption class="item-description">
+                    <h2 class="name">Gabriel Sanchez</h2>
+                    <span class="role">P.O.</span>
+                </figcaption>
+            </figure>
+            <figure class="gallery-item">
+                <img src="../Assets/jonny.jpeg" alt="" class="item-image" />
+                <figcaption class="item-description">
+                    <h2 class="name">Jonathan Alborghetti</h2>
+                    <span class="role">Front-end Developer</span>
+                </figcaption>
+            </figure>
+            <figure class="gallery-item">
+                <img src="../Assets/ped.jpeg" alt="" class="item-image" />
+                <figcaption class="item-description">
+                    <h2 class="name">Pedro Paulo</h2>
+                    <span class="role">Back-end Developer</span>
+                </figcaption>
+            </figure>
+            <figure class="gallery-item">
+                <img src="../Assets/livia.jpeg" alt="" class="item-image" />
+                <figcaption class="item-description">
+                    <h2 class="name">Livia Lanes</h2>
+                    <span class="role">Human resources</span>
+                </figcaption>
+            </figure>
+        </div>
+    </section>
+
+    <!-- Nosso time -->
+
+    <!-- fale conosco -->
+
+    <div class="faleconosco" id="div_faleconosco">
+
+        <div class="fc_banner">
+            <div class="fundo_faleconosco">
+                <div class="fc_labels">
+                    <span class="fc_titulo">
+                        <span class="fale">Fale</span>
+                        <span class="conosco">Conosco</span>
+                    </span>
+                    <span class="fc_desc">Gostou de nossos serviços, quer tirar dúvidas ou nos contatar? 
+                        use nosssos meios de contato ou preencha nosso formulário abaixo:</span>
+                </div>
+
+                <input class="dado" type="email" placeholder="E-mail">
+                <div class="dados">
+                    <input class="identidade" type="text" placeholder="Nome">
+                    <input class="identidade" type="text" placeholder="Sobrenome">
+                </div>
+                <input class="dado" type="number" placeholder="Telefone celular">
+                <input class="mensagem" type="text" placeholder="Mensagem">
+                <div class="wrapper">
+                    <a href="#"><span>Enviar</span></a>
+                </div>
+            </div>
+            <div class="formulario">
+                <div class="fc_imagem"></div>
+                <div class="icons">
+                    <div class="end_tel">
+                        <div class="icon1">
+                        </div>
+                        <span>Rua Haddock Lobo, 595 - Cequeira Cesár, São Paulo - SP</span>
+                    </div>
+                    <div class="end_tel">
+                        <div class="icon2">
+                        </div>
+                        <span>(00) 12345-67890</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- footer -->
+
+
+    <div class="footer">
+        <div class="content">
+            <div class="brand">
+                <img src="../Assets/logo_Multclinics_branca_sem_nome.png" alt="Logo">
+                
+            </div>
+    
+            <nav class="footer-nav">
+                <ul>
+                    <li>
+                        <h2>Company</h2>
+                    </li>
+                    <li><a href="#">About us</a></li>
+                    <li><a href="#">Serviços</a></li>
+                    <li><a href="#">Fale conosco</a></li>
+                </ul>
+            </nav>
+    
+            <div class="contact">
+                <div style="font-weight: 500;padding-top: 5vh;">Gostou de nossos serviços?</div>
+                <div style="font-weight: 200; padding-bottom: 2vh;">Entre em contado!</div>
+                <div class="wrapper">
+                    <a href="#div_faleconosco"><span>Fale Conosco</span></a>
+                </div>
+            </div>
+        </div>
+        <p>Copyright © 2024 MultiClinics.All rights reserved.</p>
+    </div>
+
+
+
+
+</body>
+
+</html>
+
+<script>
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+
+</script>

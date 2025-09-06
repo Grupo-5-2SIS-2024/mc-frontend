@@ -1,0 +1,215 @@
+body {
+    font-family: 'Inter', serif;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background-color: #F5F5F5;
+}
+
+.tela {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+.banner {
+    width: 80%;
+    height: fit-content;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: rgba(0, 0, 0, 0.175) 0px 30px 100px, rgba(0, 0, 0, 0.121) 20px 21px 12px;
+}
+
+.intro {
+    width: 50%;
+    height: 75vh;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    background-color: #FFFFFF;
+    padding-left: 6vh;
+    box-shadow: 7px 0px 5px -2px #88888892;
+}
+
+.dados {
+    width: 50%;
+    height: 55vh;
+    background-color: #BBDEFB; /* #C8E6C9 -> #BBDEFB (azul muito claro) */
+    padding-top: 10vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    padding-bottom: 10vh;
+
+}
+
+.login {
+    background-color: #1976D2; /* #388E3B -> #1976D2 (azul médio) */
+    padding: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
+    color: #FFFFFF;
+    font-size: 22px;
+    border-radius: 5px;
+    border: 0px;
+    transition: all 0.3s ease 0s;
+    cursor: pointer;
+    outline: none;
+    position: relative;
+    transition: all .50s;
+    z-index: 2;
+}
+
+.registrar {
+
+    width: 10vw;
+    height: 7vh;
+    padding: 1rem, 1rem, 1rem, 1rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    background-color: #1976D2; /* #43A046 -> #1976D2 (azul médio) */
+    font-weight: bold;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    color: whitesmoke;
+}
+
+.registrar:hover {
+
+    transform: translateY(-0.4rem);
+    transition: 0.2s;
+    box-shadow: 0rem 0.5rem 0.8rem rgb(0, 0, 0);
+
+}
+
+a {
+    list-style: none;
+    text-decoration: none;
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    transition: all 0.3s ease 0s;
+    cursor: pointer;
+}
+
+.dadosform {
+    height: 33vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.input {
+    position: relative;
+    width: 100%;
+}
+
+.input__field {
+    padding: 0.625rem;
+    width: 100%;
+    border: none;
+    border-radius: 0.25rem;
+    font: inherit;
+    color: #0a0a0a;
+    background-color: transparent;
+    outline: 0.125rem solid #000000;
+}
+
+.input__label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translate(0.625rem, 0.625rem);
+    transform-origin: left;
+    transition: transform 0.25s;
+}
+
+.input__field:focus-visible~.input__label,
+.input__field:valid~.input__label {
+    transform: translate(0, -1.875rem) scale(0.8);
+}
+
+.input__field:is(:focus-visible, :valid) {
+    outline-color: #000000;
+}
+
+.input__icon-wrapper {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+.input__icon {
+    color: #999;
+    font-size: 1.5rem;
+}
+
+.titulo1 {
+    font-weight: 990;
+    color: #2196F3; /* #38B54C -> #2196F3 (azul claro) */
+    font-size: 9vh;
+    padding-top: 3vh;
+}
+
+.titulo2 {
+    font-weight: bolder;
+    color: #0D47A1; /* #276E2A -> #0D47A1 (azul escuro) */
+    font-size: 7vh;
+}
+
+.slogan {
+    font-weight: 500;
+    color: #949090;
+    font-size: 3vh;
+    width: 84%;
+}
+
+.conta {
+    font-weight: 500;
+    color: #949090;
+    font-size: 3.5vh;
+}
+
+.contato {
+    font-weight: 700;
+    color: #0D47A1; /* #276E2A -> #0D47A1 (azul escuro) */
+    font-size: 3.5vh;
+}
+
+.fotomedicos {
+    background-image: url("../Assets/medicos.jpg");
+    background-size: cover;
+    height: 21vh;
+    width: 90%;
+}
+
+.btn-voltar {
+    position: fixed;
+    top: 24px;
+    left: 32px;
+    font-size: 2.5rem;
+    color: #1976D2;
+    background: #fff;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: background 0.2s, color 0.2s;
+    z-index: 1000;
+}
+
+.btn-voltar:hover {
+    background: #1976D2;
+    color: #fff;
+}

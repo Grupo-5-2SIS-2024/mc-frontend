@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiclinics | Agendar Consulta</title>
+    <link rel="stylesheet" href="../Css/addAgendamento.css">
+    <link rel="stylesheet" href="../Css/Sidebar.css">
+    <link rel="shortcut icon" href="../../Assets/logo_Multclinics_branca_sem_nome.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> <!-- SheetJS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+</head>
+
+<body>
+    <i id="hamburger-menu" class="fa-solid fa-bars"></i>
+
+    <div id="menu-overlay" class="menu-overlay">
+        <ul>
+            <li><a href="homePosLoginMedico.html">Home</a></li>
+            <li><a href="calendario.html">Agendamento</a></li>
+            <li><a href="listagemColaborador.html">Colaborador</a></li>
+            <li><a href="listagemPaciente.html">Paciente</a></li>
+            <li><a href="dashboards.html">Dashboards</a></li>
+            <li><a href="listagemLead.html">Leads</a></li>
+        </ul>
+    </div>
+    <nav id="sidebar">
+        <div id="sidebar_content">
+            <div id="user">
+                <img src="../Assets/perfil.jpeg" id="user_avatar" alt="Avatar">
+
+                <p id="user_infos">
+                    <span id="user_nome" class="item-description">Silvia</span>
+                    <span id="user_permissao" class="item-description">ADM</span>
+                </p>
+            </div>
+
+            <ul id="side_items">
+                <li class="side-item">
+                    <a href="homePosLoginMedico.html">
+                        <i class="fa-solid fa-home"></i>
+                        <span class="item-description">
+                            Home
+                        </span>
+                    </a>
+                </li>
+
+                <li class="side-item active">
+                    <a href="calendario.html">
+                        <i class="fa-solid fa-calendar"></i>
+                        <span class="item-description">
+                            Agendamento
+                        </span>
+                    </a>
+                </li>
+
+                <li id="Colaborador" class="side-item">
+                    <a href="listagemColaborador.html">
+                        <i class="fa-solid fa-user"></i>
+                        <span class="item-description">
+                            Colaborador
+                        </span>
+                    </a>
+                </li>
+
+                <li id="Paciente" class="side-item">
+                    <a href="listagemPaciente.html">
+                        <i class="fa-solid fa-hospital-user"></i>
+                        <span class="item-description">
+                            Paciente
+                        </span>
+                    </a>
+                </li>
+
+                <li id="Dash" class="side-item">
+                    <a href="dashboards.html">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span class="item-description">
+                            Dashboards
+                        </span>
+                    </a>
+                </li>
+
+                <li id="Lead" class="side-item">
+                    <a href="listagemLead.html">
+                        <i class="fa-solid fa-filter"></i>
+                        <span class="item-description">
+                            Leads
+                        </span>
+                    </a>
+                </li>
+            </ul>
+
+            <button id="open_btn">
+                <i id="open_btn_icon" class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <div id="logout">
+            <button onclick="deslogar()" id="logout_btn">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="item-description">
+                    Logout
+                </span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <h1>Agendar <span>Consulta</span></h1>
+        <div class="form-container">
+            <div class="form-group">
+                <label for="dia">Escolher Dia</label>
+                <input type="date" id="dia">
+            </div>
+            <div class="form-group">
+                <label for="hora">Escolher Hora</label>
+                <select id="hora">
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="medico">Escolher Médico</label>
+                <select id="medico">
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="paciente">Escolher Paciente</label>
+                <select id="paciente">
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="descricao">Descrição</label>
+                <textarea id="descricao" placeholder="Digite a descrição da consulta (opcional)" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="recorrente" style="display:inline; margin-right: 10px;">Consulta Recorrente</label>
+                <input type="checkbox" id="recorrente" style="display:inline;">
+            </div>
+
+            <button id="agendar"><i class="fas fa-calendar-check"></i> Agendar</button>
+        </div>
+
+        <div class="form-container2" id="consultas-container"></div>
+
+        <button id="download-excel" class="btn-download" onclick="BaixarExcelGeral()">
+            <i class="fas fa-download"></i> Baixar Excel
+        </button>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../Js/addAgendamento.js"></script>
+    <script src="../Js/funcoesPadroes.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="../Js/sessao.js"></script>
+
+</body>
+
+</html>

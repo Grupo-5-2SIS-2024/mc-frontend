@@ -1,0 +1,225 @@
+body {
+    display: flex;
+    height: 100vh;
+    background-image: url(https://img.freepik.com/fotos-gratis/vista-do-luxuoso-espaco-interior-do-hotel_23-2150683473.jpg?t=st=1717014718~exp=1717018318~hmac=808a6ebab494c075a2c564e18bca7eba2f1680aa38e734a6d283539f03177540&w=740);
+    background-size: cover;
+    background-position: 100%;
+    overflow-x: hidden;
+    font-size: 1rem;
+}
+
+/* Avatar */
+
+#picture__input {
+    display: none;
+}
+
+.picture {
+    width: 12.5rem;
+    aspect-ratio: 1;
+    background: #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    border: 0.125rem solid;
+    border-radius: 50%;
+    cursor: pointer;
+    font-family: sans-serif;
+    transition: color 300ms ease-in-out, background 300ms ease-in-out;
+    outline: none;
+    overflow: hidden;
+    position: relative;
+    bottom: 2rem;
+}
+
+.picture:hover {
+    color: #777;
+    background: #ccc;
+}
+
+.picture:active {
+    border-color: turquoise;
+    color: turquoise;
+    background: #eee;
+}
+
+.picture:focus {
+    color: #777;
+    background: #ccc;
+    box-shadow: 0 0 0.625rem rgba(0, 0, 0, 0.3);
+}
+
+.picture__img {
+    max-width: 100%;
+}
+
+/* Fim do avatar */
+
+/* Box do Cadastro */
+.ContainerCadastro {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 70vw;
+    height: auto;
+    padding: 2rem;
+    background-color: #fffffff2;
+    border-radius: 15px;
+}
+
+.equipe {
+    color: #2196F3; /* azul claro */
+}
+
+.error {
+    color: red;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.inputs_Container {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    width: 100%;
+    position: relative;
+    bottom: 1rem;
+}
+
+.inputs_coluna {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    width: 32%;
+}
+
+.input_linha_dupla {
+    display: flex;
+    gap: 1.5rem;
+    width: 100%; 
+}
+
+.input_linha_dupla .input {
+    flex: 1;
+    position: relative;
+}
+
+.input {
+    position: relative;
+    width: 100%;
+}
+
+.input__field {
+    padding: 0.625rem;
+    width: 100%;
+    border: none;
+    border-radius: 0.25rem;
+    font: inherit;
+    color: #0a0a0a;
+    background-color: transparent;
+    outline: 0.125rem solid #000000;
+}
+
+.input__label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translate(0.625rem, 0.625rem);
+    transform-origin: left;
+    transition: transform 0.25s;
+}
+
+.input__labelComplemento {
+    position: absolute;
+    top: 0; 
+    left: 0; 
+    transform: translate(0.625rem, 0.625rem);
+    transform-origin: left;
+    transition: transform 0.25s;
+}
+
+.input__labelDate {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translate(0, -1.825rem);
+    transform-origin: left;
+    transition: transform 0.25s;
+}
+
+.input__label--active,
+.input__labelDate--active,
+.input__labelComplemento--active {
+    transform: translate(0, -1.875rem) scale(0.8);
+}
+
+.input__field:focus-visible~.input__label,
+.input__field:valid~.input__label,
+.input__field:focus-visible~.input__labelDate,
+.input__field:valid~.input__labelDate,
+.input__field:focus-visible~.input__labelComplemento {
+    transform: translate(0, -1.875rem) scale(0.8);
+}
+
+/* Botão de registro */
+.registrar {
+    width: 15vw;
+    height: 7vh;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    background-color: #1976D2; /* azul médio */
+    font-weight: bold;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    color: whitesmoke;
+}
+
+.registrar:hover {
+    transform: translateY(-0.4rem);
+    transition: 0.2s;
+    box-shadow: 0rem 0.5rem 0.8rem rgb(0, 0, 0);
+    background-color: #1565C0; /* hover azul escuro */
+}
+
+/* Media Queries para ajuste em telas menores */
+@media (max-width: 440px) {
+    .ContainerCadastro {
+        width: 90vw;
+        height: 165vh;
+        padding: 2rem;
+        position: relative;
+        top: 20rem;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .inputs_Container {
+        flex-direction: column;
+        gap: 3rem;
+    }
+
+    .inputs_login_esquerda,
+    .inputs_login_direita {
+        width: 100%;
+        align-items: center;
+        gap: 3rem;
+    }
+
+    .input__field {
+        width: 90%;
+    }
+
+    .registrar {
+        width: 100%;
+        text-align: center;
+        margin-top: 2rem;
+    }
+}

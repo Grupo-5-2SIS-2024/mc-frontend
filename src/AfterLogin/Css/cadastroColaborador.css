@@ -1,0 +1,271 @@
+body {
+    display: flex;
+    height: 100vh;
+    background-image: url(https://img.freepik.com/fotos-gratis/vista-do-luxuoso-espaco-interior-do-hotel_23-2150683473.jpg?t=st=1717014718~exp=1717018318~hmac=808a6ebab494c075a2c564e18bca7eba2f1680aa38e734a6d283539f03177540&w=740);
+    background-size: cover;
+    background-position: 100%;
+    overflow-x: hidden;
+    font-size: 1rem;
+    /* Base for rem units */
+}
+
+/* Box do Cadastro */
+.ContainerCadastro {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 70vw;
+    height: 90vh;
+    padding: 1rem;
+    background-color: #fffffff2;
+    border-radius: 15px;
+}
+
+.equipe {
+    color: #2196F3; /* azul claro */
+}
+
+/* Avatar */
+
+#picture__input {
+    display: none;
+}
+
+.picture {
+    width: 12.5rem;
+    aspect-ratio: 1;
+    background: #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    border: 0.125rem solid;
+    border-radius: 50%;
+    cursor: pointer;
+    font-family: sans-serif;
+    transition: color 300ms ease-in-out, background 300ms ease-in-out;
+    outline: none;
+    overflow: hidden;
+    margin-top: -1rem;
+    /* Move um pouco para cima */
+}
+
+.picture:hover {
+    color: #777;
+    background: #ccc;
+}
+
+.picture:active {
+    border-color: turquoise;
+    color: turquoise;
+    background: #eee;
+}
+
+.picture:focus {
+    color: #777;
+    background: #ccc;
+    box-shadow: 0 0 0.625rem rgba(0, 0, 0, 0.3);
+}
+
+.picture__img {
+    max-width: 100%;
+}
+
+/* Fim do avatar */
+
+/* comeco do box cadastro */
+
+.error {
+    color: red;
+    font-size: 0.75rem;
+    /* Tamanho da fonte da mensagem de erro */
+    margin-top: 0.25rem;
+    /* Adiciona um pequeno espaço acima das mensagens de erro */
+    display: block;
+    /* Exibe a mensagem de erro como bloco */
+}
+
+.inputs_Container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    /* Alinha as inputs no topo */
+    gap: 2rem;
+    width: 100%;
+    height: auto;
+    padding: 1rem;
+}
+
+.inputs_login_esquerda,
+.inputs_login_direita {
+    gap: 2.5rem;
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+}
+
+.input {
+    position: relative;
+    width: 100%;
+}
+
+.input__field {
+    padding: 0.625rem;
+    width: 100%;
+    border: none;
+    border-radius: 0.25rem;
+    font: inherit;
+    color: #0a0a0a;
+    background-color: transparent;
+    outline: 0.125rem solid #000000;
+}
+
+.input__label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translate(0.625rem, 0.625rem);
+    transform-origin: left;
+    transition: transform 0.25s;
+}
+
+.input__labelDate{
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translate(0, -1.825rem);
+    transform-origin: left;
+    transition: transform 0.25s;
+}
+
+.input__label--active,
+.input__labelDate--active {
+    transform: translate(0, -1.875rem) scale(0.8);
+}
+
+.input__field:focus-visible~.input__label,
+.input__field:valid~.input__label,
+.input__field:focus-visible~.input__labelDate,
+.input__field:valid~.input__labelDate {
+    transform: translate(0, -1.875rem) scale(0.8);
+}
+
+.input__field:is(:focus-visible, :valid) {
+    outline-color: #000000;
+}
+
+
+.input__icon-wrapper {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+.input__icon {
+    color: #999;
+    font-size: 1.5rem;
+}
+
+.input__icon2 {
+    color: #999;
+    font-size: 1.5rem;
+}
+
+.registrar {
+    width: 100%;
+    height: 7vh;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    background-color: #1976D2; /* azul médio */
+    font-weight: bold;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    color: whitesmoke;
+}
+
+.registrar:hover {
+    transform: translateY(-0.4rem);
+    transition: 0.2s;
+    box-shadow: 0rem 0.5rem 0.8rem rgb(0, 0, 0);
+    background-color: #1565C0; /* hover azul escuro */
+}
+
+/* Fim do box cadastro */
+
+/* Media Queries for iPhone 14 Pro Max */
+@media (max-width: 440px) {
+
+    .ContainerCadastro {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        /* Centraliza os itens horizontalmente */
+        justify-content: center;
+        /* Centraliza os itens verticalmente */
+        width: 90vw;
+        height: 165vh;
+        padding: 2rem;
+        position: relative;
+        top: 20rem;
+    }
+
+    h1 {
+        word-wrap: break-word;
+        /* Allow text to break within words */
+        text-align: center;
+        /* Center-align text */
+        margin-bottom: 2rem;
+        /* Adiciona espaçamento inferior */
+    }
+
+    .picture {
+        width: 10rem;
+        text-align: center;
+        margin-bottom: 2rem;
+        /* Adiciona espaçamento inferior */
+    }
+
+    .inputs_Container {
+        display: flex;
+        flex-direction: column;
+        gap: 3rem;
+    }
+
+    .inputs_login_esquerda,
+    .inputs_login_direita {
+        width: 100%;
+        align-items: center;
+        /* Centraliza os itens horizontalmente */
+        gap: 3rem;
+    }
+
+    .input__field {
+        width: 90%;
+    }
+
+    .registrar {
+        width: 100%;
+        text-align: center;
+        /* Centraliza o texto */
+        padding: auto;
+        position: relative;
+        right: 1rem;
+        margin-top: 2rem;
+        /* Adiciona espaçamento superior */
+    }
+
+    .input__icon-wrapper {
+        position: absolute;
+        top: 50%;
+        right: 2.5rem;
+        transform: translateY(-50%);
+        cursor: pointer;
+    }
+
+}

@@ -1,0 +1,346 @@
+/* Estilos gerais */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    height: 100vh;
+    background-color: #BBDEFB; /* azul muito claro */
+    background-size: cover;
+    background-position: 100%;
+    overflow-x: hidden;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-areas:
+        'header header header'
+        'kpis grafico shortcuts'
+        'agenda agenda notificacoes';
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: auto 1fr 2fr;
+    gap: 20px;
+    width: 100%;
+    height: 100vh;
+    padding: 20px;
+    background-color: #BBDEFB; /* azul muito claro */
+}
+
+.header {
+    grid-area: header;
+    background-color: #1976D2; /* azul médio */
+    color: white;
+    padding: 20px;
+    text-align: center;
+    border-radius: 10px;
+}
+
+.kpis {
+    grid-area: kpis;
+    display: flex;
+    justify-content: space-between;
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    align-items: center; /* Centralizar verticalmente os elementos */
+}
+
+.foto-medico-container {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.kpi-items {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Define duas colunas */
+    grid-template-rows: repeat(2, 1fr); /* Define duas linhas */
+    gap: 50px; /* Espaçamento entre os elementos */
+    width: 50%;
+    margin-right: 45px;
+}
+
+.kpi-item {
+    text-align: center;
+    background-color: #E3F2FD; /* azul claro */
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.kpi-item:hover {
+    transform: translateY(-5px);
+}
+
+.kpi-item h3 {
+    margin-top: 10px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+#consultasHoje, #consultasMarcadas, #consultasConcluidas, #consultasCanceladas {
+    font-size: 32px;
+    font-weight: bold;
+    color: #1976D2; /* azul médio */
+}
+
+/* Atalhos */
+.shortcuts {
+    grid-area: shortcuts;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.shortcuts h2,
+.agenda h2,
+.notificacoes h2,
+.grafico h2 {
+    color: #000; /* Títulos em preto */
+    font-weight: bold;
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+}
+
+.shortcut-btn {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 15px;
+    background-color: #1976D2; /* azul médio */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.shortcut-btn:hover {
+    background-color: #1565C0; /* hover azul escuro */
+}
+
+/* Agenda */
+.agenda {
+    grid-area: agenda;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead {
+    background-color: #1976D2; /* azul médio */
+    color: white;
+}
+
+th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+td {
+    background-color: #f4f4f4;
+}
+
+/* Notificações */
+.notificacoes {
+    grid-area: notificacoes;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.notificacoes ul {
+    list-style: none;
+    padding: 0;
+}
+
+.notificacoes li {
+    background-color: #E0E0E0; /* Cinza */
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    position: relative;
+}
+
+.notificacoes li h3 {
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+}
+
+/* Gráfico */
+.grafico {
+    grid-area: grafico;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 500px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    color: #000;
+}
+
+.foto-medico-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-right: 20px;
+}
+
+.foto-medico {
+    width: 200px;
+    height: 200px;
+    border-radius: 100px;
+    margin-bottom: 20px;
+    border: #000 solid 2px;
+}
+
+.nome-medico, .especialidade {
+    font-size: 16px;
+    font-weight: bold;
+    color: #1976D2; /* azul médio */
+    text-align: center;
+}
+
+/* KPI Estilo adicional */
+.kpi {
+    background-color: white;
+    width: 15vw;
+    height: 17vh;
+    margin-left: 5%;
+    margin-top: 3%;
+    color: rgb(0, 0, 0);
+    border-radius: 15px;
+    box-shadow: 5px 5px 5px rgb(142, 141, 141);
+}
+
+.kpiData {
+    padding: 2%;
+    display: flex;
+    justify-content: space-between;
+}
+
+.kpiTexto p {
+    font-size: xx-large;
+    color: #2196F3; /* azul claro */
+}
+
+.kpiContent {
+    display: flex;
+    flex-direction: column;
+}
+
+.kpiTexto p {
+    padding-top: 5%;
+    font-size: xx-large;
+    color: #38B54C;
+}
+
+.kpiDescricao {
+    padding-top: 4%;
+    padding-left: 2%;
+    font-size: small;
+    color: #6E706E;
+}
+
+/* Sessão inferior */
+.sessaoInferior {
+    background-color: #BBDEFB; /* azul muito claro */
+    width: 100vw;
+    height: 50vh;
+    display: flex;
+}
+
+
+/* Bloco de atalhos geral */
+.shortcuts {
+    background-color: #f4f4f4; /* Fundo leve para destaque */
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.shortcuts h2 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.shortcuts .shortcut-number {
+    font-size: 78px; /* Número grande para chamar atenção */
+    color: #1976D2; /* azul médio */
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* Responsivo para telas menores */
+@media (max-width: 768px) {
+    .shortcuts {
+        padding: 15px;
+    }
+
+    .shortcuts h2 {
+        font-size: 20px;
+    }
+
+    .shortcuts .shortcut-number {
+        font-size: 36px;
+    }
+}

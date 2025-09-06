@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="../Css/login.css">
+  <link rel="shortcut icon" href="../Assets/logo_Multclinics_branca_sem_nome.png" type="image/x-icon">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+  <div class="tela">
+    <div class="banner">
+      <div class="intro">
+        <div class="titulo">
+          <div class="titulo1">BEM VINDO</div>
+          <div class="titulo2">DE VOLTA!</div>
+        </div>
+
+        <div class="slogan">Ouse sonhar sobre a tecnologia que poderíamos criar, sobre o mundo que podemos construir
+          juntos para um futuro melhor!</div>
+        <div class="cadastro">
+          <span class="conta">Não possui conta?</span>
+          <span class="contato">Entre em contato!</span>
+        </div>
+
+        <div class="fotomedicos"></div>
+      </div>
+      <div class="dados">
+        <span class="titulo2">LOG IN</span>
+
+        <div class="dadosform">
+          <div class="input">
+            <input class="input__field" id="email" type="email" required />
+            <label for="email" class="input__label">E-mail</label>
+          </div><br>
+          <div class="input">
+            <input class="input__field" id="password" type="password" required />
+            <label for="password" class="input__label">Senha</label>
+            <span class="input__icon-wrapper">
+              <i class="input__icon ri-eye-off-line"></i>
+            </span>
+          </div><br>
+          <Button class="registrar" onclick="fazerLogin()">
+            Login <i class="fa-solid fa-right-to-bracket"></i>
+          </Button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <a href="index.html" class="btn-voltar" title="Voltar para o início">
+      <i class="fa-solid fa-arrow-left"></i>
+  </a>
+
+</body>
+
+</html>
+
+<script>
+
+  async function fazerLogin() {
+    const valorEmailLogin = document.getElementById("email").value;
+    const valorSenhaLogin = document.getElementById("password").value;
+
+    // Validação dos campos de login
+    if (valorEmailLogin === "") {
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro no login',
+        text: 'O campo email é obrigatório.'
+      });
+      return;
+    }
+    if (valorSenhaLogin === "") {
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro no login',
+        text: 'O campo senha é obrigatório.'
+      });
+      return;
+    }
+    if (valorEmailLogin.indexOf('@') === -1) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro no login',
+        text: 'O email informado é inválido. Por favor, insira um email válido.'
+      });
+      return;
+    }
+
+    const valoresLogin = {
+      email: valorEmailLogin,
+      senha: valorSenhaLogin
+    };
+    
+    try {
+        const respostaLogin = await fetch("http://localhost:8080/medicos/login", {
+            method: "PUT",
+            body: JSON.stringify(valoresLogin),
+            headers: { "Content-type": "application/json; charset=UTF-8" }
+        });
+        if (respostaLogin.status === 200) {
+            const json = await respostaLogin.json(); 
+            // Armazenamento de dados no sessionStorage
+            sessionStorage.setItem("ID_MEDICO", json.id);
+            sessionStorage.setItem("NOME_MEDICO", json.nome);
+            sessionStorage.setItem("SOBRENOME_MEDICO", json.sobrenome);
+            sessionStorage.setItem("EMAIL_MEDICO", json.email);
+            sessionStorage.setItem("TELEFONE_MEDICO", json.telefone);
+            sessionStorage.setItem("CARTEIRA_REPRESENTANTE", json.carterinha); 
+            sessionStorage.setItem("TIPO_MEDICO", json.tipo);
+            sessionStorage.setItem("ESPECIFICACAO_MEDICA", json.especificacaoMedica.area); 
+            sessionStorage.setItem("PERMISSIONAMENTO_MEDICO", json.permissao.nome); 
+            sessionStorage.setItem("CPF_MEDICO", json.cpf);
+            sessionStorage.setItem("ATIVO_MEDICO", json.ativo);
+            sessionStorage.setItem("DT_NASC", json.dataNascimento);
+            sessionStorage.setItem("FOTO", json.foto);
+            Swal.fire({
+                icon: 'success',
+                title: 'Login bem-sucedido!',
+                text: 'Redirecionando para a área do colaborador...',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                // Verificação de permissão e redirecionamento
+                if (json.permissao.nome === "Admin" || json.permissao.nome === "Supervisor") {
+                    window.location.href = "../AfterLogin/Html/homePosLoginAdm.html";
+                } else if (json.permissao.nome === "Médico") {
+                    window.location.href = "../AfterLogin/Html/homePosLoginMedico.html";
+                }
+            });
+        } else {
+            // Tratamento de erros de login
+            let mensagemErro;
+            switch (respostaLogin.status) {
+                case 401:
+                    mensagemErro = "Credenciais inválidas. Por favor, tente novamente.";
+                    break;
+                case 404:
+                    mensagemErro = "Usuário não encontrado.";
+                    break;
+                default:
+                    mensagemErro = `Erro inesperado: ${respostaLogin.status}`;
+            }
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro no login',
+                text: mensagemErro
+            });
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro no login',
+            text: 'Erro ao tentar se conectar com o servidor. Por favor, tente novamente mais tarde.'
+        });
+    }
+  }
+
+</script>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.2.0/fonts/remixicon.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="../Css/dashboard.css">
+    <link rel="stylesheet" href="../Css/Sidebar.css">
+    <link rel="shortcut icon" href="../../Assets/logo_Multclinics_branca_sem_nome.png" type="image/x-icon">
+    <title>Multiclinics | Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <i id="hamburger-menu" class="fa-solid fa-bars"></i>
+
+    <div id="menu-overlay" class="menu-overlay">
+        <ul>
+            <li><a href="homePosLoginAdm.html">Home</a></li>
+            <li><a href="calendario.html">Agendamento</a></li>
+            <li><a href="listagemColaborador.html">Colaborador</a></li>
+            <li><a href="listagemPaciente.html">Paciente</a></li>
+            <li><a href="dashboards.html">Dashboards</a></li>
+            <li><a href="listagemLead.html">Leads</a></li>
+        </ul>
+    </div>
+    <nav id="sidebar">
+        <div id="sidebar_content">
+            <div id="user">
+                <img src="../Assets/perfil.jpeg" id="user_avatar" alt="Avatar">
+                <p id="user_infos">
+                    <span id="user_nome" class="item-description">Silvia</span>
+                    <span id="user_permissao" class="item-description">ADM</span>
+                </p>
+            </div>
+            <ul id="side_items">
+                <li class="side-item">
+                    <a href="homePosLoginMedico.html">
+                        <i class="fa-solid fa-home"></i>
+                        <span class="item-description">Home</span>
+                    </a>
+                </li>
+                <li class="side-item">
+                    <a href="calendario.html">
+                        <i class="fa-solid fa-calendar"></i>
+                        <span class="item-description">Agendamento</span>
+                    </a>
+                </li>
+                <li class="side-item">
+                    <a href="listagemColaborador.html">
+                        <i class="fa-solid fa-user"></i>
+                        <span class="item-description">Colaborador</span>
+                    </a>
+                </li>
+                <li class="side-item">
+                    <a href="listagemPaciente.html">
+                        <i class="fa-solid fa-hospital-user"></i>
+                        <span class="item-description">Paciente</span>
+                    </a>
+                </li>
+                <li class="side-item active">
+                    <a href="dashboards.html">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span class="item-description">Dashboards</span>
+                    </a>
+                </li>
+        <li id="Lead" class="side-item">
+                    <a href="listagemLead.html">
+                        <i class="fa-solid fa-filter"></i>
+                        <span class="item-description">
+                            Leads
+                        </span>
+                    </a>
+                </li>
+            </ul>
+            <button id="open_btn">
+                <i id="open_btn_icon" class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+        <div id="logout">
+            <button onclick="deslogar()" id="logout_btn">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="item-description">
+                    Logout
+                </span>
+            </button>
+        </div>
+    </nav>
+
+    <main onload="buscar(), buscarRosca()">
+        <div class="dashboard">
+
+
+
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+            <div class="buttons">            <h1>DASHBOARD</h1>
+                <button class="filter-button" onclick="abrirModalFiltro()">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+            </div>
+            
+            <!-- Modal de Filtro -->
+            <div id="modalFiltro" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="fecharModalFiltro()">&times;</span>
+                    <h3><i class="fas fa-search"></i> Filtrar Consultas</h3>
+            
+                    <div class="filter-group">
+                        <label for="filtroMedico"><i class="fas fa-user-md"></i> Médico:</label>
+                        <select id="filtroMedicoS">
+                            <option value="">Todos os Médicos</option>
+                        </select>
+                    </div>
+            
+                    <div class="filter-group">
+                        <label for="filtroPaciente"><i class="fas fa-user"></i> Paciente:</label>
+                        <select id="filtroPaciente">
+                            <option value="">Todos os Pacientes</option>
+                        </select>
+                    </div>
+            
+                    <div class="filter-group">
+                        <label for="filtroStatus"><i class="fas fa-info-circle"></i> Status:</label>
+                        <select id="filtroStatus">
+                            <option value="">Todos os Status</option>
+                        </select>
+                    </div>
+            
+                    <div class="filter-group">
+                        <label for="filtroAreaConsulta"><i class="fas fa-stethoscope"></i> Área de Consulta:</label>
+                        <select id="filtroAreaConsulta">
+                            <option value="">Todas as Áreas</option>
+                        </select>
+                    </div>
+            
+                    <div class="filter-group">
+                        <label for="filtroIdadeGenero"><i class="fas fa-birthday-cake"></i> Idade, Gênero e Data:</label>
+                        <div class="filtro-duplo">
+                            <input type="number" id="filtroIdade" placeholder="Idade">
+                            <select id="filtroGenero">
+                                <option value="">Todos os Gêneros</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Feminino">Feminino</option>
+                            </select>
+                            <input type="date" id="filtroDataInicio" placeholder="Data >=">
+                            <input type="date" id="filtroDataFim" placeholder="Data <=">
+                        </div>
+                    </div>
+            
+                    <div class="filter-buttons">
+                        <button onclick="aplicarFiltros()"><i class="fas fa-check"></i> Aplicar Filtros</button>
+                        <button onclick="limparFiltros()" class="limpar-button"><i class="fas fa-times"></i> Limpar Filtros</button>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            <div class="grid-container">
+                <div class="card executed-appointments">
+                    <div id="rosca" class="line-chart">
+                        <canvas id="GraficoRosca"></canvas>
+                    </div>
+                </div>
+                <div class="card upcoming-appointments">
+                    <p>Agendamentos recorrentes próximos ao vencimento:</p>
+                    <table id="tableUpcomingAppointments">
+                        <tr>
+                            <th>Paciente</th>
+                            <th>Vencimento</th>
+                            <th>Especialidade</th>
+                        </tr>
+                    </table>
+                </div>
+                <div class="card patients-released">
+                    <div class="line-chart">
+                        <canvas id="GraficoBarraHorizontal"></canvas>
+                    </div>
+                </div>
+                <div class="card retention">
+                    <div class="line-chart">
+                        <canvas id="GraficoBarraDePe"></canvas>
+                    </div>
+                </div>
+
+                <div class="card grande">
+                    <div class="line-chart">
+                        <canvas id="GraficoLinhaFidelizacao"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+    <script src="../Js/dashboards.js"></script>
+    <script src="../Js/funcoesPadroes.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../Js/sessao.js"></script>
+</body>
+
+</html>

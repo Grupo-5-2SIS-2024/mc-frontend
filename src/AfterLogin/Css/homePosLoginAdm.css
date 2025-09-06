@@ -1,0 +1,451 @@
+body {
+    display: flex;
+    height: 100vh;
+    background-color: #BBDEFB; /* azul muito claro */
+    background-size: cover;
+    background-position: 100%;
+    overflow-x: hidden;
+}
+
+.container {
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+.sessaoSuperior {
+    background-color: #1976D2; /* azul médio */
+    width: 100vw;
+    height: 50vh;
+    display: flex;
+}
+
+.divInfoPerfil {
+    background-color: #BBDEFB; /* azul muito claro */
+    width: 42vw;
+    height: 50vh;
+    font-family: initial;
+    font-size: large;
+    color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.DivInfoPerfilFilha {
+    background-color: rgb(255, 255, 255);
+    width: 25vw;
+    height: 40vh;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    margin-left: 15%;
+    border-radius: 15px;
+    color: #1976D2; /* azul médio */
+    box-shadow: 5px 5px 5px rgb(142, 141, 141);
+    position: relative;
+    gap: 0.3rem;
+}
+
+.edit-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #1976D2; /* azul médio */
+    font-size: 16px;
+    display: none;
+}
+
+
+.imgMedica {
+    max-width: 120%;
+    height: 25vh;
+    object-fit: contain;
+    border-radius: 20px;
+}
+
+.divInfoClinica {
+    background-color: #BBDEFB; /* azul muito claro */
+    width: 58vw;
+    height: 50vh;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.KPIS {
+    display: flex;
+    justify-content: space-between;
+    /* Mudança para espaçar os KPIs */
+    align-items: center;
+    width: 98%;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+    /* Permite que os itens sejam movidos para a próxima linha */
+}
+
+.cardKpi {
+    width: calc(30% - 1rem);
+    /* Ajuste para garantir que caibam três KPIs por linha */
+    height: 20vh;
+    background-color: #ffffff;
+    border-radius: 15px;
+    display: flex;
+    padding: 1.2rem;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.kpiContent {
+    display: flex;
+    align-items: start;
+    gap: 1rem;
+}
+
+.kpiIcon img {
+    width: 3vw;
+    height: 6vh;
+    position: relative;
+    top: 0.5rem;
+}
+
+.kpiData {
+    text-align: start;
+    width: 100%;
+    position: relative;
+    bottom: 0.5rem;
+}
+
+.kpiNumber {
+    font-size: 2rem;
+    /* Diminuído de 3rem para 2rem */
+    font-weight: bold;
+    margin: 0;
+    color: #1976D2; /* azul médio */
+}
+
+.kpiText {
+    font-size: 14px;
+    /* Diminuído de 16px para 14px */
+    margin: 5px 0;
+}
+
+.kpiSubtext {
+    font-size: 10px;
+    /* Diminuído de 12px para 10px */
+    color: #151414;
+    margin: 0;
+}
+
+.bolaVerde {
+    width: 50px;
+    height: 50px;
+    background-color: #2196F3; /* azul claro */
+    border-radius: 50%;
+}
+
+.bolaVerde img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.sessaoInferior {
+    background-color: #BBDEFB; /* azul muito claro */
+    width: 100vw;
+    height: 50vh;
+    display: flex;
+}
+
+.grafico {
+    background-color: #BBDEFB; /* azul muito claro */
+    width: 60vw;
+    height: 50vh;
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    margin-left: 1%;
+}
+
+canvas {
+    border-radius: 10px;
+}
+
+.graficoGeral {
+    background-color: #f8f8f8;
+    width: 50vw;
+    height: 45vh;
+    border-radius: 15px;
+    box-shadow: 5px 5px 5px rgb(142, 141, 141);
+}
+
+.calendarioPai {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #BBDEFB; /* azul muito claro */
+    width: 25vw;
+    height: 50vh;
+    justify-content: center;
+    position: relative;
+    left: 6.5rem;
+    bottom: 2.7rem;
+}
+
+.containerTituloCalendario {
+    width: 40vw;
+    height: 15vh;
+    position: relative;
+    bottom: 2rem;
+}
+
+.containerTituloCalendario span {
+    color: #1976D2; /* azul médio */
+}
+
+.tituloCalendario {
+    text-align: center;
+    font-size: 30px;
+    /* Aumentei o tamanho do título */
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: #333;
+    position: relative;
+    margin-top: -1.5rem;
+    /* Ajuste para trazer o título mais para cima */
+}
+
+.calendario {
+    background-color: rgb(255, 255, 255);
+    width: 33vw;
+    height: 44vh;
+    margin-top: 3%;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#monthYear {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1976D2; /* azul médio */
+}
+
+button {
+    background-color: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.calendarioFundo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(255, 255, 255);
+    box-shadow: 5px 5px 5px rgb(142, 141, 141);
+    width: 36vw;
+    height: 47vh;
+    border-radius: 15px;
+}
+
+.calendar-weekdays {
+    display: flex;
+    justify-content: space-around;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.calendar-days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.calendar-days div {
+    width: calc(100% / 7 - 4px);
+    text-align: center;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 30px;
+}
+
+.calendar-days div:hover {
+    background-color: #eaeaea;
+}
+
+.calendar-days .selected {
+    background-color: #1976D2; /* azul médio */
+    color: white;
+}
+
+.ADM {
+    transition: margin-left 0.5s;
+    flex-grow: 1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+    overflow-y: none;
+    margin-left: 0;
+    background-color: #E8F5E9;
+}
+
+@media (max-width: 768px) {
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        height: auto;
+        overflow-x: hidden;
+        overflow-y: auto;
+        background-color: #BBDEFB; /* azul muito claro */
+    }
+
+    .container {
+        justify-content: start;
+        align-items: stretch;
+    }
+
+    .sessaoSuperior,
+    .sessaoInferior {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .divInfoPerfil,
+    .divInfoClinica,
+    .grafico,
+    .calendarioPai,
+    .containerTituloCalendario {
+        width: 100%;
+        height: auto;
+        margin: 0;
+    }
+
+    .DivInfoPerfilFilha {
+        width: 90%;
+        height: auto;
+        margin: 1rem auto;
+        gap: 1rem;
+    }
+
+    .imgMedica {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .KPIS {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .cardKpi {
+        width: 90%;
+        margin: 1rem auto;
+        height: auto;
+    }
+
+    .graficoGeral {
+        width: 90%;
+        margin: 1rem auto;
+        height: auto;
+    }
+
+
+    .calendario {
+        background-color: #fff;
+        width: 90%; /* Ajuste para caber na tela */
+        padding: 1rem; /* Espaçamento interno */
+        margin: 2rem auto; /* Centraliza na página */
+        border-radius: 15px; /* Borda arredondada */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: Arial, sans-serif;
+    }
+
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        font-size: 16px;
+        font-weight: bold;
+        color: #2f8333;
+        margin-bottom: 1rem;
+    }
+
+    .calendar-header button {
+        background-color: transparent;
+        border: none;
+        font-size: 18px;
+        color: #2f8333;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 5px;
+    }
+
+    .calendar-header button:hover {
+        background-color: #e6f7eb;
+    }
+
+    #monthYear {
+        text-align: center;
+    }
+
+    .calendar-weekdays {
+        display: flex;
+        justify-content: space-between; /* Ajustado para espaçar uniformemente */
+        width: 100%;
+        font-size: 14px;
+        font-weight: bold;
+        color: #555;
+        margin-bottom: 0.5rem;
+    }
+
+    .calendar-days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr); /* Grade de 7 colunas */
+        gap: 5px;
+        width: 100%;
+    }
+
+    .calendar-days div {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 14px;
+        font-weight: bold;
+        color: #2f8333;
+        background-color: #f9f9f9;
+        border-radius: 5px;
+        padding: 10px 0; /* Ajuste do espaçamento interno */
+        height: 40px; /* Altura fixa para uniformidade */
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .calendar-days div:hover {
+        background-color: #e6f7eb;
+    }
+
+    .calendar-days .selected {
+        background-color: #1976D2; /* azul médio */
+        color: white;
+    }
+
+}

@@ -1,0 +1,262 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    display: flex;
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+}
+
+main {
+    padding: 1.25rem;
+    transition: margin-left 0.5s;
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-y: auto;
+    margin-left: 5.125rem; /* Start with sidebar collapsed */
+}
+
+#sidebar {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: #0D47A1; /* azul escuro */
+    height: 100vh;
+    border-radius: 0px 1.125rem 1.125rem 0px;
+    position: fixed;
+    transition: width 0.5s;
+    width: 5.125rem;
+    z-index: 9999;
+}
+
+#sidebar.open-sidebar {
+    width: 15.625rem;
+}
+
+#sidebar_content {
+    padding: 0.75rem;
+    flex-grow: 1;
+}
+
+#user {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 3rem;
+}
+
+#user_avatar {
+    width: 3.125rem;
+    height: 3.125rem;
+    object-fit: cover;
+    border-radius: 1.25rem;
+    border: #1d1d1d solid 1px;
+}
+
+#user_infos {
+    display: flex;
+    flex-direction: column;
+}
+
+#user_infos span:last-child {
+    color: #BBDEFB; /* azul muito claro */
+    font-size: 0.75rem;
+}
+
+#side_items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    list-style: none;
+}
+
+.side-item {
+    border-radius: 0.5rem;
+    padding: 0.875rem;
+    cursor: pointer;
+}
+
+.side-item.active {
+    background-color: #1565C0; /* hover azul escuro */
+}
+
+.side-item:hover:not(.active),
+#logout_btn:hover {
+    background-color: #1565C0; /* hover azul escuro */
+}
+
+.side-item a {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+}
+
+.side-item.active a {
+    color: #fff;
+}
+
+.side-item a i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+#logout {
+    border-top: 1px solid #e3e9f7;
+    padding: 0.75rem;
+}
+
+#logout_btn {
+    border: none;
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+    border-radius: 0.5rem;
+    text-align: start;
+    cursor: pointer;
+    background-color: transparent;
+    color: #fff;
+}
+
+#open_btn {
+    position: absolute;
+    top: 1.875rem;
+    right: -0.625rem;
+    background-color: #0D47A1; /* azul escuro */
+    color: #BBDEFB; /* azul muito claro */
+    border-radius: 100%;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.5s;
+}
+
+#open_btn_icon {
+    transition: transform 0.5s;
+    width: 0.725rem;
+    height: 0.725rem;
+}
+
+#sidebar.open-sidebar #open_btn_icon {
+    transform: rotate(180deg);
+}
+
+.item-description {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 0.875rem;
+    transition: width 0.5s, opacity 0.5s;
+    width: 0;
+    opacity: 0;
+    color: #fff;
+}
+
+#sidebar.open-sidebar .item-description {
+    width: 9.375rem;
+    opacity: 1;
+}
+
+#sidebar.open-sidebar .side-item a {
+    justify-content: flex-start;
+    gap: 1.4rem;
+}
+
+a {
+    list-style: none;
+    text-decoration: none;
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    transition: all 0.3s ease 0s;
+    cursor: pointer;
+}
+
+main.expanded {
+    margin-left: 15.625rem; /* Adjust for expanded sidebar width */
+}
+
+/* Ícone do menu hambúrguer */
+#hamburger-menu {
+    display: none;
+    font-size: 1.5rem;
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1000;
+    color: #0D47A1; /* azul escuro */
+    cursor: pointer;
+}
+
+/* Estilo para o menu modal */
+.menu-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Fundo escuro com opacidade */
+    backdrop-filter: blur(5px); /* Efeito de desfoque no fundo */
+    z-index: 999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: #FFF;
+}
+
+.menu-overlay.open {
+    display: flex;
+}
+
+/* Itens do menu */
+.menu-overlay ul {
+    list-style: none;
+    text-align: center;
+    padding: 0;
+}
+
+.menu-overlay li {
+    margin: 20px 0;
+    font-size: 1.5rem;
+}
+
+.menu-overlay li a {
+    text-decoration: none;
+    color: #FFF;
+    transition: color 0.3s ease;
+}
+
+.menu-overlay li a:hover {
+    color: #2196F3; /* azul claro */
+}
+
+/* Ocultando a sidebar no modo mobile */
+@media (max-width: 768px) {
+    #sidebar {
+        display: none;
+    }
+
+    #hamburger-menu {
+        display: block;
+    }
+
+    main {
+        margin-left: 0;
+    }
+}
