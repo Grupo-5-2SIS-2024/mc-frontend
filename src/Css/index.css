@@ -513,7 +513,7 @@ padding-top: 10vh;
 .card_beneficios2 {
     width: 22rem;
     height: 16rem;
-    background-image: url('../Assets/employee-holding-laptop-with-business-diagrams-company-office-management-presentation-diagrams-graphs-computer-screen-data-report-research-information-pc-close-up.jpg');
+    /* background-image: url('../Assets/employee-holding-laptop-with-business-diagrams-company-office-management-presentation-diagrams-graphs-computer-screen-data-report-research-information-pc-close-up.jpg'); */
     background-size: cover;
     box-shadow: 0.1rem 0.5rem 1rem rgba(47, 47, 47, 0.342);
     display: flex;
