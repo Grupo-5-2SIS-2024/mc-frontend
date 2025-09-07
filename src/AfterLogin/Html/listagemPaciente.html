@@ -398,7 +398,7 @@
                 if (cpfResponsavel) {
                     // Verificar se o CPF do responsável já existe
                     try {
-                        const response = await fetch(`http://localhost:8080/responsaveis/cpf?cpf=${cpfResponsavel}`);
+                        const response = await fetch(`http://mc/responsaveis/cpf?cpf=${cpfResponsavel}`);
                         if (response.ok) {
                             const responsavel = await response.json();
 

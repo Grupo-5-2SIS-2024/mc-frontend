@@ -34,7 +34,7 @@ inputFile.addEventListener("change", function (e) {
 // Função para buscar os valores do paciente e preencher o formulário
 async function buscarValoresPaciente(id) {
     try {
-        const response = await fetch(`http://localhost:8080/pacientes/${id}`);
+        const response = await fetch(`http://mc/pacientes/${id}`);
         if (!response.ok) throw new Error(`Erro ao buscar dados: ${response.statusText}`);
 
         const paciente = await response.json();
@@ -228,7 +228,7 @@ async function atualizarPaciente() {
         };
 
         try {
-            const response = await fetch(`http://localhost:8080/pacientes/${id}`, {
+            const response = await fetch(`http://mc/pacientes/${id}`, {
                 method: "PUT",
                 body: JSON.stringify(dadosPaciente),
                 headers: { "Content-Type": "application/json; charset=UTF-8" }

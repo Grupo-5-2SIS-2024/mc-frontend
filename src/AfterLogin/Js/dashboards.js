@@ -23,7 +23,7 @@ async function fetchDados(url, filtros = {}) {
     }
 }
 async function atualizarGraficoRosca(filtros = {}) {
-    const url = 'http://localhost:8080/consultas/percentagem-concluidos';
+    const url = 'http://mc/consultas/percentagem-concluidos';
     try {
         // Busca os dados do endpoint com os filtros aplicados
         const dados = await fetchDados(url, filtros);
@@ -95,7 +95,7 @@ async function atualizarGraficoRosca(filtros = {}) {
 
 
 async function atualizarGraficoBarraHorizontal(filtros = {}) {
-    const url = 'http://localhost:8080/consultas/altas-ultimos-seis-meses'; // URL do endpoint
+    const url = 'http://mc/consultas/altas-ultimos-seis-meses'; // URL do endpoint
 
     try {
         // Busca os dados do back-end com os filtros
@@ -184,7 +184,7 @@ async function atualizarGraficoBarraHorizontal(filtros = {}) {
 async function atualizarGraficoBarraDePe(filtros = {}) {
     console.log("Iniciando atualização do gráfico de barras de pé");
 
-    const url = 'http://localhost:8080/consultas/horarios-ultimos-seis-meses';
+    const url = 'http://mc/consultas/horarios-ultimos-seis-meses';
     try {
         const dados = await fetchDados(url, filtros);
 
@@ -266,7 +266,7 @@ async function atualizarGraficoBarraDePe(filtros = {}) {
 
 // Função para atualizar gráfico de Linhas
 async function atualizarGraficoLinhaFidelizacao(filtros = {}) {
-    const url = 'http://localhost:8080/pacientes/conversoes-ultimos-seis-meses';
+    const url = 'http://mc/pacientes/conversoes-ultimos-seis-meses';
     try {
         const dados = await fetchDados(url, filtros);
 
@@ -339,7 +339,7 @@ async function buscarTabela(filtros = {}) {
 
     try {
         // Faz a requisição para o endpoint
-        const resposta = await fetch("http://localhost:8080/consultas/agendamentosProximos");
+        const resposta = await fetch("http://mc/consultas/agendamentosProximos");
         if (!resposta.ok) {
             throw new Error(`Erro HTTP! Status: ${resposta.status}`);
         }
@@ -477,10 +477,10 @@ function limparFiltros() {
 }
 
 async function preencherCamposDeFiltro() {
-    const medicos = await fetchDados('http://localhost:8080/medicos');
-    const pacientes = await fetchDados('http://localhost:8080/pacientes');
-    const status = await fetchDados('http://localhost:8080/statusConsultas');
-    const areas = await fetchDados('http://localhost:8080/especificacoes');
+    const medicos = await fetchDados('http://mc/medicos');
+    const pacientes = await fetchDados('http://mc/pacientes');
+    const status = await fetchDados('http://mc/statusConsultas');
+    const areas = await fetchDados('http://mc/especificacoes');
 
     preencherSelect('filtroMedicoS', medicos, 'id', 'nome');
     preencherSelect('filtroPaciente', pacientes, 'id', 'nome');

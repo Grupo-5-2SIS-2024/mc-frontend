@@ -44,7 +44,7 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
         const areaEspecializacaoSupervisor = sessionStorage.getItem("ESPECIFICACAO_MEDICA");
         const idMedicoLogado = Number(sessionStorage.getItem("ID_MEDICO"));
 
-        const resposta = await fetch("http://localhost:8080/medicos");
+        const resposta = await fetch("http://mc/medicos");
         const listaMedicos = await resposta.json();
 
         let medicosFiltrados = listaMedicos.filter(medico => medico.id !== idMedicoLogado);
@@ -131,7 +131,7 @@ async function deletarMedico(id) {
     try {
         // Tenta deletar o acompanhamento
         try {
-            const resposta1 = await fetch(`http://localhost:8080/acompanhamentos/${id}`, {
+            const resposta1 = await fetch(`http://mc/acompanhamentos/${id}`, {
                 method: 'DELETE'
             });
             if (!resposta1.ok && resposta1.status !== 404) {
@@ -143,7 +143,7 @@ async function deletarMedico(id) {
 
         // Tenta deletar as consultas
         try {
-            const resposta2 = await fetch(`http://localhost:8080/consultas/${id}`, {
+            const resposta2 = await fetch(`http://mc/consultas/${id}`, {
                 method: 'DELETE'
             });
             if (!resposta2.ok && resposta2.status !== 404) {
@@ -155,7 +155,7 @@ async function deletarMedico(id) {
 
         // Tenta deletar as notas
         try {
-            const resposta3 = await fetch(`http://localhost:8080/notas/${id}`, {
+            const resposta3 = await fetch(`http://mc/notas/${id}`, {
                 method: 'DELETE'
             });
             if (!resposta3.ok && resposta3.status !== 404) {
@@ -166,7 +166,7 @@ async function deletarMedico(id) {
         }
 
         // Deleta o médico
-        const resposta4 = await fetch(`http://localhost:8080/medicos/${id}`, {
+        const resposta4 = await fetch(`http://mc/medicos/${id}`, {
             method: 'DELETE'
         });
         if (!resposta4.ok) {
@@ -184,7 +184,7 @@ async function deletarMedico(id) {
 async function buscarKPIsMedico() {
     try {
         // Buscar o número total de médicos
-        const respostaTotalMedicos = await fetch('http://localhost:8080/medicos');
+        const respostaTotalMedicos = await fetch('http://mc/medicos');
         const listaMedicos = await respostaTotalMedicos.json();
         const totalMedicos = listaMedicos.length;
 
@@ -192,11 +192,11 @@ async function buscarKPIsMedico() {
         const medicosAtivos = listaMedicos.filter(medico => medico.ativo).length;
 
         // Buscar o total de administradores
-        const respostaTotalAdmins = await fetch('http://localhost:8080/medicos/totalAdministradores');
+        const respostaTotalAdmins = await fetch('http://mc/medicos/totalAdministradores');
         const totalAdmins = await respostaTotalAdmins.json();
 
         // Buscar o número de administradores ativos
-        const respostaAdminsAtivos = await fetch('http://localhost:8080/medicos/totalAdministradoresAtivos');
+        const respostaAdminsAtivos = await fetch('http://mc/medicos/totalAdministradoresAtivos');
         const totalAdminsAtivos = await respostaAdminsAtivos.json();
 
         // Função para adicionar zero à esquerda se necessário
@@ -217,7 +217,7 @@ buscarKPIsMedico();
 
 async function buscarAreasClinica() {
     try {
-        const resposta = await fetch('http://localhost:8080/especificacoes');
+        const resposta = await fetch('http://mc/especificacoes');
         const listaAreas = await resposta.json();
         console.log('Áreas recebidas:', listaAreas);
 
@@ -265,7 +265,7 @@ async function atualizarArea(areaId) {
     const novoNome = inputArea.value.trim();
 
     try {
-        const resposta = await fetch(`http://localhost:8080/especificacoes/${areaId}`, {
+        const resposta = await fetch(`http://mc/especificacoes/${areaId}`, {
             method: "PUT",
             body: JSON.stringify({ area: novoNome }),
             headers: { "Content-type": "application/json; charset=UTF-8" }
@@ -321,7 +321,7 @@ async function cadastrarArea() {
     };
 
     try {
-        const respostaCadastro = await fetch('http://localhost:8080/especificacoes', {
+        const respostaCadastro = await fetch('http://mc/especificacoes', {
             method: "POST",
             body: JSON.stringify(dadosArea),
             headers: { "Content-type": "application/json; charset=UTF-8" }

@@ -97,7 +97,7 @@ function deslogar() {
         return;
     }
 
-    fetch('http://localhost:8080/medicos/logout', {
+    fetch('http://mc/medicos/logout', {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
