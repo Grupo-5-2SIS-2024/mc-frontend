@@ -239,7 +239,7 @@ async function cadastrarResponsavel() {
         };
 
         try {
-            const respostaCadastro = await fetch("http://localhost:8080/responsaveis", {
+            const respostaCadastro = await fetch("http://localhost:8080/mc/responsaveis", {
                 method: "POST",
                 body: JSON.stringify(dadosResponsavel),
                 headers: { "Content-Type": "application/json; charset=UTF-8" }
@@ -336,7 +336,7 @@ async function cadastrarPacienteComResponsavel() {
         };
 
         try {
-            const respostaCadastro = await fetch("http://localhost:8080/pacientes/ComResponsavel", {
+            const respostaCadastro = await fetch("http://localhost:8080/mc/pacientes/ComResponsavel", {
                 method: "POST",
                 body: JSON.stringify(dadosPaciente),
                 headers: { "Content-Type": "application/json; charset=UTF-8" }

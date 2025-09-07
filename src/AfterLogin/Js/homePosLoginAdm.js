@@ -40,7 +40,7 @@ const graficoGeral = new Chart(ctx, {
 
 // Função para buscar dados do gráfico
 function fetchGraficoGeralData() {
-    fetch('http://localhost:8080/medicos/graficoGeral')
+    fetch('http://localhost:8080/mc/medicos/graficoGeral')
         .then(response => response.json())
         .then(data => {
             // Se o usuário for supervisor, filtra os dados pela especificação
@@ -134,18 +134,18 @@ renderCalendar();
 async function buscarKPIsMedico() {
     try {
         // Buscar o número total de médicos
-        const respostaTotalMedicos = await fetch('http://localhost:8080/medicos');
+        const respostaTotalMedicos = await fetch('http://localhost:8080/mc/medicos');
         const listaMedicos = await respostaTotalMedicos.json();
         const totalMedicos = listaMedicos.length;
 
         // Buscar o número de médicos ativos
         const medicosAtivos = listaMedicos.filter(medico => medico.ativo).length;
 
-        const respostaPacientesAtivos = await fetch("http://localhost:8080/pacientes/ativos");
+        const respostaPacientesAtivos = await fetch("http://localhost:8080/mc/pacientes/ativos");
         const pacientesAtivos = await respostaPacientesAtivos.json();
 
         // Buscar o número total de pacientes ativos
-        const respostaPacientes = await fetch("http://localhost:8080/pacientes");
+        const respostaPacientes = await fetch("http://localhost:8080/mc/pacientes");
         const pacientes = await respostaPacientes.json();
         const totalpacientes = pacientes.length;
 

@@ -202,7 +202,7 @@
         const pictureImage = document.querySelector(".picture__image");
 
       
-            const response = await fetch(`http://localhost:8080/medicos/${id}`);
+            const response = await fetch(`http://localhost:8080/mc/medicos/${id}`);
             if (!response.ok) {
                 throw new Error(`Erro ao buscar dados: ${response.statusText}`);
             }
@@ -247,7 +247,7 @@
 
     async function carregarEspecificacoes() {
         try {
-            const response = await fetch("http://localhost:8080/especificacoes");
+            const response = await fetch("http://localhost:8080/mc/especificacoes");
             if (!response.ok) {
                 throw new Error(`Erro ao carregar especificações: ${response.statusText}`);
             }
@@ -333,7 +333,7 @@
             };
     
             try {
-                const respostaAtualizacao = await fetch(`http://localhost:8080/medicos/${id}`, {
+                const respostaAtualizacao = await fetch(`http://localhost:8080/mc/medicos/${id}`, {
                     method: "PUT",
                     body: JSON.stringify(dadosColaborador),
                     headers: { "Content-Type": "application/json; charset=UTF-8" }

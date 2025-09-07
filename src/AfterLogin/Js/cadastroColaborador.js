@@ -169,7 +169,7 @@ const toBase64 = file => new Promise((resolve, reject) => {
 });
 
 function carregarEspecificacoes() {
-  fetch("http://localhost:8080/especificacoes")
+  fetch("http://localhost:8080/mc/especificacoes")
     .then(response => response.json())
     .then(especificacoes => {
       const especificacaoSelect = document.getElementById("especificacao");
@@ -243,7 +243,7 @@ async function cadastrarColaborador() {
     console.log(dadosColaborador);
 
     try {
-      const respostaCadastro = await fetch("http://localhost:8080/medicos", {
+      const respostaCadastro = await fetch("http://localhost:8080/mc/medicos", {
         method: "POST",
         body: JSON.stringify(dadosColaborador),
         headers: { "Content-type": "application/json; charset=UTF-8" }
