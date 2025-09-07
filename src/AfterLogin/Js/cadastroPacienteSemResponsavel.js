@@ -180,7 +180,7 @@ async function cadastrarPacienteSemResponsavel() {
         };
 
         try {
-            const respostaCadastro = await fetch("mc/pacientes/SemResponsavel", {
+            const respostaCadastro = await fetch("/mc/pacientes/SemResponsavel", {
                 method: "POST",
                 body: JSON.stringify(dadosPaciente),
                 headers: { "Content-Type": "application/json; charset=UTF-8" }

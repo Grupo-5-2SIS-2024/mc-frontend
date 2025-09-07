@@ -102,7 +102,7 @@
     };
     
     try {
-        const respostaLogin = await fetch("mc/medicos/login", {
+        const respostaLogin = await fetch("/mc/medicos/login", {
             method: "PUT",
             body: JSON.stringify(valoresLogin),
             headers: { "Content-type": "application/json; charset=UTF-8" }

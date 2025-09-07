@@ -41,7 +41,7 @@ let consultas = []; // Variável global para armazenar as consultas
 async function buscarConsultas() {
     console.log("Buscando consultas...");
     try {
-        const resposta = await fetch("mc/consultas");
+        const resposta = await fetch("/mc/consultas");
         if (!resposta.ok) {
             throw new Error(`HTTP error! Status: ${resposta.status}`);
         }
@@ -99,14 +99,14 @@ async function buscarPacientesEMedicos() {
     console.log("Buscando pacientes e médicos...");
 
     try {
-        const respostaPacientes = await fetch("mc/pacientes");
+        const respostaPacientes = await fetch("/mc/pacientes");
         if (!respostaPacientes.ok) {
             throw new Error(`HTTP error! Status: ${respostaPacientes.status}`);
         }
         const pacientes = await respostaPacientes.json();
         console.log(pacientes);
 
-        const respostaMedicos = await fetch("mc/medicos");
+        const respostaMedicos = await fetch("/mc/medicos");
         if (!respostaMedicos.ok) {
             throw new Error(`HTTP error! Status: ${respostaMedicos.status}`);
         }
@@ -213,7 +213,7 @@ async function updateAvailableDoctors() {
     if (dia && hora) {
         try {
             const consultas = await buscarConsultas();
-            const respostaMedicos = await fetch("mc/medicos");
+            const respostaMedicos = await fetch("/mc/medicos");
             const medicos = await respostaMedicos.json();
 
             // Filtra os médicos que têm consultas no horário selecionado
@@ -239,7 +239,7 @@ async function updateAvailablePatients() {
     if (dia && hora) {
         try {
             const consultas = await buscarConsultas();
-            const respostaPacientes = await fetch("mc/pacientes");
+            const respostaPacientes = await fetch("/mc/pacientes");
             const pacientes = await respostaPacientes.json();
 
             // Filtra os pacientes que têm consultas no horário selecionado
@@ -266,7 +266,7 @@ async function agendarConsulta() {
     const recorrente = document.getElementById('recorrente').checked; // Verifica se o checkbox está marcado
 
     try {
-        const respostaEspec = await fetch("mc/medicos");
+        const respostaEspec = await fetch("/mc/medicos");
         if (!respostaEspec.ok) {
             throw new Error(`HTTP error! Status: ${respostaEspec.status}`);
         }
@@ -298,7 +298,7 @@ async function agendarConsulta() {
 
         // Agendar a consulta original
         const dadosConsulta = criarDadosConsulta(dia);
-        const respostaCadastro = await fetch("mc/consultas", {
+        const respostaCadastro = await fetch("/mc/consultas", {
             method: "POST",
             body: JSON.stringify(dadosConsulta),
             headers: {
@@ -324,7 +324,7 @@ async function agendarConsulta() {
                 const novaConsulta = criarDadosConsulta(novaDataISO);
 
                 // Faz a requisição para cadastrar a nova consulta
-                const respostaNovaConsulta = await fetch("mc/consultas", {
+                const respostaNovaConsulta = await fetch("/mc/consultas", {
                     method: "POST",
                     body: JSON.stringify(novaConsulta),
                     headers: {
@@ -362,7 +362,7 @@ async function excluirConsulta(idConsulta) {
 
     try {
         // Recupera todas as consultas
-        const respostaConsulta = await fetch(`mc/consultas`, {
+        const respostaConsulta = await fetch(`/mc/consultas`, {
             method: 'GET',
             headers: {
                 "Content-type": "application/json; charset=UTF-8",
@@ -410,7 +410,7 @@ async function excluirConsulta(idConsulta) {
             if (result.isConfirmed) {
                 try {
                     // Envia a requisição PUT para atualizar o status da consulta
-                    const resposta = await fetch(`mc/consultas/${idConsulta}`, {
+                    const resposta = await fetch(`/mc/consultas/${idConsulta}`, {
                         method: 'PUT',
                         body: JSON.stringify(consultaAtualizada),
                         headers: {
@@ -447,7 +447,7 @@ async function alterarConsulta(idConsulta) {
 
     try {
         // Buscar todas as consultas
-        const respostaConsulta = await fetch(`mc/consultas`, {
+        const respostaConsulta = await fetch(`/mc/consultas`, {
             method: 'GET',
             headers: {
                 "Content-type": "application/json; charset=UTF-8",
@@ -470,9 +470,9 @@ async function alterarConsulta(idConsulta) {
 
         // Buscar dados para preencher selects de Médicos, Pacientes e Especializações Médicas
         const [medicos, pacientes, especializacoes] = await Promise.all([
-            fetch("mc/medicos").then(res => res.json()),
-            fetch("mc/pacientes").then(res => res.json()),
-            fetch("mc/especificacoes").then(res => res.json())
+            fetch("/mc/medicos").then(res => res.json()),
+            fetch("/mc/pacientes").then(res => res.json()),
+            fetch("/mc/especificacoes").then(res => res.json())
         ]);
 
         // Preencher selects com opções
@@ -512,7 +512,7 @@ async function alterarConsulta(idConsulta) {
 
             try {
                 // Envia a requisição PUT para atualizar a consulta
-                const resposta = await fetch(`mc/consultas/${idConsulta}`, {
+                const resposta = await fetch(`/mc/consultas/${idConsulta}`, {
                     method: 'PUT',
                     body: JSON.stringify(consultaAtualizada),
                     headers: {
@@ -564,7 +564,7 @@ document.getElementById('agendar').addEventListener('click', agendarConsulta);
 
 async function BaixarExcelGeral() {
     try {
-        const resposta = await fetch(`mc/consultas/export/csv`, {
+        const resposta = await fetch(`/mc/consultas/export/csv`, {
             method: 'GET',
             headers: {
                 "Accept": "text/csv" 
@@ -650,7 +650,7 @@ async function excluirUltimaConsulta() {
             if (result.isConfirmed) {
                 try {
                     
-                    const resposta = await fetch(`mc/consultas/${ultimaConsulta.id}`, {
+                    const resposta = await fetch(`/mc/consultas/${ultimaConsulta.id}`, {
                         method: 'DELETE',
                         headers: {
                             "Content-type": "application/json; charset=UTF-8",
@@ -714,7 +714,7 @@ async function excluirPrimeiraConsulta() {
                
                     const consultaId = Number(primeiraConsulta.id); 
                     console.log(consultaId)
-                    const resposta = await fetch(`mc/consultas/${consultaId}`, {
+                    const resposta = await fetch(`/mc/consultas/${consultaId}`, {
                         method: 'DELETE',
                         headers: {
                             "Content-type": "application/json; charset=UTF-8",

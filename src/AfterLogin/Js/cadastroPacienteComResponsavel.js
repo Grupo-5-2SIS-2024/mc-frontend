@@ -239,7 +239,7 @@ async function cadastrarResponsavel() {
         };
 
         try {
-            const respostaCadastro = await fetch("mc/responsaveis", {
+            const respostaCadastro = await fetch("/mc/responsaveis", {
                 method: "POST",
                 body: JSON.stringify(dadosResponsavel),
                 headers: { "Content-Type": "application/json; charset=UTF-8" }
@@ -336,7 +336,7 @@ async function cadastrarPacienteComResponsavel() {
         };
 
         try {
-            const respostaCadastro = await fetch("mc/pacientes/ComResponsavel", {
+            const respostaCadastro = await fetch("/mc/pacientes/ComResponsavel", {
                 method: "POST",
                 body: JSON.stringify(dadosPaciente),
                 headers: { "Content-Type": "application/json; charset=UTF-8" }

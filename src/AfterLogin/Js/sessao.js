@@ -97,7 +97,7 @@ function deslogar() {
         return;
     }
 
-    fetch('mc/medicos/logout', {
+    fetch('/mc/medicos/logout', {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',

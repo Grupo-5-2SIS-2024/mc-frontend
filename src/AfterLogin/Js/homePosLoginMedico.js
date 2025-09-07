@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Função para buscar todas as consultas e filtrar pelo ID do médico
     async function buscarConsultas(idMedico) {
         try {
-            const response = await fetch(`mc/consultas`); // Busca todas as consultas
+            const response = await fetch(`/mc/consultas`); // Busca todas as consultas
             if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
             const data = await response.json();
 
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Função para buscar a foto do médico
     async function buscarFotoMedico(idMedico) {
         try {
-            const response = await fetch(`mc/medicos/${idMedico}/foto`);
+            const response = await fetch(`/mc/medicos/${idMedico}/foto`);
             if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
             const fotoData = await response.json();
             return fotoData.url; // Supondo que o URL da foto esteja no campo 'url'
