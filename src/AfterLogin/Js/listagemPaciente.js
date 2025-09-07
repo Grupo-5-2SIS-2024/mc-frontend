@@ -90,13 +90,13 @@ async function buscarPacientes(nomeFiltro = '', emailFiltro = '', cpfFiltro = ''
         let listaPacientes = [];
 
         if (permissionamentoMedico === "Admin") {
-            const resposta = await fetch("http://mc/pacientes");
+            const resposta = await fetch("mc/pacientes");
             listaPacientes = await resposta.json();
         } else if (permissionamentoMedico === "Supervisor" && especificacaoMedicaArea) {
-            const respostaPacientes = await fetch("http://mc/pacientes");
+            const respostaPacientes = await fetch("mc/pacientes");
             const todosPacientes = await respostaPacientes.json();
 
-            const respostaConsultas = await fetch("http://mc/consultas");
+            const respostaConsultas = await fetch("mc/consultas");
             const todasConsultas = await respostaConsultas.json();
 
             listaPacientes = todosPacientes.filter(paciente =>
@@ -203,10 +203,10 @@ function atualizarListagemPacientes(listaPacientes) {
 async function deletarPaciente(id) {
     try {
         await Promise.all([
-            fetch(`http://mc/acompanhamentos/${id}`, { method: 'DELETE' }),
-            fetch(`http://mc/consultas/${id}`, { method: 'DELETE' }),
-            fetch(`http://mc/notas/${id}`, { method: 'DELETE' }),
-            fetch(`http://mc/pacientes/${id}`, { method: 'DELETE' })
+            fetch(`mc/acompanhamentos/${id}`, { method: 'DELETE' }),
+            fetch(`mc/consultas/${id}`, { method: 'DELETE' }),
+            fetch(`mc/notas/${id}`, { method: 'DELETE' }),
+            fetch(`mc/pacientes/${id}`, { method: 'DELETE' })
         ]);
         console.log('Paciente deletado com sucesso.');
         buscarPacientes();
@@ -218,10 +218,10 @@ async function deletarPaciente(id) {
 async function buscarKPIsPaciente() {
     try {
         const [porcentagemABA, pacientesAtivos, pacientesUltimoTrimestre, agendamentosVencidos] = await Promise.all([
-            fetch("http://mc/pacientes/porcentagem-aba").then(r => r.json()),
-            fetch("http://mc/pacientes/ativos").then(r => r.json()),
-            fetch("http://mc/pacientes/ultimo-trimestre").then(r => r.json()),
-            fetch("http://mc/pacientes/agendamentos-vencidos").then(r => r.json())
+            fetch("mc/pacientes/porcentagem-aba").then(r => r.json()),
+            fetch("mc/pacientes/ativos").then(r => r.json()),
+            fetch("mc/pacientes/ultimo-trimestre").then(r => r.json()),
+            fetch("mc/pacientes/agendamentos-vencidos").then(r => r.json())
         ]);
 
         document.querySelector(".cardKpi:nth-child(1) .kpiNumber").textContent = `${parseFloat(porcentagemABA).toFixed(1)}%`;
@@ -241,7 +241,7 @@ function abrirModalPaciente(idPaciente) {
     document.getElementById('modalBackdrop').style.display = 'flex';
 
     // Chamada ao endpoint para buscar as informações detalhadas do paciente
-    fetch(`http://mc/pacientes/${idPaciente}`)
+    fetch(`mc/pacientes/${idPaciente}`)
         .then(response => response.json())
         .then(data => {
             // Exibe o nome e a foto do paciente no modal
@@ -335,7 +335,7 @@ function preencherCalendario(pacienteId) {
 async function preencherEvolucoes(pacienteId) {
     try {
         // Faz a requisição para buscar todas as consultas
-        const resposta = await fetch("http://mc/consultas");
+        const resposta = await fetch("mc/consultas");
         if (!resposta.ok) {
             throw new Error(`Erro ao buscar consultas. Status: ${resposta.status}`);
         }
@@ -399,7 +399,7 @@ function obterInicioDaSemana(date) {
 
 async function buscarConsultasCliente(pacienteId) {
     try {
-        const resposta = await fetch("http://mc/consultas");
+        const resposta = await fetch("mc/consultas");
         if (!resposta.ok) throw new Error(`HTTP error! Status: ${resposta.status}`);
         const todasConsultas = await resposta.json();
         consultasOriginais = todasConsultas.filter(consulta => consulta.paciente.id === pacienteId);
@@ -599,7 +599,7 @@ async function listarConsultasRealizadas(consultasCliente, pacienteId) {
     }
 
     try {
-        const resposta = await fetch(`http://mc/acompanhamentos`);
+        const resposta = await fetch(`mc/acompanhamentos`);
         if (!resposta.ok) {
             throw new Error(`Erro ao buscar dados dos acompanhamentos. Status: ${resposta.status}`);
         }
@@ -650,7 +650,7 @@ async function listarConsultasRealizadas(consultasCliente, pacienteId) {
 // Função para abrir o modal de evolução com diferentes modos
 async function abrirModalEvolucao(consultaId, modo, pacienteId) {
     try {
-        const resposta = await fetch(`http://mc/acompanhamentos`);
+        const resposta = await fetch(`mc/acompanhamentos`);
         if (!resposta.ok) {
             throw new Error(`Erro ao buscar dados dos acompanhamentos. Status: ${resposta.status}`);
         }
@@ -717,8 +717,8 @@ async function adicionarAcompanhamento(idConsulta, modo, idAcompanhamento, pacie
     };
 
     const url = modo === "criar" 
-        ? "http://mc/acompanhamentos" 
-        : `http://mc/acompanhamentos/${idAcompanhamento}`;
+        ? "mc/acompanhamentos" 
+        : `mc/acompanhamentos/${idAcompanhamento}`;
 
     try {
         const resposta = await fetch(url, {

@@ -3,7 +3,7 @@ async function buscarHoje() {
     var idUser = 1
 
     try {
-    const resposta = await fetch(`http://mc/consultas/listarConsultasMedicoID/${idUser}`);
+    const resposta = await fetch(`mc/consultas/listarConsultasMedicoID/${idUser}`);
         if (!resposta.ok) {
             throw new Error(`HTTP error! Status: ${resposta.status}`);
         }
@@ -30,7 +30,7 @@ async function buscarSemana() {
     var idUser = 1
 
     try {
-    const resposta = await fetch(`http://mc/consultas/listarConsultasMedicoID/${idUser}`);
+    const resposta = await fetch(`mc/consultas/listarConsultasMedicoID/${idUser}`);
         if (!resposta.ok) {
             throw new Error(`HTTP error! Status: ${resposta.status}`);
         }
@@ -79,7 +79,7 @@ function formatarData(dataISO){
 //     var idUser = 1
 
 //     try {
-//     const resposta = await fetch(`http://mc/consultas/listarConsultasMedicoID/${idUser}`);
+//     const resposta = await fetch(`mc/consultas/listarConsultasMedicoID/${idUser}`);
 //         if (!resposta.ok) {
 //             throw new Error(`HTTP error! Status: ${resposta.status}`);
 //         }

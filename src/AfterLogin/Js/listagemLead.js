@@ -62,7 +62,7 @@ function removerFiltroEspecifico(filtro) {
 // Função para buscar leads com filtros específicos
 async function buscarLeads(nomeFiltro = '', emailFiltro = '', dataEntradaFiltro = '', faseFiltro = '') {
     try {
-        const resposta = await fetch("http://mc/leads");
+        const resposta = await fetch("mc/leads");
         const listaLeads = await resposta.json();
         console.log(listaLeads); // Adicione isto para verificar os dados recebidos
 
@@ -151,7 +151,7 @@ function atualizarListagemLeads(listaLeads) {
 
 async function deletarLead(id) {
     try {
-        const resposta = await fetch(`http://mc/leads/${id}`, {
+        const resposta = await fetch(`mc/leads/${id}`, {
             method: 'DELETE'
         });
         if (!resposta.ok) {
@@ -170,12 +170,12 @@ buscarLeads();
 async function buscarKPIsLeads() {
     try {
         // Buscar o número total de leads
-        const respostaTotalLeads = await fetch('http://mc/leads');
+        const respostaTotalLeads = await fetch('mc/leads');
         const listaLeads = await respostaTotalLeads.json();
         const totalLeads = listaLeads.length;
 
         // Buscar a porcentagem de leads convertidos
-        const respostaPorcentagemConvertidos = await fetch('http://mc/leads/percentual-convertidos');
+        const respostaPorcentagemConvertidos = await fetch('mc/leads/percentual-convertidos');
         const porcentagemConvertidos = await respostaPorcentagemConvertidos.json();
 
         // Filtrar leads com mais de 6 meses de cadastro

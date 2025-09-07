@@ -5,7 +5,7 @@ const viewOnly = urlParams.get('viewOnly') === 'true';
 // Variável para armazenar os dados da consulta
 let consultaAtual;async function carregarDadosConsulta() {
     try {
-        const resposta = await fetch("http://mc/consultas");
+        const resposta = await fetch("mc/consultas");
         if (!resposta.ok) {
             throw new Error(`Erro ao buscar dados das consultas. Status: ${resposta.status}`);
         }
@@ -65,7 +65,7 @@ let consultaAtual;async function carregarDadosConsulta() {
 // Função para buscar os dados do acompanhamento relacionado à consulta
 async function carregarDadosAcompanhamento() {
     try {
-        const resposta = await fetch("http://mc/acompanhamentos");
+        const resposta = await fetch("mc/acompanhamentos");
         if (!resposta.ok) {
             throw new Error(`Erro ao buscar dados dos acompanhamentos. Status: ${resposta.status}`);
         }
@@ -99,7 +99,7 @@ async function concluirConsultaEAdicionarFeedback(idConsulta) {
 
     try {
         // Buscar todas as consultas
-        const respostaConsulta = await fetch(`http://mc/consultas`, {
+        const respostaConsulta = await fetch(`mc/consultas`, {
             method: 'GET',
             headers: {
                 "Content-type": "application/json; charset=UTF-8",
@@ -129,7 +129,7 @@ async function concluirConsultaEAdicionarFeedback(idConsulta) {
         console.log("Dados da consulta a serem atualizados:", consultaAtualizada);
 
         // Envia a requisição PUT para atualizar a consulta
-        const respostaAtualizacao = await fetch(`http://mc/consultas/${idConsulta}`, {
+        const respostaAtualizacao = await fetch(`mc/consultas/${idConsulta}`, {
             method: 'PUT',
             headers: {
                 "Content-Type": "application/json",
@@ -168,7 +168,7 @@ async function adicionarAcompanhamento(idConsulta) {
     console.log("Dados de feedback a serem enviados:", dadosFeedback);
 
     try {
-        const respostaFeedback = await fetch("http://mc/acompanhamentos", {
+        const respostaFeedback = await fetch("mc/acompanhamentos", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -206,7 +206,7 @@ async function adicionarAcompanhamento(idConsulta) {
 //             try {
 //                 //const fkConsulta = 4; // Substitua pelo ID da consulta correto
 //                 const response = await fetch(
-//                     `http://mc/acompanhamentos/importar-feedback-txt/${consultaId}`,
+//                     `mc/acompanhamentos/importar-feedback-txt/${consultaId}`,
 //                     {
 //                         method: "POST",
 //                         headers: { "Content-Type": "text/plain" },
