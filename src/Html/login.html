@@ -133,7 +133,7 @@
                 // Verificação de permissão e redirecionamento
                 if (json.permissao.nome === "Admin" || json.permissao.nome === "Supervisor") {
                     window.location.href = "/AfterLogin/Html/homePosLoginAdm.html";
-                } else if (json.permissao.nome === "Médico" || json.permissao.nome === "MÃ©dico") {
+                } else if (json.permissao.nome === "Médico" || json.permissao.nome === "MÃ©dico" || json.permissao.nome === "Medico" || json.permissao.nome === "medico") {
                     window.location.href = "/AfterLogin/Html/homePosLoginMedico.html";
                 }
             });
