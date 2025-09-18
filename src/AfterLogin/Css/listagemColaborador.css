@@ -265,7 +265,7 @@ a {
 
 .modal-content {
     background-color: #fff;
-    margin: 15% auto;
+    margin: 10% auto;
     padding: 20px;
     border-radius: 8px;
     width: 90%; 
@@ -442,15 +442,19 @@ a {
 
 .btn-fechar {
     position: absolute;
-    top: 225px;
-    right: 450px;
-    background: transparent;
+    top: 16px;
+    right: 16px;
+    background: transparent !important;
     border: none;
     font-size: 24px;
-    color: #333;
+    color: #000000 !important;
     cursor: pointer;
     font-weight: bold;
     transition: color 0.3s;
+    z-index: 10;
+}
+.modal-content {
+    position: relative;
 }
 
 /* Estilos para os alertas e feedback */

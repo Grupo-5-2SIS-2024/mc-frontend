@@ -169,7 +169,7 @@ const toBase64 = file => new Promise((resolve, reject) => {
 });
 
 function carregarEspecificacoes() {
-  fetch("/mc/especificacoes")
+  fetch("http://localhost:8080/especificacoes")
     .then(response => response.json())
     .then(especificacoes => {
       const especificacaoSelect = document.getElementById("especificacao");
@@ -221,6 +221,11 @@ async function cadastrarColaborador() {
       return;
     }
 
+    let fotoBase64 = null;
+    if (fotoEscolhida) {
+      fotoBase64 = await toBase64(fotoEscolhida);
+    }
+
     const dadosColaborador = {
       "nome": nomeDigitado,
       "sobrenome": sobrenomeDigitado,
@@ -237,13 +242,13 @@ async function cadastrarColaborador() {
       "permissao": {
         "id": nivelAcessoId
       },
-      "foto": await toBase64(fotoEscolhida)
+      "foto": fotoBase64 
     };
 
     console.log(dadosColaborador);
 
     try {
-      const respostaCadastro = await fetch("/mc/medicos", {
+      const respostaCadastro = await fetch("http://localhost:8080/medicos", {
         method: "POST",
         body: JSON.stringify(dadosColaborador),
         headers: { "Content-type": "application/json; charset=UTF-8" }

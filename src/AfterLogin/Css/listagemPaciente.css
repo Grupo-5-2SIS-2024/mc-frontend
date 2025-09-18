@@ -262,7 +262,7 @@ a {
 
 .modal-content {
     background-color: #fff;
-    margin: 15% auto;
+    margin: 2% auto;
     padding: 20px;
     border-radius: 8px;
     width: 90%; 
@@ -373,19 +373,27 @@ a {
 
 .btn-fechar {
     position: absolute;
-    top: 225px;
-    right: 450px;
-    background: transparent;
+    top: 16px;
+    right: 16px;
+    background: transparent !important;
     border: none;
     font-size: 24px;
-    color: #333;
+    color: #000000 !important;
     cursor: pointer;
     font-weight: bold;
     transition: color 0.3s;
+    z-index: 10;
+}
+.modal-content {
+    position: relative;
 }
 
-.btn-fechar:hover {
-    color: #f44336; 
+@media (max-width: 440px) {
+    .btn-fechar {
+        top: 10px;
+        left: 10px;
+        font-size: 2rem;
+    }
 }
 
 /* Modal Detalhe paciente */
@@ -1078,5 +1086,11 @@ a {
         border-radius: 50%;
         object-fit: cover;
         margin-bottom: 15px;
+    }
+
+    .btn-fechar {
+        top: 10px;
+        left: 10px;
+        font-size: 2rem;
     }
 }
