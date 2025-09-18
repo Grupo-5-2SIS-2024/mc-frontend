@@ -202,7 +202,7 @@
 
         async function buscarMedicos() {
             try {
-                const resposta = await fetch("http://localhost:8080/medicos");
+                const resposta = await fetch("/mc/medicos");
                 if (!resposta.ok) {
                     throw new Error(`HTTP error! Status: ${resposta.status}`);
                 }
@@ -223,7 +223,7 @@
 
         async function buscarPacientes() {
             try {
-                const resposta = await fetch("http://localhost:8080/pacientes");
+                const resposta = await fetch("/mc/pacientes");
                 if (!resposta.ok) {
                     throw new Error(`HTTP error! Status: ${resposta.status}`);
                 }
@@ -244,7 +244,7 @@
 
         async function buscarEspecificacoesMedicas() {
             try {
-                const resposta = await fetch("http://localhost:8080/especificacoes");
+                const resposta = await fetch("/mc/especificacoes");
                 if (!resposta.ok) {
                     throw new Error(`HTTP error! Status: ${resposta.status}`);
                 }
@@ -265,7 +265,7 @@
 
         async function buscarStatusConsulta() {
             try {
-                const resposta = await fetch("http://localhost:8080/statusConsultas");
+                const resposta = await fetch("/mc/statusConsultas");
                 if (!resposta.ok) {
                     throw new Error(`HTTP error! Status: ${resposta.status}`);
                 }
@@ -286,7 +286,7 @@
 
         async function buscarConsultas() {
             try {
-                const resposta = await fetch("http://localhost:8080/consultas");
+                const resposta = await fetch("/mc/consultas");
                 if (!resposta.ok) {
                     throw new Error(`HTTP error! Status: ${resposta.status}`);
                 }
