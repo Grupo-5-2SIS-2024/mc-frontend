@@ -16,7 +16,7 @@ function validarSessao() {
     }
 
     if (userAvatar && fotoPerfil != "null") {
-        userAvatar.src = fotoPerfil; 
+        userAvatar.src = fotoPerfil;
     }
 
     // Atualizar o link "Home" baseado na permissão
@@ -33,6 +33,13 @@ function validarSessao() {
 
     if (nivelPermissao === "Admin") {
         // ADM pode acessar tudo, nenhuma ação necessária
+
+        const Dashboards = document.getElementById("Dash");
+
+        if (Dashboards) {
+            Dashboards.style.display = "none"
+        }
+
     } else if (nivelPermissao === "Supervisor") {
 
         // Supervisor: remover funções de adicionar pacientes e cadastrar colaboradores
@@ -42,6 +49,7 @@ function validarSessao() {
         const adicionarAreaBtn = document.getElementById("btnAdicionarArea");
         const adicionarConsultaBtn = document.getElementById("btnAdicionarConsulta");
         const Leads = document.getElementById("Lead");
+        const Dashboards = document.getElementById("Dash");
 
         if (cadastrarPacienteBtn) {
             cadastrarPacienteBtn.style.display = "none";
@@ -57,6 +65,9 @@ function validarSessao() {
         }
         if (Leads) {
             Leads.style.display = "none"
+        }
+        if (Dashboards) {
+            Dashboards.style.display = "none"
         }
     } else if (nivelPermissao === "Médico") {
         // Médico: remover botoes de Colaboradores, Pacientes e Dashboards
@@ -91,7 +102,7 @@ function deslogar() {
 
     var emailMedico = sessionStorage.getItem("EMAIL_MEDICO");
 
-  
+
     if (!emailMedico) {
         window.location = "../../Html/index.html";
         return;
@@ -106,15 +117,15 @@ function deslogar() {
             email: emailMedico
         })
     })
-    .then(response => {
-        if (response.ok) {
-            sessionStorage.clear();
-            window.location = "../../Html/index.html";
-        } else {
-            console.error('Erro ao deslogar o médico.');
-        }
-    })
-    .catch(error => {
-        console.error('Erro na requisição de logout:', error);
-    });
+        .then(response => {
+            if (response.ok) {
+                sessionStorage.clear();
+                window.location = "../../Html/index.html";
+            } else {
+                console.error('Erro ao deslogar o médico.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro na requisição de logout:', error);
+        });
 }
