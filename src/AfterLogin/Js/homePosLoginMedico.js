@@ -1,8 +1,12 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    const nivelPermissaoGlobal = sessionStorage.getItem('PERMISSIONAMENTO_MEDICO');
+    // Define base da API (ajusta para localhost em dev)
+    const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+
     // Função para buscar todas as consultas e filtrar pelo ID do médico
     async function buscarConsultas(idMedico) {
         try {
-            const response = await fetch(`/mc/consultas`); // Busca todas as consultas
+            const response = await fetch(`${API_BASE}/mc/consultas`); // Busca todas as consultas
             if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
             const data = await response.json();
 
@@ -32,25 +36,62 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Função para buscar e exibir o nome do médico do sessionStorage
 function atualizarNomeEFotoMedico() {
-    const nomeMedico = sessionStorage.getItem('NOME_MEDICO'); // Pega o nome do médico
-    const sobrenomeMedico = sessionStorage.getItem('SOBRENOME_MEDICO'); // Pega o sobrenome do médico
+    const nomeMedico = sessionStorage.getItem('NOME_MEDICO');
+    const sobrenomeMedico = sessionStorage.getItem('SOBRENOME_MEDICO');
     const fotoMedico = sessionStorage.getItem('FOTO');
     const nivelPermissao = sessionStorage.getItem('PERMISSIONAMENTO_MEDICO');
     const especificacao = sessionStorage.getItem('ESPECIFICACAO_MEDICA');
-    var userAvatar = document.getElementById("userAvatar");
-
-    console.log(fotoMedico)
+    const userAvatar = document.getElementById('userAvatar');
+    const userAvatarAdmin = document.getElementById('userAvatarAdmin');
 
     if (nomeMedico) {
-        document.querySelector('.nome-medico').textContent = `${nomeMedico} ${sobrenomeMedico}`;
+        document.querySelectorAll('.nome-medico').forEach(el => {
+            el.textContent = `${nomeMedico} ${sobrenomeMedico || ''}`.trim();
+        });
     }
 
-    if (fotoMedico != 'null') {
-        userAvatar.src = fotoMedico;
+    if (fotoMedico && fotoMedico !== 'null') {
+        if (userAvatar) userAvatar.src = fotoMedico;
+        if (userAvatarAdmin) userAvatarAdmin.src = fotoMedico;
     }
 
-    if (nivelPermissao && especificacao) {
-        document.querySelector('.especialidade').textContent = `${nivelPermissao} | ${especificacao}`;
+    if (nivelPermissao) {
+        const espec = especificacao && especificacao !== 'null' ? especificacao : 'Desconhecido';
+        document.querySelectorAll('.especialidade').forEach(el => {
+            el.textContent = `${nivelPermissao} | ${espec}`;
+        });
+    }
+}
+
+// KPIs ADMIN (substitui KPIs do médico quando permissão for Admin)
+async function buscarKPIsAdmin() {
+    try {
+    const respostaTotalMedicos = await fetch(`${API_BASE}/mc/medicos`);
+        const listaMedicos = await respostaTotalMedicos.json();
+        const totalMedicos = listaMedicos.length;
+
+        const medicosAtivos = listaMedicos.filter(medico => medico.ativo).length;
+
+    const respostaPacientesAtivos = await fetch(`${API_BASE}/mc/pacientes/ativos`);
+        const pacientesAtivos = await respostaPacientesAtivos.json();
+
+    const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes`);
+        const pacientes = await respostaPacientes.json();
+        const totalPacientes = pacientes.length;
+
+        const formatarNumero = (numero) => numero.toString().padStart(2, '0');
+
+        const elTotalMedicos = document.getElementById('kpiTotalMedicos');
+        const elMedicosAtivos = document.getElementById('kpiMedicosAtivos');
+        const elTotalPacientes = document.getElementById('kpiTotalPacientes');
+        const elPacientesAtivos = document.getElementById('kpiPacientesAtivos');
+
+        if (elTotalMedicos) elTotalMedicos.textContent = formatarNumero(totalMedicos);
+        if (elMedicosAtivos) elMedicosAtivos.textContent = formatarNumero(medicosAtivos);
+        if (elTotalPacientes) elTotalPacientes.textContent = formatarNumero(totalPacientes);
+        if (elPacientesAtivos) elPacientesAtivos.textContent = formatarNumero(pacientesAtivos);
+    } catch (erro) {
+        console.error('Erro ao buscar os dados dos KPIs admin:', erro);
     }
 }
 
@@ -153,7 +194,12 @@ async function atualizarKPIs(consultas) {
         const consultasConcluidas = consultas.filter(c => c.statusConsulta.nomeStatus === 'Realizada').length;
         const consultasCanceladas = consultas.filter(c => c.statusConsulta.nomeStatus === 'Cancelada').length;
 
-        const ctx = document.getElementById('consultasChart').getContext('2d');
+        const canvas = document.getElementById('consultasChart');
+        if(!canvas){
+            console.warn('Canvas de gráfico não encontrado.');
+            return;
+        }
+        const ctx = canvas.getContext('2d');
         new Chart(ctx, {
             type: 'bar',
             data: {
@@ -178,14 +224,36 @@ async function atualizarKPIs(consultas) {
     // Inicialização
     const idMedico = sessionStorage.getItem('ID_MEDICO'); // Pega o ID do médico armazenado no sessionStorage
     console.log(idMedico);
-    if (idMedico) {
-        const consultas = await buscarConsultas(idMedico); // Busca os dados das consultas do backend para o médico específico
-        atualizarKPIs(consultas); // Atualiza os KPIs
-        atualizarAgenda(consultas); // Preenche a tabela de agenda
-        atualizarAnotacoes(consultas); // Preenche a lista de anotações
-        atualizarGrafico(consultas); // Atualiza o gráfico de desempenho
-        atualizarNomeEFotoMedico(); // Atualiza o nome do médico do sessionStorage
+    atualizarNomeEFotoMedico();
+
+    // Verifica se é Admin para alternar KPIs
+    if (nivelPermissaoGlobal === 'Admin') {
+        // Mostrar container admin e esconder do médico
+        const medicoKpis = document.getElementById('medicoKpis');
+        const adminKpis = document.getElementById('adminKpis');
+        if (medicoKpis) medicoKpis.style.display = 'none';
+        if (adminKpis) adminKpis.style.display = 'flex';
+        buscarKPIsAdmin();
+        // Carregar gráfico geral para admin usando todas as consultas
+        try {
+            const resp = await fetch(`${API_BASE}/mc/consultas`);
+            if (resp.ok) {
+                const todas = await resp.json();
+                console.log('Consultas (admin) carregadas:', todas.length);
+                atualizarGrafico(todas);
+            } else {
+                console.error('Falha ao buscar consultas para gráfico admin. Status:', resp.status);
+            }
+        } catch(e) { console.warn('Falha ao carregar gráfico geral admin', e); }
     } else {
-        console.error('ID do médico não encontrado no sessionStorage.');
+        if (idMedico) {
+            const consultas = await buscarConsultas(idMedico); // Busca os dados das consultas do backend para o médico específico
+            atualizarKPIs(consultas); // Atualiza os KPIs
+            atualizarAgenda(consultas); // Preenche a tabela de agenda
+            atualizarAnotacoes(consultas); // Preenche a lista de anotações
+            atualizarGrafico(consultas); // Atualiza o gráfico de desempenho
+        } else {
+            console.error('ID do médico não encontrado no sessionStorage.');
+        }
     }
 });

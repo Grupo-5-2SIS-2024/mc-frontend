@@ -19,17 +19,6 @@ function validarSessao() {
         userAvatar.src = fotoPerfil;
     }
 
-    // Atualizar o link "Home" baseado na permissão
-    var homeLink = document.querySelector("#side_items .side-item a");
-
-    if (homeLink) {
-        if (nivelPermissao === "Admin" || nivelPermissao === "Supervisor") {
-            homeLink.href = "homePosLoginAdm.html"; // Altera o link para a Home de Admin
-        } else if (nivelPermissao === "Medico") {
-            homeLink.href = "homePosLoginMedico.html"; // Mantém o link para a Home de Médico
-        }
-    }
-
 
     if (nivelPermissao === "Admin") {
         // ADM pode acessar tudo, nenhuma ação necessária

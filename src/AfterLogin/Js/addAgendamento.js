@@ -2,14 +2,23 @@
 
 
 
-document.addEventListener("DOMContentLoaded", () => {
-    const diaInput = document.getElementById("dia");
+// Definição dos novos slots de 50 minutos a partir de 06/10
+const SLOT_DURATION = '00:50:00';
+// Apenas horários de início (start times) conforme nova regra (manhã e tarde)
+const SCHEDULE_SLOTS = [
+    '08:00', '08:50', '09:40', '10:30', // manhã termina 11:20
+    '13:40', '14:30', '15:20', '16:10', '17:00' // tarde termina 17:50 (encerrando 18:00)
+];
+
+document.addEventListener('DOMContentLoaded', () => {
+    const diaInput = document.getElementById('dia');
     const diaConsulta = sessionStorage.getItem('DIA_CONSULTA');
     if (diaConsulta) {
         diaInput.value = diaConsulta;
         sessionStorage.removeItem('DIA_CONSULTA');
-        updateAvailableHours(dia);
     }
+    // Carrega horários se já houver data preenchida
+    updateAvailableHours();
 });
 
 function formatarData(dataISO){
@@ -152,39 +161,94 @@ function populateSelect(selectId, options, textKey = 'nome', valueKey = 'id') {
     });
 }
 
-// Função para obter horários disponíveis para um dia específico, considerando todos os médicos
+// Função para obter horários disponíveis (slots de 50min). Considera que um slot está indisponível
+// se todos os médicos já possuem consulta iniciando exatamente nesse horário.
 async function getAvailableHours(dia) {
-    console.log("Obtendo horas disponíveis para o dia:", dia);
+    console.log('Obtendo slots disponíveis para o dia:', dia);
     const consultas = await buscarConsultas();
 
-    const allHours = [];
-    for (let h = 6; h <= 18; h++) {
-        const hourStr = h.toString().padStart(2, '0') + ':00';
-        allHours.push(hourStr);
-    }
-
-    // Lista de horários reservados por qualquer médico
-    const bookedHours = consultas
-        .filter(consulta => consulta.datahoraConsulta.startsWith(dia))
-        .map(consulta => consulta.datahoraConsulta.split('T')[1].substring(0, 5));
-
-    // Horários disponíveis são aqueles que não estão reservados para todos os médicos
-    const availableHours = allHours.filter(hora => {
-        // Verifica se pelo menos um médico está livre neste horário
-        const isHourFullyBooked = consultas.every(consulta => consulta.datahoraConsulta.endsWith(hora));
-        return !isHourFullyBooked;
+    // Filtra consultas do dia e mapeia horários de início existentes
+    const consultasDoDia = consultas.filter(c => c.datahoraConsulta.startsWith(dia));
+    // Monta um mapa horário -> quantidade de médicos ocupados
+    const ocupadoPorHorario = {};
+    consultasDoDia.forEach(c => {
+        const horaInicio = c.datahoraConsulta.split('T')[1].substring(0,5); // HH:MM
+        ocupadoPorHorario[horaInicio] = (ocupadoPorHorario[horaInicio] || 0) + 1;
     });
 
-    console.log("Horas disponíveis:", availableHours);
-    return availableHours.length > 0 ? availableHours : ['Sem horários disponíveis'];
+    // Se quisermos saber total de médicos para marcar slot como totalmente ocupado, precisamos da lista de medicos
+    // Para simplicidade, só consideramos ocupado se pelo menos uma consulta existe naquele start time (ou podemos manter livre se quiser permitir multi-sala)
+    // Ajuste: slot indisponível somente se TODOS os médicos estão ocupados naquele horário -> requer fetch de medicos
+    let totalMedicos = 0;
+    try {
+        const respMed = await fetch('/mc/medicos');
+        if (respMed.ok) {
+            const medicos = await respMed.json();
+            totalMedicos = medicos.length;
+        }
+    } catch(e) { console.warn('Falha ao obter total de médicos, assumindo 0 para lógica liberal.', e); }
+
+    const available = SCHEDULE_SLOTS.filter(slot => {
+        // Se não conseguimos determinar total de médicos, não bloqueamos nenhum slot
+        if (totalMedicos <= 0) return true;
+        const ocupados = ocupadoPorHorario[slot] || 0;
+        return ocupados < totalMedicos; // pelo menos um médico livre
+    });
+
+    console.log('Slots disponíveis:', available);
+    return available.length ? available : ['Sem horários disponíveis'];
 }
 
 // Função para atualizar as horas disponíveis após a seleção da data
 async function updateAvailableHours() {
     const dia = document.getElementById('dia').value;
+    const select = document.getElementById('hora');
+    if (!select) return;
     if (dia) {
         const availableHours = await getAvailableHours(dia);
-        populateSelect('hora', availableHours, null, null);
+        // Monta opções com intervalo completo (inicio - fim)
+        const options = availableHours.map(start => {
+            if (start === 'Sem horários disponíveis') return start;
+            const [h,m] = start.split(':').map(Number);
+            const endDate = new Date(0,0,0,h,m+50,0);
+            const endH = String(endDate.getHours()).padStart(2,'0');
+            const endM = String(endDate.getMinutes()).padStart(2,'0');
+            return { label: `${start} - ${endH}:${endM}`, value: start };
+        });
+        select.innerHTML = '';
+        if (options.length === 0) {
+            const opt = document.createElement('option');
+            opt.textContent = 'Sem horários disponíveis';
+            opt.value = '';
+            select.appendChild(opt);
+        } else {
+            const placeholder = document.createElement('option');
+            placeholder.textContent = 'Selecione um horário';
+            placeholder.value = '';
+            placeholder.disabled = true;
+            placeholder.selected = true;
+            select.appendChild(placeholder);
+            options.forEach(o => {
+                const opt = document.createElement('option');
+                if (typeof o === 'string') {
+                    opt.textContent = o;
+                    opt.value = o;
+                } else {
+                    opt.textContent = o.label;
+                    opt.value = o.value;
+                }
+                select.appendChild(opt);
+            });
+        }
+    } else {
+        // Sem data: limpa select e adiciona placeholder
+        select.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.textContent = 'Selecione uma data primeiro';
+        placeholder.value = '';
+        placeholder.disabled = true;
+        placeholder.selected = true;
+        select.appendChild(placeholder);
     }
 }
 
@@ -293,7 +357,7 @@ async function agendarConsulta() {
             especificacaoMedica: { id: especificacaoMedicaId },
             statusConsulta: { id: 1 },
             paciente: { id: pacienteId },
-            duracaoConsulta: "01:00:00"
+            duracaoConsulta: SLOT_DURATION
         });
 
         // Agendar a consulta original
