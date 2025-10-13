@@ -120,7 +120,7 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
             });
         }
     } catch (e) {
-        console.error('Erro ao buscar médicos:', e);
+        console.error('Erro ao buscar Profissionais:', e);
     }
 }
 
@@ -165,30 +165,30 @@ async function deletarMedico(id) {
             console.warn('Nenhuma nota para deletar ou erro ao deletar notas:', erro);
         }
 
-        // Deleta o médico
+        // Deleta o Profissional
         const resposta4 = await fetch(`http://localhost:8080/mc/medicos/${id}`, {
             method: 'DELETE'
         });
         if (!resposta4.ok) {
-            throw new Error(`Erro ao deletar médico: ${resposta4.statusText}`);
+            throw new Error(`Erro ao deletar Profissional: ${resposta4.statusText}`);
         }
 
-        // Se todas as operações forem bem-sucedidas, exibe a mensagem e recarrega a lista de médicos
-        console.log('Médico deletado com sucesso.');
+        // Se todas as operações forem bem-sucedidas, exibe a mensagem e recarrega a lista de Profissionais
+        console.log('Profissional deletado com sucesso.');
         buscarMedicos();
     } catch (erro) {
-        console.error('Erro ao deletar médico:', erro);
+        console.error('Erro ao deletar Profissional:', erro);
     }
 }
 
 async function buscarKPIsMedico() {
     try {
-        // Buscar o número total de médicos
+        // Buscar o número total de Profissionais
         const respostaTotalMedicos = await fetch('http://localhost:8080/mc/medicos');
         const listaMedicos = await respostaTotalMedicos.json();
         const totalMedicos = listaMedicos.length;
 
-        // Buscar o número de médicos ativos
+        // Buscar o número de Profissionais ativos
         const medicosAtivos = listaMedicos.filter(medico => medico.ativo).length;
 
         // Buscar o total de administradores

@@ -304,7 +304,7 @@
             const nivelAcessoMap = {
                 "Admin": 1,
                 "Supervisor": 2,
-                "Médico": 3
+                "Profissional": 3
             };
           
             const nivelAcessoId = nivelAcessoMap[nivelAcessoEscolhido];
@@ -375,7 +375,7 @@
         if (id) {
             buscarValores(id);
         } else {
-            console.error('ID do médico não encontrado na URL.');
+            console.error('ID do Profissional não encontrado na URL.');
         }
         carregarEspecificacoes();
     };

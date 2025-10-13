@@ -1,21 +1,21 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    // Função para buscar todas as consultas e filtrar pelo ID do médico
+    // Função para buscar todas as consultas e filtrar pelo ID do Profissional
     async function buscarConsultas(idMedico) {
         try {
             const response = await fetch(`http://localhost:8080/mc/consultas`); // Busca todas as consultas
             if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
             const data = await response.json();
 
-            // Filtra apenas as consultas que pertencem ao médico com o ID especificado
+            // Filtra apenas as consultas que pertencem ao Profissional com o ID especificado
             const consultasMedico = data.filter(consulta => consulta.medico.id === parseInt(idMedico, 10));
-            return consultasMedico; // Retorna apenas as consultas do médico
+            return consultasMedico; // Retorna apenas as consultas do Profissional
         } catch (error) {
             console.error('Erro ao buscar consultas:', error);
             return [];
         }
     }
 
-    // Função para buscar a foto do médico
+    // Função para buscar a foto do Profissional
     async function buscarFotoMedico(idMedico) {
         try {
             const response = await fetch(`http://localhost:8080/mc/medicos/${idMedico}/foto`);
@@ -23,17 +23,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             const fotoData = await response.json();
             return fotoData.url; // Supondo que o URL da foto esteja no campo 'url'
         } catch (error) {
-            console.error('Erro ao buscar foto do médico:', error);
+            console.error('Erro ao buscar foto do Profissional:', error);
             return null;
         }
     }
 
 
 
-  // Função para buscar e exibir o nome do médico do sessionStorage
+  // Função para buscar e exibir o nome do Profissional do sessionStorage
 function atualizarNomeEFotoMedico() {
-    const nomeMedico = sessionStorage.getItem('NOME_MEDICO'); // Pega o nome do médico
-    const sobrenomeMedico = sessionStorage.getItem('SOBRENOME_MEDICO'); // Pega o sobrenome do médico
+    const nomeMedico = sessionStorage.getItem('NOME_MEDICO'); // Pega o nome do Profissional
+    const sobrenomeMedico = sessionStorage.getItem('SOBRENOME_MEDICO'); // Pega o sobrenome do Profissional
     const fotoMedico = sessionStorage.getItem('FOTO');
     const nivelPermissao = sessionStorage.getItem('PERMISSIONAMENTO_MEDICO');
     const especificacao = sessionStorage.getItem('ESPECIFICACAO_MEDICA');
@@ -176,16 +176,16 @@ async function atualizarKPIs(consultas) {
     }
 
     // Inicialização
-    const idMedico = sessionStorage.getItem('ID_MEDICO'); // Pega o ID do médico armazenado no sessionStorage
+    const idMedico = sessionStorage.getItem('ID_MEDICO'); // Pega o ID do Profissional armazenado no sessionStorage
     console.log(idMedico);
     if (idMedico) {
-        const consultas = await buscarConsultas(idMedico); // Busca os dados das consultas do backend para o médico específico
+        const consultas = await buscarConsultas(idMedico); // Busca os dados das consultas do backend para o Profissional específico
         atualizarKPIs(consultas); // Atualiza os KPIs
         atualizarAgenda(consultas); // Preenche a tabela de agenda
         atualizarAnotacoes(consultas); // Preenche a lista de anotações
         atualizarGrafico(consultas); // Atualiza o gráfico de desempenho
-        atualizarNomeEFotoMedico(); // Atualiza o nome do médico do sessionStorage
+        atualizarNomeEFotoMedico(); // Atualiza o nome do Profissional do sessionStorage
     } else {
-        console.error('ID do médico não encontrado no sessionStorage.');
+        console.error('ID do Profissional não encontrado no sessionStorage.');
     }
 });

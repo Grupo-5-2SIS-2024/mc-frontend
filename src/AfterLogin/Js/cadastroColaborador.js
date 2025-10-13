@@ -211,7 +211,7 @@ async function cadastrarColaborador() {
     const nivelAcessoMap = {
       "Admin": 1,
       "Supervisor": 2,
-      "Médico": 3
+      "Profissional": 3
     };
 
     const nivelAcessoId = nivelAcessoMap[nivelAcessoEscolhido];

@@ -26,7 +26,7 @@ function validarSessao() {
         if (nivelPermissao === "Admin" || nivelPermissao === "Supervisor") {
             homeLink.href = "homePosLoginAdm.html"; // Altera o link para a Home de Admin
         } else if (nivelPermissao === "Medico") {
-            homeLink.href = "homePosLoginMedico.html"; // Mantém o link para a Home de Médico
+            homeLink.href = "homePosLoginMedico.html"; // Mantém o link para a Home de Profissional
         }
     }
 
@@ -58,8 +58,8 @@ function validarSessao() {
         if (Leads) {
             Leads.style.display = "none"
         }
-    } else if (nivelPermissao === "Médico") {
-        // Médico: remover botoes de Colaboradores, Pacientes e Dashboards
+    } else if (nivelPermissao === "Profissional") {
+        // Profissional: remover botoes de Colaboradores, Pacientes e Dashboards
         const Colaboradores = document.getElementById("Colaborador");
         const Pacientes = document.getElementById("Paciente");
         const Dashboards = document.getElementById("Dash");
@@ -111,7 +111,7 @@ function deslogar() {
             sessionStorage.clear();
             window.location = "../../Html/index.html";
         } else {
-            console.error('Erro ao deslogar o médico.');
+            console.error('Erro ao deslogar o Profissional.');
         }
     })
     .catch(error => {

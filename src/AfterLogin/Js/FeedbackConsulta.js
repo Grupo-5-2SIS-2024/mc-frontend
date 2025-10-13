@@ -28,7 +28,7 @@ let consultaAtual;async function carregarDadosConsulta() {
         if (consultaAtual.medico) {
             document.getElementById("medico").value = `${consultaAtual.medico.nome} ${consultaAtual.medico.sobrenome}`;
         } else {
-            document.getElementById("medico").value = "Médico não disponível";
+            document.getElementById("medico").value = "Profissional não disponível";
         }
 
         if (consultaAtual.especificacaoMedica) {

@@ -77,11 +77,13 @@ function validarCadastro() {
         document.getElementById('error-telefone').textContent = "";
     }
 
-    if (!cpfRegex.test(cpf)) {
+    if(cpf.trim() !== ""){
+      if (!cpfRegex.test(cpf)) {
         document.getElementById('error-cpf').textContent = "CPF inválido. Deve conter 11 dígitos.";
         errors.push("CPF inválido.");
     } else {
         document.getElementById('error-cpf').textContent = "";
+    }
     }
 
     if (!genero.trim()) {
