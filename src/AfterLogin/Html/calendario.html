@@ -112,9 +112,9 @@
                         <h3><i class="fas fa-search"></i> Filtrar Consultas</h3>
 
                         <div class="filter-group">
-                            <label for="filtroMedico"><i class="fas fa-user-md"></i> Médico:</label>
+                            <label for="filtroMedico"><i class="fas fa-user-md"></i> Profissional:</label>
                             <select id="filtroMedico">
-                                <option value="">Todos os Médicos</option>
+                                <option value="">Todos os Profissionais</option>
                             </select>
                         </div>
 
@@ -197,7 +197,7 @@
                 const medicos = await resposta.json();
 
                 const filtroMedico = document.getElementById('filtroMedico');
-                filtroMedico.innerHTML = '<option value="">Todos os Médicos</option>';
+                filtroMedico.innerHTML = '<option value="">Todos os Profissionais</option>';
                 medicos.forEach(medico => {
                     const option = document.createElement('option');
                     option.value = medico.id;
@@ -205,7 +205,7 @@
                     filtroMedico.appendChild(option);
                 });
             } catch (error) {
-                console.error('Erro ao buscar médicos:', error);
+                console.error('Erro ao buscar Profissionais:', error);
             }
         }
 
@@ -486,7 +486,7 @@
                 <p><strong>Descrição:</strong> ${consulta.descricao}</p>
                 <p><strong>Data e Hora:</strong> ${dataFormatada} às ${horaFormatada}</p>
                 <p><strong>Paciente:</strong> ${consulta.paciente.nome} ${consulta.paciente.sobrenome}</p>
-                <p><strong>Médico:</strong> ${consulta.medico.nome} ${consulta.medico.sobrenome} - ${consulta.especificacaoMedica.area}</p>
+                <p><strong>Profissional:</strong> ${consulta.medico.nome} ${consulta.medico.sobrenome} - ${consulta.especificacaoMedica.area}</p>
                 <p><strong>Status:</strong> ${consulta.statusConsulta.nomeStatus}</p>
                 <p><strong>Duração:</strong> ${consulta.duracaoConsulta}</p>
             `;

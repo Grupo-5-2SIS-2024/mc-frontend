@@ -8,24 +8,31 @@ document.addEventListener("DOMContentLoaded", () => {
     if (diaConsulta) {
         diaInput.value = diaConsulta;
         sessionStorage.removeItem('DIA_CONSULTA');
-        updateAvailableHours(dia);
+        updateAvailableHours();
     }
 });
 
-function formatarData(dataISO){
+function withLabelNomeSobrenome(lista) {
+    return (lista || []).map(item => ({
+        ...item,
+        label: `${item.nome} ${item.sobrenome}`.trim()
+    }));
+}
+
+function formatarData(dataISO) {
     const data = new Date(dataISO)
-    const dia = String(data.getDate()).padStart(2,'0');
-    const mes =String(data.getMonth() + 1). padStart(2,'0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
     const ano = data.getFullYear();
-    
-    const  horas = String(data.getHours()).padStart(2,'0')
-    const minutos = String(data.getMinutes()).padStart(2,'0')
-    const segundos = String(data.getSeconds()).padStart(2,'0')
-    
+
+    const horas = String(data.getHours()).padStart(2, '0')
+    const minutos = String(data.getMinutes()).padStart(2, '0')
+    const segundos = String(data.getSeconds()).padStart(2, '0')
+
     return `${dia}/${mes}/${ano} - ${horas}:${minutos}:${segundos}`
-    
-    
-    }
+
+
+}
 // Função para determinar o ícone com base no gênero do paciente
 function obterIconeGenero(genero) {
     if (genero.toLowerCase() === 'masculino') {
@@ -57,25 +64,23 @@ async function buscarConsultas() {
                     <div class="consulta-info">
                         <h3>${consulta.paciente.nome} ${consulta.paciente.sobrenome}</h3>
                         <p>${formatarData(consulta.datahoraConsulta)}</p>
-                        <p>Médico: ${consulta.medico.nome} ${consulta.medico.sobrenome} - ${consulta.especificacaoMedica.area}</p>
+                        <p>Profissional: ${consulta.medico.nome} ${consulta.medico.sobrenome} - ${consulta.especificacaoMedica.area}</p>
                         <p>Status: ${consulta.statusConsulta.nomeStatus}</p>
                         <div class="consulta-actions">
                             <i class="fas fa-pen" onclick="alterarConsulta(${consulta.id})" title="Alterar Consulta"></i>
                             <i class="fas fa-trash" onclick="excluirConsulta(${consulta.id})" title="Cancelar Consulta"></i>
                             <i class="fas fa-download" onclick="baixarConsultaExcel(${consulta.id})" title="Baixar Excel da Consulta"></i>
-                            ${
-                                consulta.statusConsulta.nomeStatus === 'Agendada' 
-                                ? `<i class="fas fa-notes-medical" onclick="AnaliseConsultasx(${consulta.id})" title="Bloco De Notas"></i>` 
-                                : ''
-                            }
+                            ${consulta.statusConsulta.nomeStatus === 'Agendada'
+                    ? `<i class="fas fa-notes-medical" onclick="AnaliseConsultasx(${consulta.id})" title="Bloco De Notas"></i>`
+                    : ''
+                }
 
 
 
-                              ${
-                                consulta.statusConsulta.nomeStatus === 'Realizada' 
-                                ? `<i class="fas fa-eye" onclick="verFeedback(${consulta.id})" title="Visualizar Feedback"></i>`
-                                : ''
-                            }
+                              ${consulta.statusConsulta.nomeStatus === 'Realizada'
+                    ? `<i class="fas fa-eye" onclick="verFeedback(${consulta.id})" title="Visualizar Feedback"></i>`
+                    : ''
+                }
                         </div>
                     </div>
                 </div>
@@ -93,10 +98,27 @@ function verFeedback(consultaId) {
     window.location.href = `FeedbackConsulta.html?consultaId=${consultaId}&viewOnly=true`;
 }
 
+async function buscarEspecificacoes() {
+    console.log("Buscando procedimentos/especializações...");
+    try {
+        const resp = await fetch("http://localhost:8080/mc/especificacoes");
+        if (!resp.ok) throw new Error(`HTTP error! Status: ${resp.status}`);
+        const especificacoes = await resp.json();
 
-// Função para buscar dados da API para pacientes e médicos e popular os selects
+        // Opção padrão + lista
+        populateSelect('procedimento', [{ area: 'Selecione um Procedimento', id: '' }, ...especificacoes], 'area', 'id');
+    } catch (error) {
+        console.error('Erro ao buscar procedimentos:', error);
+        // fallback mínimo
+        populateSelect('procedimento', [{ area: 'Nenhum procedimento encontrado', id: '' }], 'area', 'id');
+    }
+}
+
+
+
+// Função para buscar dados da API para pacientes e Profissionais e popular os selects
 async function buscarPacientesEMedicos() {
-    console.log("Buscando pacientes e médicos...");
+    console.log("Buscando pacientes e Profissionais...");
 
     try {
         const respostaPacientes = await fetch("http://localhost:8080/mc/pacientes");
@@ -114,10 +136,14 @@ async function buscarPacientesEMedicos() {
         console.log(medicos);
 
         // Adiciona a opção padrão antes de popular as opções reais
-        populateSelect('paciente', [{nome: 'Selecione um Paciente', id: ''}, ...pacientes], 'nome', 'id');
-        populateSelect('medico', [{nome: 'Selecione um Médico', id: ''}, ...medicos], 'nome', 'id');
+        const pacientesLabel = withLabelNomeSobrenome(pacientes);
+        const medicosLabel = withLabelNomeSobrenome(medicos);
+
+        // Adiciona a opção padrão antes de popular as opções reais
+        populateSelect('paciente', [{ label: 'Selecione um Paciente', id: '' }, ...pacientesLabel], 'label', 'id');
+        populateSelect('medico', [{ label: 'Selecione um Profissionais', id: '' }, ...medicosLabel], 'label', 'id');
     } catch (error) {
-        console.error('Erro ao buscar pacientes e médicos:', error);
+        console.error('Erro ao buscar pacientes e Profissionais:', error);
     }
 }
 
@@ -125,7 +151,7 @@ async function buscarPacientesEMedicos() {
 function populateSelect(selectId, options, textKey = 'nome', valueKey = 'id') {
     const selectElement = document.getElementById(selectId);
     selectElement.innerHTML = ''; // Limpar opções existentes
-    
+
     // Verifica se a lista de opções é válida e não está vazia
     if (options.length === 0 || options[0] === 'Sem horários disponíveis') {
         const optionElement = document.createElement('option');
@@ -137,7 +163,7 @@ function populateSelect(selectId, options, textKey = 'nome', valueKey = 'id') {
 
     options.forEach(option => {
         const optionElement = document.createElement('option');
-        
+
         if (typeof option === 'string') {
             // Caso seja uma string, adiciona diretamente
             optionElement.textContent = option;
@@ -147,12 +173,12 @@ function populateSelect(selectId, options, textKey = 'nome', valueKey = 'id') {
             optionElement.textContent = option[textKey];
             optionElement.value = option[valueKey];
         }
-        
+
         selectElement.appendChild(optionElement);
     });
 }
 
-// Função para obter horários disponíveis para um dia específico, considerando todos os médicos
+// Função para obter horários disponíveis para um dia específico, considerando todos os Profissionais
 async function getAvailableHours(dia) {
     console.log("Obtendo horas disponíveis para o dia:", dia);
     const consultas = await buscarConsultas();
@@ -163,14 +189,14 @@ async function getAvailableHours(dia) {
         allHours.push(hourStr);
     }
 
-    // Lista de horários reservados por qualquer médico
+    // Lista de horários reservados por qualquer Profissional
     const bookedHours = consultas
         .filter(consulta => consulta.datahoraConsulta.startsWith(dia))
         .map(consulta => consulta.datahoraConsulta.split('T')[1].substring(0, 5));
 
-    // Horários disponíveis são aqueles que não estão reservados para todos os médicos
+    // Horários disponíveis são aqueles que não estão reservados para todos os Profissional
     const availableHours = allHours.filter(hora => {
-        // Verifica se pelo menos um médico está livre neste horário
+        // Verifica se pelo menos um Profissional está livre neste horário
         const isHourFullyBooked = consultas.every(consulta => consulta.datahoraConsulta.endsWith(hora));
         return !isHourFullyBooked;
     });
@@ -188,49 +214,42 @@ async function updateAvailableHours() {
     }
 }
 
-// Função para popular as opções dos selects de maneira eficiente
-function populateSelect(selectId, options, textKey = 'nome', valueKey = 'id') {
-    const selectElement = document.getElementById(selectId);
-    selectElement.innerHTML = ''; // Limpar opções existentes
-
-    options.forEach(option => {
-        const optionElement = document.createElement('option');
-        if (typeof option === 'string') {
-            optionElement.textContent = option;
-            optionElement.value = option;
-        } else {
-            optionElement.textContent = option[textKey];
-            optionElement.value = option[valueKey];
-        }
-        selectElement.appendChild(optionElement);
-    });
-}
-
 async function updateAvailableDoctors() {
     const dia = document.getElementById('dia').value;
     const hora = document.getElementById('hora').value;
+    const procedimentoId = document.getElementById('procedimento').value;
 
-    if (dia && hora) {
-        try {
-            const consultas = await buscarConsultas();
-            const respostaMedicos = await fetch("http://localhost:8080/mc/medicos");
-            const medicos = await respostaMedicos.json();
+    try {
+        const consultas = await buscarConsultas();
+        const respMedicos = await fetch("http://localhost:8080/mc/medicos");
+        if (!respMedicos.ok) throw new Error(`HTTP error! Status: ${respMedicos.status}`);
+        const medicos = await respMedicos.json();
 
-            // Filtra os médicos que têm consultas no horário selecionado
-            const bookedDoctors = consultas
-                .filter(consulta => consulta.datahoraConsulta.startsWith(`${dia}T${hora}`))
-                .map(consulta => consulta.medico.id);
-
-            // Médicos disponíveis são aqueles que não estão na lista de médicos ocupados
-            const availableDoctors = medicos.filter(medico => !bookedDoctors.includes(medico.id));
-            
-            // Popula o select com os médicos disponíveis
-            populateSelect('medico', [{ nome: 'Selecione um Médico', id: '' }, ...availableDoctors], 'nome', 'id');
-        } catch (error) {
-            console.error('Erro ao atualizar médicos disponíveis:', error);
+        // Filtra por procedimento se houver
+        let medicosFiltrados = medicos;
+        if (procedimentoId) {
+            medicosFiltrados = medicos.filter(m => String(m.especificacaoMedica.id) === String(procedimentoId));
         }
+
+        // Se já tem dia e hora, remove os ocupados nesse horário
+        if (dia && hora) {
+            const bookedDoctors = consultas
+                .filter(c => c.datahoraConsulta.startsWith(`${dia}T${hora}`))
+                .map(c => c.medico.id);
+
+            const availableDoctors = medicosFiltrados.filter(m => !bookedDoctors.includes(m.id));
+            const availableDoctorsLabel = withLabelNomeSobrenome(availableDoctors);
+            populateSelect('medico', [{ label: 'Selecione um Profissional', id: '' }, ...availableDoctorsLabel], 'label', 'id');
+        } else {
+            // Sem dia/hora ainda: só filtra por procedimento (se houver)
+            const medicosFiltradosLabel = withLabelNomeSobrenome(medicosFiltrados);
+            populateSelect('medico', [{ label: 'Selecione um Profissional', id: '' }, ...medicosFiltradosLabel], 'label', 'id');
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar Profissionais disponíveis:', error);
     }
 }
+
 
 async function updateAvailablePatients() {
     const dia = document.getElementById('dia').value;
@@ -251,7 +270,8 @@ async function updateAvailablePatients() {
             const availablePatients = pacientes.filter(paciente => !bookedPatients.includes(paciente.id));
 
             // Popula o select com os pacientes disponíveis
-            populateSelect('paciente', [{ nome: 'Selecione um Paciente', id: '' }, ...availablePatients], 'nome', 'id');
+            const availablePatientsLabel = withLabelNomeSobrenome(availablePatients);
+            populateSelect('paciente', [{ label: 'Selecione um Paciente', id: '' }, ...availablePatientsLabel], 'label', 'id');
         } catch (error) {
             console.error('Erro ao atualizar pacientes disponíveis:', error);
         }
@@ -263,7 +283,19 @@ async function agendarConsulta() {
     const medicoId = document.getElementById('medico').value;
     const pacienteId = document.getElementById('paciente').value;
     const descricao = document.getElementById('descricao').value || "Sem descrição";
+    const procedimentoId = document.getElementById('procedimento').value;
     const recorrente = document.getElementById('recorrente').checked; // Verifica se o checkbox está marcado
+
+    // validações rápidas
+    if (!procedimentoId) {
+        Swal.fire({ icon: 'warning', title: 'Selecione o Procedimento', text: 'Escolha o procedimento antes de agendar.' });
+        return;
+    }
+
+    if (!dia || !hora || !medicoId || !pacienteId) {
+        Swal.fire({ icon: 'warning', title: 'Campos obrigatórios', text: 'Preencha data, hora, profissional e paciente.' });
+        return;
+    }
 
     try {
         const respostaEspec = await fetch("http://localhost:8080/mc/medicos");
@@ -274,16 +306,26 @@ async function agendarConsulta() {
         const medicos = await respostaEspec.json();
         const medicoSelecionado = medicos.find(medico => medico.id == medicoId);
 
+
         if (!medicoSelecionado) {
             Swal.fire({
                 icon: 'error',
                 title: 'Erro',
-                text: 'Médico não encontrado.',
+                text: 'Profissional não encontrado.',
             });
             return;
         }
 
-        const especificacaoMedicaId = medicoSelecionado.especificacaoMedica.id;
+        if (String(medicoSelecionado.especificacaoMedica.id) !== String(procedimentoId)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Profissional não atende este procedimento',
+                text: 'O profissional selecionado não pertence à especialização escolhida. Escolha um profissional compatível.'
+            });
+            return;
+        }
+
+        const especificacaoMedicaId = procedimentoId;
 
         // Função para criar o objeto da consulta
         const criarDadosConsulta = (dataConsulta) => ({
@@ -314,7 +356,7 @@ async function agendarConsulta() {
         // Se o checkbox de recorrente estiver marcado, agendar as próximas 30 semanas
         if (recorrente) {
             const dataOriginal = new Date(dia);
-            
+
             // Agendar para as próximas 30 semanas (7 dias de diferença entre cada consulta)
             for (let i = 1; i <= 30; i++) {
                 const novaData = new Date(dataOriginal);
@@ -468,7 +510,7 @@ async function alterarConsulta(idConsulta) {
             throw new Error('Consulta não encontrada.');
         }
 
-        // Buscar dados para preencher selects de Médicos, Pacientes e Especializações Médicas
+        // Buscar dados para preencher selects de Profissionais, Pacientes e Especializações Médicas
         const [medicos, pacientes, especializacoes] = await Promise.all([
             fetch("http://localhost:8080/mc/medicos").then(res => res.json()),
             fetch("http://localhost:8080/mc/pacientes").then(res => res.json()),
@@ -488,7 +530,7 @@ async function alterarConsulta(idConsulta) {
                 `<label for="descricao">Descrição:</label><br><textarea id="descricao" class="swal2-textarea">${consultaExistente.descricao}</textarea><br>` +
                 `<label for="duracaoConsulta">Duração:</label><br><input type="time" id="duracaoConsulta" value="${consultaExistente.duracaoConsulta}" class="swal2-input"><br>` +
                 `<label for="especificacaoMedica">Especialização Médica:</label><br><select id="especificacaoMedica" class="swal2-select">${especializacaoOptions}</select><br>` +
-                `<label for="medico">Médico:</label><br><select id="medico" class="swal2-select">${medicoOptions}</select><br>` +
+                `<label for="medico">Profissional:</label><br><select id="medico" class="swal2-select">${medicoOptions}</select><br>` +
                 `<label for="paciente">Paciente:</label><br><select id="paciente" class="swal2-select">${pacienteOptions}</select><br>` +
                 `<label for="statusConsulta">Status:</label><br><select id="statusConsulta" class="swal2-select">
                     <option value="1" ${consultaExistente.statusConsulta.id === 1 ? 'selected' : ''}>Agendada</option>
@@ -542,6 +584,7 @@ async function alterarConsulta(idConsulta) {
 // Inicialização da página
 (async function initialize() {
     console.log("Iniciando página de agendamentos...");
+    await buscarEspecificacoes();
     await buscarPacientesEMedicos();
     await buscarConsultas();
 
@@ -551,6 +594,9 @@ async function alterarConsulta(idConsulta) {
     }, 30000); // Intervalo de 30000 milissegundos (30 segundos)
 })();
 
+document.getElementById('procedimento').addEventListener('change', () => {
+    updateAvailableDoctors(); // refiltra profissionais pelo procedimento
+});
 // Eventos de mudança nos selects
 document.getElementById('dia').addEventListener('change', updateAvailableHours);
 document.getElementById('hora').addEventListener('change', () => {
@@ -567,7 +613,7 @@ async function BaixarExcelGeral() {
         const resposta = await fetch(`http://localhost:8080/mc/consultas/export/csv`, {
             method: 'GET',
             headers: {
-                "Accept": "text/csv" 
+                "Accept": "text/csv"
             }
         });
 
@@ -575,18 +621,18 @@ async function BaixarExcelGeral() {
             throw new Error(`Erro ao baixar o arquivo: ${resposta.statusText}`);
         }
 
-  
+
         const blob = await resposta.blob();
 
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'consultas.csv'; 
+        a.download = 'consultas.csv';
         document.body.appendChild(a);
         a.click();
         a.remove();
 
-    
+
         window.URL.revokeObjectURL(url);
     } catch (error) {
         console.error('Erro ao baixar o arquivo:', error);
@@ -597,7 +643,7 @@ async function BaixarExcelGeral() {
 
 async function baixarConsultaExcel(consultaId) {
     try {
-       
+
         const consultas = await buscarConsultas();
         const consulta = consultas.find(c => c.id === consultaId);
 
@@ -605,38 +651,38 @@ async function baixarConsultaExcel(consultaId) {
             throw new Error("Consulta não encontrada");
         }
 
- 
+
         const dadosExcel = [{
             Paciente: `${consulta.paciente.nome} ${consulta.paciente.sobrenome}`,
             "Data e Hora": formatarData(consulta.datahoraConsulta),
-            Médico: `${consulta.medico.nome} ${consulta.medico.sobrenome}`,
+            Profissional: `${consulta.medico.nome} ${consulta.medico.sobrenome}`,
             Especialização: consulta.especificacaoMedica.area,
             Status: consulta.statusConsulta.nomeStatus,
             Descrição: consulta.descricao
         }];
 
-     
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(dadosExcel); 
-        XLSX.utils.book_append_sheet(wb, ws, "Consulta"); 
 
-        
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(dadosExcel);
+        XLSX.utils.book_append_sheet(wb, ws, "Consulta");
+
+
         XLSX.writeFile(wb, `consulta_${consultaId}.xlsx`);
     } catch (error) {
         console.error("Erro ao baixar consulta em Excel:", error);
     }
-}function getConsultasAgendadas() {
+} function getConsultasAgendadas() {
     return consultas.filter(consulta => consulta.statusConsulta.nomeStatus === 'Agendada');
 }
 
 
 async function excluirUltimaConsulta() {
-    const consultasAgendadas = getConsultasAgendadas(); 
+    const consultasAgendadas = getConsultasAgendadas();
 
     if (consultasAgendadas.length > 0) {
-        const ultimaConsulta = consultasAgendadas[consultasAgendadas.length - 1]; 
+        const ultimaConsulta = consultasAgendadas[consultasAgendadas.length - 1];
 
-   
+
         Swal.fire({
             title: 'Tem certeza?',
             text: `Deseja excluir a última consulta agendada de ${ultimaConsulta.paciente.nome}?`,
@@ -649,7 +695,7 @@ async function excluirUltimaConsulta() {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    
+
                     const resposta = await fetch(`http://localhost:8080/mc/consultas/${ultimaConsulta.id}`, {
                         method: 'DELETE',
                         headers: {
@@ -659,10 +705,10 @@ async function excluirUltimaConsulta() {
                     });
 
                     if (resposta.ok) {
-                        
+
                         consultas = consultas.filter(consulta => consulta.id !== ultimaConsulta.id);
 
-                       
+
                         Swal.fire({
                             icon: 'success',
                             title: 'Consulta Excluída',
@@ -670,7 +716,7 @@ async function excluirUltimaConsulta() {
                             confirmButtonText: 'Ok'
                         });
 
-  
+
                         atualizarListagemConsultas();
                     } else {
                         throw new Error('Erro ao excluir a consulta no backend');
@@ -694,11 +740,11 @@ async function excluirUltimaConsulta() {
 }
 
 async function excluirPrimeiraConsulta() {
-    const consultasAgendadas = getConsultasAgendadas(); 
+    const consultasAgendadas = getConsultasAgendadas();
 
     if (consultasAgendadas.length > 0) {
-        const primeiraConsulta = consultasAgendadas[0]; 
-        
+        const primeiraConsulta = consultasAgendadas[0];
+
         Swal.fire({
             title: 'Tem certeza?',
             text: `Deseja excluir a primeira consulta agendada de ${primeiraConsulta.paciente.nome}?`,
@@ -711,8 +757,8 @@ async function excluirPrimeiraConsulta() {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-               
-                    const consultaId = Number(primeiraConsulta.id); 
+
+                    const consultaId = Number(primeiraConsulta.id);
                     console.log(consultaId)
                     const resposta = await fetch(`http://localhost:8080/mc/consultas/${consultaId}`, {
                         method: 'DELETE',
@@ -723,10 +769,10 @@ async function excluirPrimeiraConsulta() {
                     });
 
                     if (resposta.ok) {
-                        
+
                         consultas = consultas.filter(consulta => consulta.id !== primeiraConsulta.id);
 
-                        
+
                         Swal.fire({
                             icon: 'success',
                             title: 'Consulta Excluída',
@@ -734,7 +780,7 @@ async function excluirPrimeiraConsulta() {
                             confirmButtonText: 'Ok'
                         });
 
-                        
+
                         atualizarListagemConsultas();
                     } else {
                         throw new Error('Erro ao excluir a consulta no backend');
@@ -759,7 +805,7 @@ async function excluirPrimeiraConsulta() {
 
 function atualizarListagemConsultas() {
     buscarConsultas(); // Atualiza a lista de consultas na tela
-} 
+}
 
 
 function AnaliseConsultasx(consultaId) {

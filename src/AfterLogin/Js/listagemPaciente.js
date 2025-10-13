@@ -415,7 +415,7 @@ function filtrarConsultasPorPermissao() {
     const idMedico = parseInt(sessionStorage.getItem('ID_MEDICO'));
     const especificacaoMedica = sessionStorage.getItem('ESPECIFICACAO_MEDICA');
 
-    if (permissao === 'Médico' && idMedico) {
+    if (permissao === 'Profissional' && idMedico) {
         return consultasOriginais.filter(consulta => consulta.medico.id === idMedico);
     } else if (permissao === 'Supervisor') {
         return consultasOriginais.filter(consulta => consulta.especificacaoMedica.area === especificacaoMedica);
@@ -472,7 +472,7 @@ function abrirDetalhesTarefa(consulta) {
         <p><strong>Descrição:</strong> ${consulta.descricao}</p>
         <p><strong>Data e Hora:</strong> ${dataFormatada} às ${horaFormatada}</p>
         <p><strong>Paciente:</strong> ${consulta.paciente.nome} ${consulta.paciente.sobrenome}</p>
-        <p><strong>Médico:</strong> ${consulta.medico.nome} ${consulta.medico.sobrenome} - ${consulta.especificacaoMedica.area}</p>
+        <p><strong>Profissional:</strong> ${consulta.medico.nome} ${consulta.medico.sobrenome} - ${consulta.especificacaoMedica.area}</p>
         <p><strong>Status:</strong> ${consulta.statusConsulta.nomeStatus}</p>
         <p><strong>Duração:</strong> ${consulta.duracaoConsulta}</p>
     `;

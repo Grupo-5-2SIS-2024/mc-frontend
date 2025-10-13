@@ -16,7 +16,7 @@ const graficoGeral = new Chart(ctx, {
                 backgroundColor: '#ffcc00'
             },
             {
-                label: 'Médicos',
+                label: 'Profissionais',
                 data: [],
                 backgroundColor: '#006400'
             },
@@ -133,12 +133,12 @@ renderCalendar();
 
 async function buscarKPIsMedico() {
     try {
-        // Buscar o número total de médicos
+        // Buscar o número total de Profissionais
         const respostaTotalMedicos = await fetch('http://localhost:8080/mc/medicos');
         const listaMedicos = await respostaTotalMedicos.json();
         const totalMedicos = listaMedicos.length;
 
-        // Buscar o número de médicos ativos
+        // Buscar o número de Profissionais ativos
         const medicosAtivos = listaMedicos.filter(medico => medico.ativo).length;
 
         const respostaPacientesAtivos = await fetch("http://localhost:8080/mc/pacientes/ativos");
@@ -165,8 +165,8 @@ async function buscarKPIsMedico() {
 
 
 function atualizarNomeEFotoMedico() {
-    const nomeMedico = sessionStorage.getItem('NOME_MEDICO'); // Pega o nome do médico
-    const sobrenomeMedico = sessionStorage.getItem('SOBRENOME_MEDICO'); // Pega o sobrenome do médico
+    const nomeMedico = sessionStorage.getItem('NOME_MEDICO'); // Pega o nome do Profissional
+    const sobrenomeMedico = sessionStorage.getItem('SOBRENOME_MEDICO'); // Pega o sobrenome do Profissional
     const fotoMedico = sessionStorage.getItem('FOTO');
     var userAvatar = document.getElementById("avatar");
 
@@ -205,5 +205,5 @@ if (idMedico) {
     buscarKPIsMedico();
     gerenciarBotaoEditar()
 } else {
-    console.error('ID do médico não encontrado no sessionStorage.');
+    console.error('ID do Profissional não encontrado no sessionStorage.');
 }
