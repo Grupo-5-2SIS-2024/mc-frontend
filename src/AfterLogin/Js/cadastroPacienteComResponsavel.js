@@ -1,34 +1,37 @@
+// Base da API: usa localhost em dev, vazio em produção
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+
 const inputFile = document.querySelector("#picture__input");
 const pictureImage = document.querySelector(".picture__image");
 const pictureImageTxt = "Choose an image";
 
 // Verifique se inputFile e pictureImage existem antes de configurar os eventos
 if (inputFile && pictureImage) {
-  pictureImage.innerHTML = pictureImageTxt;
+    pictureImage.innerHTML = pictureImageTxt;
 
-  inputFile.addEventListener("change", function (e) {
-    const inputTarget = e.target;
-    const file = inputTarget.files[0];
+    inputFile.addEventListener("change", function (e) {
+        const inputTarget = e.target;
+        const file = inputTarget.files[0];
 
-    if (file) {
-      const reader = new FileReader();
+        if (file) {
+            const reader = new FileReader();
 
-      reader.addEventListener("load", function (e) {
-        const readerTarget = e.target;
+            reader.addEventListener("load", function (e) {
+                const readerTarget = e.target;
 
-        const img = document.createElement("img");
-        img.src = readerTarget.result;
-        img.classList.add("picture__img");
+                const img = document.createElement("img");
+                img.src = readerTarget.result;
+                img.classList.add("picture__img");
 
-        pictureImage.innerHTML = "";
-        pictureImage.appendChild(img);
-      });
+                pictureImage.innerHTML = "";
+                pictureImage.appendChild(img);
+            });
 
-      reader.readAsDataURL(file);
-    } else {
-      pictureImage.innerHTML = pictureImageTxt;
-    }
-  });
+            reader.readAsDataURL(file);
+        } else {
+            pictureImage.innerHTML = pictureImageTxt;
+        }
+    });
 }
 // Função para validar o cadastro do paciente
 function validarCadastro() {
@@ -239,7 +242,7 @@ async function cadastrarResponsavel() {
         };
 
         try {
-            const respostaCadastro = await fetch("/mc/responsaveis", {
+            const respostaCadastro = await fetch(`${API_BASE}/mc/responsaveis`, {
                 method: "POST",
                 body: JSON.stringify(dadosResponsavel),
                 headers: { "Content-Type": "application/json; charset=UTF-8" }
@@ -247,8 +250,8 @@ async function cadastrarResponsavel() {
 
             if (respostaCadastro.status === 201) {
                 const responsavelCadastrado = await respostaCadastro.json();
-                sessionStorage.setItem("idResponsavelCadastrado", responsavelCadastrado.id); 
-            
+                sessionStorage.setItem("idResponsavelCadastrado", responsavelCadastrado.id);
+
                 Swal.fire({
                     icon: 'success',
                     title: 'Responsável cadastrado com sucesso!',
@@ -336,7 +339,7 @@ async function cadastrarPacienteComResponsavel() {
         };
 
         try {
-            const respostaCadastro = await fetch("/mc/pacientes/ComResponsavel", {
+            const respostaCadastro = await fetch(`${API_BASE}/mc/pacientes/ComResponsavel`, {
                 method: "POST",
                 body: JSON.stringify(dadosPaciente),
                 headers: { "Content-Type": "application/json; charset=UTF-8" }

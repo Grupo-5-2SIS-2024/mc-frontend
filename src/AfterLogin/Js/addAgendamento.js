@@ -1,7 +1,3 @@
-
-
-
-
 // Definição dos novos slots de 50 minutos a partir de 06/10
 const SLOT_DURATION = '00:50:00';
 // Apenas horários de início (start times) conforme nova regra (manhã e tarde)
@@ -9,6 +5,9 @@ const SCHEDULE_SLOTS = [
     '08:00', '08:50', '09:40', '10:30', // manhã termina 11:20
     '13:40', '14:30', '15:20', '16:10', '17:00' // tarde termina 17:50 (encerrando 18:00)
 ];
+
+// Base da API: usa localhost em dev, vazio em produção
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
 
 document.addEventListener('DOMContentLoaded', () => {
     const diaInput = document.getElementById('dia');
@@ -21,20 +20,20 @@ document.addEventListener('DOMContentLoaded', () => {
     updateAvailableHours();
 });
 
-function formatarData(dataISO){
+function formatarData(dataISO) {
     const data = new Date(dataISO)
-    const dia = String(data.getDate()).padStart(2,'0');
-    const mes =String(data.getMonth() + 1). padStart(2,'0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
     const ano = data.getFullYear();
-    
-    const  horas = String(data.getHours()).padStart(2,'0')
-    const minutos = String(data.getMinutes()).padStart(2,'0')
-    const segundos = String(data.getSeconds()).padStart(2,'0')
-    
+
+    const horas = String(data.getHours()).padStart(2, '0')
+    const minutos = String(data.getMinutes()).padStart(2, '0')
+    const segundos = String(data.getSeconds()).padStart(2, '0')
+
     return `${dia}/${mes}/${ano} - ${horas}:${minutos}:${segundos}`
-    
-    
-    }
+
+
+}
 // Função para determinar o ícone com base no gênero do paciente
 function obterIconeGenero(genero) {
     if (genero.toLowerCase() === 'masculino') {
@@ -50,7 +49,7 @@ let consultas = []; // Variável global para armazenar as consultas
 async function buscarConsultas() {
     console.log("Buscando consultas...");
     try {
-        const resposta = await fetch("/mc/consultas");
+        const resposta = await fetch(`${API_BASE}/mc/consultas`);
         if (!resposta.ok) {
             throw new Error(`HTTP error! Status: ${resposta.status}`);
         }
@@ -72,19 +71,17 @@ async function buscarConsultas() {
                             <i class="fas fa-pen" onclick="alterarConsulta(${consulta.id})" title="Alterar Consulta"></i>
                             <i class="fas fa-trash" onclick="excluirConsulta(${consulta.id})" title="Cancelar Consulta"></i>
                             <i class="fas fa-download" onclick="baixarConsultaExcel(${consulta.id})" title="Baixar Excel da Consulta"></i>
-                            ${
-                                consulta.statusConsulta.nomeStatus === 'Agendada' 
-                                ? `<i class="fas fa-notes-medical" onclick="AnaliseConsultasx(${consulta.id})" title="Bloco De Notas"></i>` 
-                                : ''
-                            }
+                            ${consulta.statusConsulta.nomeStatus === 'Agendada'
+                    ? `<i class="fas fa-notes-medical" onclick="AnaliseConsultasx(${consulta.id})" title="Bloco De Notas"></i>`
+                    : ''
+                }
 
 
 
-                              ${
-                                consulta.statusConsulta.nomeStatus === 'Realizada' 
-                                ? `<i class="fas fa-eye" onclick="verFeedback(${consulta.id})" title="Visualizar Feedback"></i>`
-                                : ''
-                            }
+                              ${consulta.statusConsulta.nomeStatus === 'Realizada'
+                    ? `<i class="fas fa-eye" onclick="verFeedback(${consulta.id})" title="Visualizar Feedback"></i>`
+                    : ''
+                }
                         </div>
                     </div>
                 </div>
@@ -108,14 +105,14 @@ async function buscarPacientesEMedicos() {
     console.log("Buscando pacientes e médicos...");
 
     try {
-        const respostaPacientes = await fetch("/mc/pacientes");
+        const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes`);
         if (!respostaPacientes.ok) {
             throw new Error(`HTTP error! Status: ${respostaPacientes.status}`);
         }
         const pacientes = await respostaPacientes.json();
         console.log(pacientes);
 
-        const respostaMedicos = await fetch("/mc/medicos");
+        const respostaMedicos = await fetch(`${API_BASE}/mc/medicos`);
         if (!respostaMedicos.ok) {
             throw new Error(`HTTP error! Status: ${respostaMedicos.status}`);
         }
@@ -123,8 +120,8 @@ async function buscarPacientesEMedicos() {
         console.log(medicos);
 
         // Adiciona a opção padrão antes de popular as opções reais
-        populateSelect('paciente', [{nome: 'Selecione um Paciente', id: ''}, ...pacientes], 'nome', 'id');
-        populateSelect('medico', [{nome: 'Selecione um Médico', id: ''}, ...medicos], 'nome', 'id');
+        populateSelect('paciente', [{ nome: 'Selecione um Paciente', id: '' }, ...pacientes], 'nome', 'id');
+        populateSelect('medico', [{ nome: 'Selecione um Médico', id: '' }, ...medicos], 'nome', 'id');
     } catch (error) {
         console.error('Erro ao buscar pacientes e médicos:', error);
     }
@@ -134,7 +131,7 @@ async function buscarPacientesEMedicos() {
 function populateSelect(selectId, options, textKey = 'nome', valueKey = 'id') {
     const selectElement = document.getElementById(selectId);
     selectElement.innerHTML = ''; // Limpar opções existentes
-    
+
     // Verifica se a lista de opções é válida e não está vazia
     if (options.length === 0 || options[0] === 'Sem horários disponíveis') {
         const optionElement = document.createElement('option');
@@ -146,7 +143,7 @@ function populateSelect(selectId, options, textKey = 'nome', valueKey = 'id') {
 
     options.forEach(option => {
         const optionElement = document.createElement('option');
-        
+
         if (typeof option === 'string') {
             // Caso seja uma string, adiciona diretamente
             optionElement.textContent = option;
@@ -156,7 +153,7 @@ function populateSelect(selectId, options, textKey = 'nome', valueKey = 'id') {
             optionElement.textContent = option[textKey];
             optionElement.value = option[valueKey];
         }
-        
+
         selectElement.appendChild(optionElement);
     });
 }
@@ -172,7 +169,7 @@ async function getAvailableHours(dia) {
     // Monta um mapa horário -> quantidade de médicos ocupados
     const ocupadoPorHorario = {};
     consultasDoDia.forEach(c => {
-        const horaInicio = c.datahoraConsulta.split('T')[1].substring(0,5); // HH:MM
+        const horaInicio = c.datahoraConsulta.split('T')[1].substring(0, 5); // HH:MM
         ocupadoPorHorario[horaInicio] = (ocupadoPorHorario[horaInicio] || 0) + 1;
     });
 
@@ -181,12 +178,12 @@ async function getAvailableHours(dia) {
     // Ajuste: slot indisponível somente se TODOS os médicos estão ocupados naquele horário -> requer fetch de medicos
     let totalMedicos = 0;
     try {
-        const respMed = await fetch('/mc/medicos');
+        const respMed = await fetch(`${API_BASE}/mc/medicos`);
         if (respMed.ok) {
             const medicos = await respMed.json();
             totalMedicos = medicos.length;
         }
-    } catch(e) { console.warn('Falha ao obter total de médicos, assumindo 0 para lógica liberal.', e); }
+    } catch (e) { console.warn('Falha ao obter total de médicos, assumindo 0 para lógica liberal.', e); }
 
     const available = SCHEDULE_SLOTS.filter(slot => {
         // Se não conseguimos determinar total de médicos, não bloqueamos nenhum slot
@@ -209,10 +206,10 @@ async function updateAvailableHours() {
         // Monta opções com intervalo completo (inicio - fim)
         const options = availableHours.map(start => {
             if (start === 'Sem horários disponíveis') return start;
-            const [h,m] = start.split(':').map(Number);
-            const endDate = new Date(0,0,0,h,m+50,0);
-            const endH = String(endDate.getHours()).padStart(2,'0');
-            const endM = String(endDate.getMinutes()).padStart(2,'0');
+            const [h, m] = start.split(':').map(Number);
+            const endDate = new Date(0, 0, 0, h, m + 50, 0);
+            const endH = String(endDate.getHours()).padStart(2, '0');
+            const endM = String(endDate.getMinutes()).padStart(2, '0');
             return { label: `${start} - ${endH}:${endM}`, value: start };
         });
         select.innerHTML = '';
@@ -277,7 +274,7 @@ async function updateAvailableDoctors() {
     if (dia && hora) {
         try {
             const consultas = await buscarConsultas();
-            const respostaMedicos = await fetch("/mc/medicos");
+            const respostaMedicos = await fetch(`${API_BASE}/mc/medicos`);
             const medicos = await respostaMedicos.json();
 
             // Filtra os médicos que têm consultas no horário selecionado
@@ -287,7 +284,7 @@ async function updateAvailableDoctors() {
 
             // Médicos disponíveis são aqueles que não estão na lista de médicos ocupados
             const availableDoctors = medicos.filter(medico => !bookedDoctors.includes(medico.id));
-            
+
             // Popula o select com os médicos disponíveis
             populateSelect('medico', [{ nome: 'Selecione um Médico', id: '' }, ...availableDoctors], 'nome', 'id');
         } catch (error) {
@@ -303,7 +300,7 @@ async function updateAvailablePatients() {
     if (dia && hora) {
         try {
             const consultas = await buscarConsultas();
-            const respostaPacientes = await fetch("/mc/pacientes");
+            const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes`);
             const pacientes = await respostaPacientes.json();
 
             // Filtra os pacientes que têm consultas no horário selecionado
@@ -330,7 +327,7 @@ async function agendarConsulta() {
     const recorrente = document.getElementById('recorrente').checked; // Verifica se o checkbox está marcado
 
     try {
-        const respostaEspec = await fetch("/mc/medicos");
+        const respostaEspec = await fetch(`${API_BASE}/mc/medicos`);
         if (!respostaEspec.ok) {
             throw new Error(`HTTP error! Status: ${respostaEspec.status}`);
         }
@@ -362,7 +359,7 @@ async function agendarConsulta() {
 
         // Agendar a consulta original
         const dadosConsulta = criarDadosConsulta(dia);
-        const respostaCadastro = await fetch("/mc/consultas", {
+        const respostaCadastro = await fetch(`${API_BASE}/mc/consultas`, {
             method: "POST",
             body: JSON.stringify(dadosConsulta),
             headers: {
@@ -378,7 +375,7 @@ async function agendarConsulta() {
         // Se o checkbox de recorrente estiver marcado, agendar as próximas 30 semanas
         if (recorrente) {
             const dataOriginal = new Date(dia);
-            
+
             // Agendar para as próximas 30 semanas (7 dias de diferença entre cada consulta)
             for (let i = 1; i <= 30; i++) {
                 const novaData = new Date(dataOriginal);
@@ -388,7 +385,7 @@ async function agendarConsulta() {
                 const novaConsulta = criarDadosConsulta(novaDataISO);
 
                 // Faz a requisição para cadastrar a nova consulta
-                const respostaNovaConsulta = await fetch("/mc/consultas", {
+                const respostaNovaConsulta = await fetch(`${API_BASE}/mc/consultas`, {
                     method: "POST",
                     body: JSON.stringify(novaConsulta),
                     headers: {
@@ -426,7 +423,7 @@ async function excluirConsulta(idConsulta) {
 
     try {
         // Recupera todas as consultas
-        const respostaConsulta = await fetch(`/mc/consultas`, {
+        const respostaConsulta = await fetch(`${API_BASE}/mc/consultas`, {
             method: 'GET',
             headers: {
                 "Content-type": "application/json; charset=UTF-8",
@@ -474,7 +471,7 @@ async function excluirConsulta(idConsulta) {
             if (result.isConfirmed) {
                 try {
                     // Envia a requisição PUT para atualizar o status da consulta
-                    const resposta = await fetch(`/mc/consultas/${idConsulta}`, {
+                    const resposta = await fetch(`${API_BASE}/mc/consultas/${idConsulta}`, {
                         method: 'PUT',
                         body: JSON.stringify(consultaAtualizada),
                         headers: {
@@ -511,7 +508,7 @@ async function alterarConsulta(idConsulta) {
 
     try {
         // Buscar todas as consultas
-        const respostaConsulta = await fetch(`/mc/consultas`, {
+        const respostaConsulta = await fetch(`${API_BASE}/mc/consultas`, {
             method: 'GET',
             headers: {
                 "Content-type": "application/json; charset=UTF-8",
@@ -534,9 +531,9 @@ async function alterarConsulta(idConsulta) {
 
         // Buscar dados para preencher selects de Médicos, Pacientes e Especializações Médicas
         const [medicos, pacientes, especializacoes] = await Promise.all([
-            fetch("/mc/medicos").then(res => res.json()),
-            fetch("/mc/pacientes").then(res => res.json()),
-            fetch("/mc/especificacoes").then(res => res.json())
+            fetch(`${API_BASE}/mc/medicos`).then(res => res.json()),
+            fetch(`${API_BASE}/mc/pacientes`).then(res => res.json()),
+            fetch(`${API_BASE}/mc/especificacoes`).then(res => res.json())
         ]);
 
         // Preencher selects com opções
@@ -576,7 +573,7 @@ async function alterarConsulta(idConsulta) {
 
             try {
                 // Envia a requisição PUT para atualizar a consulta
-                const resposta = await fetch(`/mc/consultas/${idConsulta}`, {
+                const resposta = await fetch(`${API_BASE}/mc/consultas/${idConsulta}`, {
                     method: 'PUT',
                     body: JSON.stringify(consultaAtualizada),
                     headers: {
@@ -628,10 +625,10 @@ document.getElementById('agendar').addEventListener('click', agendarConsulta);
 
 async function BaixarExcelGeral() {
     try {
-        const resposta = await fetch(`/mc/consultas/export/csv`, {
+        const resposta = await fetch(`${API_BASE}/mc/consultas/export/csv`, {
             method: 'GET',
             headers: {
-                "Accept": "text/csv" 
+                "Accept": "text/csv"
             }
         });
 
@@ -639,18 +636,18 @@ async function BaixarExcelGeral() {
             throw new Error(`Erro ao baixar o arquivo: ${resposta.statusText}`);
         }
 
-  
+
         const blob = await resposta.blob();
 
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'consultas.csv'; 
+        a.download = 'consultas.csv';
         document.body.appendChild(a);
         a.click();
         a.remove();
 
-    
+
         window.URL.revokeObjectURL(url);
     } catch (error) {
         console.error('Erro ao baixar o arquivo:', error);
@@ -661,7 +658,7 @@ async function BaixarExcelGeral() {
 
 async function baixarConsultaExcel(consultaId) {
     try {
-       
+
         const consultas = await buscarConsultas();
         const consulta = consultas.find(c => c.id === consultaId);
 
@@ -669,7 +666,7 @@ async function baixarConsultaExcel(consultaId) {
             throw new Error("Consulta não encontrada");
         }
 
- 
+
         const dadosExcel = [{
             Paciente: `${consulta.paciente.nome} ${consulta.paciente.sobrenome}`,
             "Data e Hora": formatarData(consulta.datahoraConsulta),
@@ -679,28 +676,28 @@ async function baixarConsultaExcel(consultaId) {
             Descrição: consulta.descricao
         }];
 
-     
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(dadosExcel); 
-        XLSX.utils.book_append_sheet(wb, ws, "Consulta"); 
 
-        
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(dadosExcel);
+        XLSX.utils.book_append_sheet(wb, ws, "Consulta");
+
+
         XLSX.writeFile(wb, `consulta_${consultaId}.xlsx`);
     } catch (error) {
         console.error("Erro ao baixar consulta em Excel:", error);
     }
-}function getConsultasAgendadas() {
+} function getConsultasAgendadas() {
     return consultas.filter(consulta => consulta.statusConsulta.nomeStatus === 'Agendada');
 }
 
 
 async function excluirUltimaConsulta() {
-    const consultasAgendadas = getConsultasAgendadas(); 
+    const consultasAgendadas = getConsultasAgendadas();
 
     if (consultasAgendadas.length > 0) {
-        const ultimaConsulta = consultasAgendadas[consultasAgendadas.length - 1]; 
+        const ultimaConsulta = consultasAgendadas[consultasAgendadas.length - 1];
 
-   
+
         Swal.fire({
             title: 'Tem certeza?',
             text: `Deseja excluir a última consulta agendada de ${ultimaConsulta.paciente.nome}?`,
@@ -713,8 +710,8 @@ async function excluirUltimaConsulta() {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    
-                    const resposta = await fetch(`/mc/consultas/${ultimaConsulta.id}`, {
+
+                    const resposta = await fetch(`${API_BASE}/mc/consultas/${ultimaConsulta.id}`, {
                         method: 'DELETE',
                         headers: {
                             "Content-type": "application/json; charset=UTF-8",
@@ -723,10 +720,10 @@ async function excluirUltimaConsulta() {
                     });
 
                     if (resposta.ok) {
-                        
+
                         consultas = consultas.filter(consulta => consulta.id !== ultimaConsulta.id);
 
-                       
+
                         Swal.fire({
                             icon: 'success',
                             title: 'Consulta Excluída',
@@ -734,7 +731,7 @@ async function excluirUltimaConsulta() {
                             confirmButtonText: 'Ok'
                         });
 
-  
+
                         atualizarListagemConsultas();
                     } else {
                         throw new Error('Erro ao excluir a consulta no backend');
@@ -758,11 +755,11 @@ async function excluirUltimaConsulta() {
 }
 
 async function excluirPrimeiraConsulta() {
-    const consultasAgendadas = getConsultasAgendadas(); 
+    const consultasAgendadas = getConsultasAgendadas();
 
     if (consultasAgendadas.length > 0) {
-        const primeiraConsulta = consultasAgendadas[0]; 
-        
+        const primeiraConsulta = consultasAgendadas[0];
+
         Swal.fire({
             title: 'Tem certeza?',
             text: `Deseja excluir a primeira consulta agendada de ${primeiraConsulta.paciente.nome}?`,
@@ -775,10 +772,10 @@ async function excluirPrimeiraConsulta() {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-               
-                    const consultaId = Number(primeiraConsulta.id); 
+
+                    const consultaId = Number(primeiraConsulta.id);
                     console.log(consultaId)
-                    const resposta = await fetch(`/mc/consultas/${consultaId}`, {
+                    const resposta = await fetch(`${API_BASE}/mc/consultas/${consultaId}`, {
                         method: 'DELETE',
                         headers: {
                             "Content-type": "application/json; charset=UTF-8",
@@ -787,10 +784,10 @@ async function excluirPrimeiraConsulta() {
                     });
 
                     if (resposta.ok) {
-                        
+
                         consultas = consultas.filter(consulta => consulta.id !== primeiraConsulta.id);
 
-                        
+
                         Swal.fire({
                             icon: 'success',
                             title: 'Consulta Excluída',
@@ -798,7 +795,7 @@ async function excluirPrimeiraConsulta() {
                             confirmButtonText: 'Ok'
                         });
 
-                        
+
                         atualizarListagemConsultas();
                     } else {
                         throw new Error('Erro ao excluir a consulta no backend');
@@ -823,7 +820,7 @@ async function excluirPrimeiraConsulta() {
 
 function atualizarListagemConsultas() {
     buscarConsultas(); // Atualiza a lista de consultas na tela
-} 
+}
 
 
 function AnaliseConsultasx(consultaId) {

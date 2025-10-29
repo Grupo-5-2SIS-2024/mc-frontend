@@ -1,3 +1,6 @@
+// Base da API: usa localhost em dev, vazio em produção
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+
 // Variáveis globais para os gráficos
 let graficos = {};
 
@@ -23,7 +26,7 @@ async function fetchDados(url, filtros = {}) {
     }
 }
 async function atualizarGraficoRosca(filtros = {}) {
-    const url = '/mc/consultas/percentagem-concluidos';
+    const url = `${API_BASE}/mc/consultas/percentagem-concluidos`;
     try {
         // Busca os dados do endpoint com os filtros aplicados
         const dados = await fetchDados(url, filtros);
@@ -46,12 +49,12 @@ async function atualizarGraficoRosca(filtros = {}) {
                     !filtros.dataFim || new Date(detail.dataConsulta) <= new Date(filtros.dataFim);
 
                 return pacienteMatch &&
-                       medicoMatch &&
-                       especMedicaMatch &&
-                       generoMatch &&
-                       statusConsultaMatch &&
-                       dataInicioMatch &&
-                       dataFimMatch;
+                    medicoMatch &&
+                    especMedicaMatch &&
+                    generoMatch &&
+                    statusConsultaMatch &&
+                    dataInicioMatch &&
+                    dataFimMatch;
             });
 
             console.log('Detalhes filtrados:', detalhesFiltrados);
@@ -61,14 +64,14 @@ async function atualizarGraficoRosca(filtros = {}) {
             const pendentes = detalhesFiltrados.filter(detail => detail.statusConsultaID === '1').length; // Agendadas
             console.log(pendentes)
             const pendentes2 = dados.total
-           // const canceladas = detalhesFiltrados.filter(detail => detail.statusConsultaID === "3").length; // canceladas
+            // const canceladas = detalhesFiltrados.filter(detail => detail.statusConsultaID === "3").length; // canceladas
             console.log(`Concluídas: ${realizadas}, Agendadas: ${pendentes}`);
 
             // Atualizar o gráfico com os novos valores
             criarGrafico('GraficoRosca', 'doughnut', {
-                labels: ['Agendadas','Concluídas'],
+                labels: ['Agendadas', 'Concluídas'],
                 datasets: [{
-                    data: [ pendentes2,realizadas],
+                    data: [pendentes2, realizadas],
                     backgroundColor: ['#36A2EB', '#00FF00'],
                 }],
             });
@@ -95,7 +98,7 @@ async function atualizarGraficoRosca(filtros = {}) {
 
 
 async function atualizarGraficoBarraHorizontal(filtros = {}) {
-    const url = '/mc/consultas/altas-ultimos-seis-meses'; // URL do endpoint
+    const url = `${API_BASE}/mc/consultas/altas-ultimos-seis-meses`; // URL do endpoint
 
     try {
         // Busca os dados do back-end com os filtros
@@ -119,12 +122,12 @@ async function atualizarGraficoBarraHorizontal(filtros = {}) {
                         !filtros.dataFim || new Date(detail.dataConsulta) <= new Date(filtros.dataFim);
 
                     return pacienteMatch &&
-                           medicoMatch &&
-                           especMedicaMatch &&
-                           generoMatch &&
-                           statusConsultaMatch &&
-                           dataInicioMatch &&
-                           dataFimMatch;
+                        medicoMatch &&
+                        especMedicaMatch &&
+                        generoMatch &&
+                        statusConsultaMatch &&
+                        dataInicioMatch &&
+                        dataFimMatch;
                 });
             });
 
@@ -184,7 +187,7 @@ async function atualizarGraficoBarraHorizontal(filtros = {}) {
 async function atualizarGraficoBarraDePe(filtros = {}) {
     console.log("Iniciando atualização do gráfico de barras de pé");
 
-    const url = '/mc/consultas/horarios-ultimos-seis-meses';
+    const url = `${API_BASE}/mc/consultas/horarios-ultimos-seis-meses`;
     try {
         const dados = await fetchDados(url, filtros);
 
@@ -206,12 +209,12 @@ async function atualizarGraficoBarraDePe(filtros = {}) {
                         !filtros.dataFim || new Date(detail.dataConsulta) <= new Date(filtros.dataFim);
 
                     return pacienteMatch &&
-                           medicoMatch &&
-                           especMedicaMatch &&
-                           generoMatch &&
-                           statusConsultaMatch &&
-                           dataInicioMatch &&
-                           dataFimMatch;
+                        medicoMatch &&
+                        especMedicaMatch &&
+                        generoMatch &&
+                        statusConsultaMatch &&
+                        dataInicioMatch &&
+                        dataFimMatch;
                 });
             });
 
@@ -220,7 +223,7 @@ async function atualizarGraficoBarraDePe(filtros = {}) {
             // Preparação dos dados para o gráfico
             const labels = dadosFiltrados.map(item => `Mês ${item.mes} de ${item.ano}`);
             const agendados = dadosFiltrados.map(item => item.agendados);
-            const disponiveis = agendados.map(valor => 300- valor );
+            const disponiveis = agendados.map(valor => 300 - valor);
 
             const data = {
                 labels: labels,
@@ -266,7 +269,7 @@ async function atualizarGraficoBarraDePe(filtros = {}) {
 
 // Função para atualizar gráfico de Linhas
 async function atualizarGraficoLinhaFidelizacao(filtros = {}) {
-    const url = '/mc/pacientes/conversoes-ultimos-seis-meses';
+    const url = `${API_BASE}/mc/pacientes/conversoes-ultimos-seis-meses`;
     try {
         const dados = await fetchDados(url, filtros);
 
@@ -288,12 +291,12 @@ async function atualizarGraficoLinhaFidelizacao(filtros = {}) {
                         !filtros.dataFim || new Date(detail.dataConsulta) <= new Date(filtros.dataFim);
 
                     return pacienteMatch &&
-                           medicoMatch &&
-                           especMedicaMatch &&
-                           generoMatch &&
-                           statusConsultaMatch &&
-                           dataInicioMatch &&
-                           dataFimMatch;
+                        medicoMatch &&
+                        especMedicaMatch &&
+                        generoMatch &&
+                        statusConsultaMatch &&
+                        dataInicioMatch &&
+                        dataFimMatch;
                 });
 
                 // Recalcula totalConvertidos com base nos detalhes filtrados
@@ -339,7 +342,7 @@ async function buscarTabela(filtros = {}) {
 
     try {
         // Faz a requisição para o endpoint
-        const resposta = await fetch("/mc/consultas/agendamentosProximos");
+        const resposta = await fetch(`${API_BASE}/mc/consultas/agendamentosProximos`);
         if (!resposta.ok) {
             throw new Error(`Erro HTTP! Status: ${resposta.status}`);
         }
@@ -477,10 +480,10 @@ function limparFiltros() {
 }
 
 async function preencherCamposDeFiltro() {
-    const medicos = await fetchDados('/mc/medicos');
-    const pacientes = await fetchDados('/mc/pacientes');
-    const status = await fetchDados('/mc/statusConsultas');
-    const areas = await fetchDados('/mc/especificacoes');
+    const medicos = await fetchDados(`${API_BASE}/mc/medicos`);
+    const pacientes = await fetchDados(`${API_BASE}/mc/pacientes`);
+    const status = await fetchDados(`${API_BASE}/mc/statusConsultas`);
+    const areas = await fetchDados(`${API_BASE}/mc/especificacoes`);
 
     preencherSelect('filtroMedicoS', medicos, 'id', 'nome');
     preencherSelect('filtroPaciente', pacientes, 'id', 'nome');

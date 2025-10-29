@@ -197,12 +197,13 @@
     </main>
 
     <script>
+        const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
         let dataInicioAtual = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
         let consultasOriginais = []; // Para armazenar todas as consultas
 
         async function buscarMedicos() {
             try {
-                const resposta = await fetch("/mc/medicos");
+                const resposta = await fetch(`${API_BASE}/mc/medicos`);
                 if (!resposta.ok) {
                     throw new Error(`HTTP error! Status: ${resposta.status}`);
                 }
@@ -223,7 +224,7 @@
 
         async function buscarPacientes() {
             try {
-                const resposta = await fetch("/mc/pacientes");
+                const resposta = await fetch(`${API_BASE}/mc/pacientes`);
                 if (!resposta.ok) {
                     throw new Error(`HTTP error! Status: ${resposta.status}`);
                 }
@@ -244,7 +245,7 @@
 
         async function buscarEspecificacoesMedicas() {
             try {
-                const resposta = await fetch("/mc/especificacoes");
+                const resposta = await fetch(`${API_BASE}/mc/especificacoes`);
                 if (!resposta.ok) {
                     throw new Error(`HTTP error! Status: ${resposta.status}`);
                 }
@@ -265,7 +266,7 @@
 
         async function buscarStatusConsulta() {
             try {
-                const resposta = await fetch("/mc/statusConsultas");
+                const resposta = await fetch(`${API_BASE}/mc/statusConsultas`);
                 if (!resposta.ok) {
                     throw new Error(`HTTP error! Status: ${resposta.status}`);
                 }
@@ -286,7 +287,7 @@
 
         async function buscarConsultas() {
             try {
-                const resposta = await fetch("/mc/consultas");
+                const resposta = await fetch(`${API_BASE}/mc/consultas`);
                 if (!resposta.ok) {
                     throw new Error(`HTTP error! Status: ${resposta.status}`);
                 }
