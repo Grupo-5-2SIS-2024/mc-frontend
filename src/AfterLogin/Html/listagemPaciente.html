@@ -362,6 +362,7 @@
 
     <!-- Script do SweetAlert para perguntar sobre a idade do paciente -->
     <script>
+        const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
         // Captura o botão de "Adicionar Paciente"
         const addPacienteBtn = document.getElementById('addPacienteBtn');
 
@@ -398,7 +399,7 @@
                 if (cpfResponsavel) {
                     // Verificar se o CPF do responsável já existe
                     try {
-                        const response = await fetch(`http://localhost:8080/mc/responsaveis/cpf?cpf=${cpfResponsavel}`);
+                        const response = await fetch(`${API_BASE}/mc/responsaveis/cpf?cpf=${cpfResponsavel}`);
                         if (response.ok) {
                             const responsavel = await response.json();
 

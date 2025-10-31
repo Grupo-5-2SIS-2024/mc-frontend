@@ -1,30 +1,33 @@
+// Base da API: usa localhost em dev, vazio em produção
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+
 const inputFile = document.querySelector("#picture__input");
 const pictureImage = document.querySelector(".picture__image");
 const pictureImageTxt = "Choose an image";
 pictureImage.innerHTML = pictureImageTxt;
 
 inputFile.addEventListener("change", function (e) {
-  const inputTarget = e.target;
-  const file = inputTarget.files[0];
+    const inputTarget = e.target;
+    const file = inputTarget.files[0];
 
-  if (file) {
-    const reader = new FileReader();
+    if (file) {
+        const reader = new FileReader();
 
-    reader.addEventListener("load", function (e) {
-      const readerTarget = e.target;
+        reader.addEventListener("load", function (e) {
+            const readerTarget = e.target;
 
-      const img = document.createElement("img");
-      img.src = readerTarget.result;
-      img.classList.add("picture__img");
+            const img = document.createElement("img");
+            img.src = readerTarget.result;
+            img.classList.add("picture__img");
 
-      pictureImage.innerHTML = "";
-      pictureImage.appendChild(img);
-    });
+            pictureImage.innerHTML = "";
+            pictureImage.appendChild(img);
+        });
 
-    reader.readAsDataURL(file);
-  } else {
-    pictureImage.innerHTML = pictureImageTxt;
-  }
+        reader.readAsDataURL(file);
+    } else {
+        pictureImage.innerHTML = pictureImageTxt;
+    }
 });
 
 // Função para validar o cadastro do paciente
@@ -141,7 +144,7 @@ const toBase64 = file => new Promise((resolve, reject) => {
     reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
-  });
+});
 
 // Função para cadastrar paciente sem responsável
 async function cadastrarPacienteSemResponsavel() {
@@ -182,7 +185,7 @@ async function cadastrarPacienteSemResponsavel() {
         };
 
         try {
-            const respostaCadastro = await fetch("http://localhost:8080/mc/pacientes/SemResponsavel", {
+            const respostaCadastro = await fetch(`${API_BASE}/mc/pacientes/SemResponsavel`, {
                 method: "POST",
                 body: JSON.stringify(dadosPaciente),
                 headers: { "Content-Type": "application/json; charset=UTF-8" }

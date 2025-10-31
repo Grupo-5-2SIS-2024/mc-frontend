@@ -1,3 +1,6 @@
+// Base da API: usa localhost em dev, vazio em produção
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+
 let selectedImage = null; // Variável para armazenar a imagem inicial ou a nova imagem selecionada
 
 const inputFile = document.querySelector("#picture__input");
@@ -34,7 +37,7 @@ inputFile.addEventListener("change", function (e) {
 // Função para buscar os valores do paciente e preencher o formulário
 async function buscarValoresPaciente(id) {
     try {
-        const response = await fetch(`http://localhost:8080/mc/pacientes/${id}`);
+        const response = await fetch(`${API_BASE}/mc/pacientes/${id}`);
         if (!response.ok) throw new Error(`Erro ao buscar dados: ${response.statusText}`);
 
         const paciente = await response.json();
@@ -230,7 +233,7 @@ async function atualizarPaciente() {
         };
 
         try {
-            const response = await fetch(`http://localhost:8080/mc/pacientes/${id}`, {
+            const response = await fetch(`${API_BASE}/mc/pacientes/${id}`, {
                 method: "PUT",
                 body: JSON.stringify(dadosPaciente),
                 headers: { "Content-Type": "application/json; charset=UTF-8" }

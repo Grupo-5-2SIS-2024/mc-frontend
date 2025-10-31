@@ -1,3 +1,6 @@
+// Base da API: usa localhost em dev, vazio em produção
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+
 function abrirModalFiltro() {
     document.getElementById("modalFiltro").style.display = "block";
 }
@@ -10,7 +13,7 @@ function limparFiltros() {
     document.getElementById('filtroNome').value = '';
     document.getElementById('filtroEmail').value = '';
     document.getElementById('filtroEspecialidade').value = '';
-    document.getElementById('listaFiltrosAtivos').innerHTML = ''; 
+    document.getElementById('listaFiltrosAtivos').innerHTML = '';
     buscarMedicos()
 }
 
@@ -35,7 +38,8 @@ function aplicarFiltros() {
     });
 
     // Chama buscarMedicos com os valores dos filtros
-    buscarMedicos(nome, email, especialidade, status);
+    // Nota: status não estava definido aqui; passando vazio para evitar erro de referência
+    buscarMedicos(nome, email, especialidade, '');
 }
 
 async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFiltro = '', statusFiltro = '') {
@@ -44,7 +48,7 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
         const areaEspecializacaoSupervisor = sessionStorage.getItem("ESPECIFICACAO_MEDICA");
         const idMedicoLogado = Number(sessionStorage.getItem("ID_MEDICO"));
 
-        const resposta = await fetch("http://localhost:8080/mc/medicos");
+    const resposta = await fetch(`${API_BASE}/mc/medicos`);
         const listaMedicos = await resposta.json();
 
         let medicosFiltrados = listaMedicos.filter(medico => medico.id !== idMedicoLogado);
@@ -131,7 +135,7 @@ async function deletarMedico(id) {
     try {
         // Tenta deletar o acompanhamento
         try {
-            const resposta1 = await fetch(`http://localhost:8080/mc/acompanhamentos/${id}`, {
+            const resposta1 = await fetch(`${API_BASE}/mc/acompanhamentos/${id}`, {
                 method: 'DELETE'
             });
             if (!resposta1.ok && resposta1.status !== 404) {
@@ -143,7 +147,7 @@ async function deletarMedico(id) {
 
         // Tenta deletar as consultas
         try {
-            const resposta2 = await fetch(`http://localhost:8080/mc/consultas/${id}`, {
+            const resposta2 = await fetch(`${API_BASE}/mc/consultas/${id}`, {
                 method: 'DELETE'
             });
             if (!resposta2.ok && resposta2.status !== 404) {
@@ -155,7 +159,7 @@ async function deletarMedico(id) {
 
         // Tenta deletar as notas
         try {
-            const resposta3 = await fetch(`http://localhost:8080/mc/notas/${id}`, {
+            const resposta3 = await fetch(`${API_BASE}/mc/notas/${id}`, {
                 method: 'DELETE'
             });
             if (!resposta3.ok && resposta3.status !== 404) {
@@ -165,8 +169,8 @@ async function deletarMedico(id) {
             console.warn('Nenhuma nota para deletar ou erro ao deletar notas:', erro);
         }
 
-        // Deleta o Profissional
-        const resposta4 = await fetch(`http://localhost:8080/mc/medicos/${id}`, {
+    // Deleta o médico
+    const resposta4 = await fetch(`${API_BASE}/mc/medicos/${id}`, {
             method: 'DELETE'
         });
         if (!resposta4.ok) {
@@ -183,20 +187,22 @@ async function deletarMedico(id) {
 
 async function buscarKPIsMedico() {
     try {
-        // Buscar o número total de Profissionais
-        const respostaTotalMedicos = await fetch('http://localhost:8080/mc/medicos');
-        const listaMedicos = await respostaTotalMedicos.json();
-        const totalMedicos = listaMedicos.length;
+    // Buscar o número total de médicos
+    const respostaTotalMedicos = await fetch(`${API_BASE}/mc/medicos/todos`);
+    const listaMedicos = await respostaTotalMedicos.json();
+    const totalMedicos = listaMedicos.length;
 
-        // Buscar o número de Profissionais ativos
-        const medicosAtivos = listaMedicos.filter(medico => medico.ativo).length;
+    // Buscar o número de médicos ativos
+    const respostaMedicosAtivos = await fetch(`${API_BASE}/mc/medicos`);
+    const listaMedicosAtivos = await respostaMedicosAtivos.json();
+    const medicosAtivos = listaMedicosAtivos.length;
 
-        // Buscar o total de administradores
-        const respostaTotalAdmins = await fetch('http://localhost:8080/mc/medicos/totalAdministradores');
-        const totalAdmins = await respostaTotalAdmins.json();
+    // Buscar o total de administradores
+    const respostaTotalAdmins = await fetch(`${API_BASE}/mc/medicos/totalAdministradores`);
+    const totalAdmins = await respostaTotalAdmins.json();
 
-        // Buscar o número de administradores ativos
-        const respostaAdminsAtivos = await fetch('http://localhost:8080/mc/medicos/totalAdministradoresAtivos');
+    // Buscar o número de administradores ativos
+    const respostaAdminsAtivos = await fetch(`${API_BASE}/mc/medicos/totalAdministradoresAtivos`);
         const totalAdminsAtivos = await respostaAdminsAtivos.json();
 
         // Função para adicionar zero à esquerda se necessário
@@ -217,7 +223,7 @@ buscarKPIsMedico();
 
 async function buscarAreasClinica() {
     try {
-        const resposta = await fetch('http://localhost:8080/mc/especificacoes');
+    const resposta = await fetch(`${API_BASE}/mc/especificacoes`);
         const listaAreas = await resposta.json();
         console.log('Áreas recebidas:', listaAreas);
 
@@ -265,7 +271,7 @@ async function atualizarArea(areaId) {
     const novoNome = inputArea.value.trim();
 
     try {
-        const resposta = await fetch(`http://localhost:8080/mc/especificacoes/${areaId}`, {
+    const resposta = await fetch(`${API_BASE}/mc/especificacoes/${areaId}`, {
             method: "PUT",
             body: JSON.stringify({ area: novoNome }),
             headers: { "Content-type": "application/json; charset=UTF-8" }
@@ -321,7 +327,7 @@ async function cadastrarArea() {
     };
 
     try {
-        const respostaCadastro = await fetch('http://localhost:8080/mc/especificacoes', {
+    const respostaCadastro = await fetch(`${API_BASE}/mc/especificacoes`, {
             method: "POST",
             body: JSON.stringify(dadosArea),
             headers: { "Content-type": "application/json; charset=UTF-8" }

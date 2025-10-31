@@ -1,3 +1,6 @@
+// Base da API: usa localhost em dev, vazio em produção
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+
 function validarSessao() {
     var nomeMedico = sessionStorage.getItem("NOME_MEDICO");
     var sobrenomeMedico = sessionStorage.getItem("SOBRENOME_MEDICO");
@@ -16,23 +19,19 @@ function validarSessao() {
     }
 
     if (userAvatar && fotoPerfil != "null") {
-        userAvatar.src = fotoPerfil; 
-    }
-
-    // Atualizar o link "Home" baseado na permissão
-    var homeLink = document.querySelector("#side_items .side-item a");
-
-    if (homeLink) {
-        if (nivelPermissao === "Admin" || nivelPermissao === "Supervisor") {
-            homeLink.href = "homePosLoginAdm.html"; // Altera o link para a Home de Admin
-        } else if (nivelPermissao === "Medico") {
-            homeLink.href = "homePosLoginMedico.html"; // Mantém o link para a Home de Profissional
-        }
+        userAvatar.src = fotoPerfil;
     }
 
 
     if (nivelPermissao === "Admin") {
         // ADM pode acessar tudo, nenhuma ação necessária
+
+        const Dashboards = document.getElementById("Dash");
+
+        if (Dashboards) {
+            Dashboards.style.display = "none"
+        }
+
     } else if (nivelPermissao === "Supervisor") {
 
         // Supervisor: remover funções de adicionar pacientes e cadastrar colaboradores
@@ -42,6 +41,7 @@ function validarSessao() {
         const adicionarAreaBtn = document.getElementById("btnAdicionarArea");
         const adicionarConsultaBtn = document.getElementById("btnAdicionarConsulta");
         const Leads = document.getElementById("Lead");
+        const Dashboards = document.getElementById("Dash");
 
         if (cadastrarPacienteBtn) {
             cadastrarPacienteBtn.style.display = "none";
@@ -58,8 +58,14 @@ function validarSessao() {
         if (Leads) {
             Leads.style.display = "none"
         }
-    } else if (nivelPermissao === "Profissional") {
-        // Profissional: remover botoes de Colaboradores, Pacientes e Dashboards
+        if (Dashboards) {
+            Dashboards.style.display = "none"
+        }
+    } else if (nivelPermissao === "Médico") {
+        // Médico: remover botoes de Colaboradores, Pacientes e Dashboards
+        if (Dashboards) {
+            Dashboards.style.display = "none"
+        }
         const Colaboradores = document.getElementById("Colaborador");
         const Pacientes = document.getElementById("Paciente");
         const Dashboards = document.getElementById("Dash");
@@ -91,13 +97,13 @@ function deslogar() {
 
     var emailMedico = sessionStorage.getItem("EMAIL_MEDICO");
 
-  
+
     if (!emailMedico) {
         window.location = "../../Html/index.html";
         return;
     }
 
-    fetch('http://localhost:8080/mc/medicos/logout', {
+    fetch(`${API_BASE}/mc/medicos/logout`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -106,15 +112,15 @@ function deslogar() {
             email: emailMedico
         })
     })
-    .then(response => {
-        if (response.ok) {
-            sessionStorage.clear();
-            window.location = "../../Html/index.html";
-        } else {
-            console.error('Erro ao deslogar o Profissional.');
-        }
-    })
-    .catch(error => {
-        console.error('Erro na requisição de logout:', error);
-    });
+        .then(response => {
+            if (response.ok) {
+                sessionStorage.clear();
+                window.location = "../../Html/index.html";
+            } else {
+                console.error('Erro ao deslogar o médico.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro na requisição de logout:', error);
+        });
 }

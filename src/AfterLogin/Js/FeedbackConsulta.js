@@ -1,11 +1,14 @@
+// Base da API: usa localhost em dev, vazio em produção
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+
 const urlParams = new URLSearchParams(window.location.search);
 const consultaId = parseInt(urlParams.get('consultaId'), 10);  // Converte consultaId para número
 const viewOnly = urlParams.get('viewOnly') === 'true';
 
 // Variável para armazenar os dados da consulta
-let consultaAtual;async function carregarDadosConsulta() {
+let consultaAtual; async function carregarDadosConsulta() {
     try {
-        const resposta = await fetch("http://localhost:8080/mc/consultas");
+        const resposta = await fetch(`${API_BASE}/mc/consultas`);
         if (!resposta.ok) {
             throw new Error(`Erro ao buscar dados das consultas. Status: ${resposta.status}`);
         }
@@ -15,7 +18,7 @@ let consultaAtual;async function carregarDadosConsulta() {
 
         // Filtra a consulta com o ID correto
         consultaAtual = consultas.find(c => c.id === consultaId);
-        
+
         console.log("Consulta encontrada:", consultaAtual);
 
         if (!consultaAtual) {
@@ -47,7 +50,7 @@ let consultaAtual;async function carregarDadosConsulta() {
         if (viewOnly) {
             document.getElementById("resumo").disabled = true;
             document.getElementById("relatorio").disabled = true;
-            
+
             const salvarBtn = document.getElementById("salvarBtn");
             if (salvarBtn) {
                 salvarBtn.style.display = "none";  // Oculta o botão de salvar
@@ -65,7 +68,7 @@ let consultaAtual;async function carregarDadosConsulta() {
 // Função para buscar os dados do acompanhamento relacionado à consulta
 async function carregarDadosAcompanhamento() {
     try {
-        const resposta = await fetch("http://localhost:8080/mc/acompanhamentos");
+        const resposta = await fetch(`${API_BASE}/mc/acompanhamentos`);
         if (!resposta.ok) {
             throw new Error(`Erro ao buscar dados dos acompanhamentos. Status: ${resposta.status}`);
         }
@@ -99,7 +102,7 @@ async function concluirConsultaEAdicionarFeedback(idConsulta) {
 
     try {
         // Buscar todas as consultas
-        const respostaConsulta = await fetch(`http://localhost:8080/mc/consultas`, {
+        const respostaConsulta = await fetch(`${API_BASE}/mc/consultas`, {
             method: 'GET',
             headers: {
                 "Content-type": "application/json; charset=UTF-8",
@@ -129,7 +132,7 @@ async function concluirConsultaEAdicionarFeedback(idConsulta) {
         console.log("Dados da consulta a serem atualizados:", consultaAtualizada);
 
         // Envia a requisição PUT para atualizar a consulta
-        const respostaAtualizacao = await fetch(`http://localhost:8080/mc/consultas/${idConsulta}`, {
+        const respostaAtualizacao = await fetch(`${API_BASE}/mc/consultas/${idConsulta}`, {
             method: 'PUT',
             headers: {
                 "Content-Type": "application/json",
@@ -168,7 +171,7 @@ async function adicionarAcompanhamento(idConsulta) {
     console.log("Dados de feedback a serem enviados:", dadosFeedback);
 
     try {
-        const respostaFeedback = await fetch("http://localhost:8080/mc/acompanhamentos", {
+        const respostaFeedback = await fetch(`${API_BASE}/mc/acompanhamentos`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -206,7 +209,7 @@ async function adicionarAcompanhamento(idConsulta) {
 //             try {
 //                 //const fkConsulta = 4; // Substitua pelo ID da consulta correto
 //                 const response = await fetch(
-//                     `http://localhost:8080/mc/acompanhamentos/importar-feedback-txt/${consultaId}`,
+//                     `/mc/acompanhamentos/importar-feedback-txt/${consultaId}`,
 //                     {
 //                         method: "POST",
 //                         headers: { "Content-Type": "text/plain" },
@@ -241,7 +244,7 @@ async function adicionarAcompanhamento(idConsulta) {
 //     }
 // }
 
-  
+
 
 // // Função para atualizar os campos "Resumo" e "Relatório".
 // function atualizarCamposFeedback(fileContent) {

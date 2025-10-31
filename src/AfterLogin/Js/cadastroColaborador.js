@@ -1,3 +1,6 @@
+// Base da API: usa localhost em dev, vazio em produção
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+
 // inputs especiais
 
 const inputIcon = document.querySelector(".input__icon");
@@ -169,7 +172,7 @@ const toBase64 = file => new Promise((resolve, reject) => {
 });
 
 function carregarEspecificacoes() {
-  fetch("http://localhost:8080/mc/especificacoes")
+  fetch(`${API_BASE}/mc/especificacoes`)
     .then(response => response.json())
     .then(especificacoes => {
       const especificacaoSelect = document.getElementById("especificacao");
@@ -221,6 +224,11 @@ async function cadastrarColaborador() {
       return;
     }
 
+    let fotoBase64 = null;
+    if (fotoEscolhida) {
+      fotoBase64 = await toBase64(fotoEscolhida);
+    }
+
     const dadosColaborador = {
       "nome": nomeDigitado,
       "sobrenome": sobrenomeDigitado,
@@ -237,13 +245,13 @@ async function cadastrarColaborador() {
       "permissao": {
         "id": nivelAcessoId
       },
-      "foto": await toBase64(fotoEscolhida)
+      "foto": fotoBase64
     };
 
     console.log(dadosColaborador);
 
     try {
-      const respostaCadastro = await fetch("http://localhost:8080/mc/medicos", {
+      const respostaCadastro = await fetch(`${API_BASE}/mc/medicos`, {
         method: "POST",
         body: JSON.stringify(dadosColaborador),
         headers: { "Content-type": "application/json; charset=UTF-8" }

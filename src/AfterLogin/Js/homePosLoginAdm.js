@@ -1,3 +1,6 @@
+// Base da API: usa localhost em dev, vazio em produção
+const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+
 const idMedico = sessionStorage.getItem('ID_MEDICO');
 const nivelPermissao = sessionStorage.getItem('PERMISSIONAMENTO_MEDICO');
 const especificacao = sessionStorage.getItem('ESPECIFICACAO_MEDICA');
@@ -40,7 +43,7 @@ const graficoGeral = new Chart(ctx, {
 
 // Função para buscar dados do gráfico
 function fetchGraficoGeralData() {
-    fetch('http://localhost:8080/mc/medicos/graficoGeral')
+    fetch(`${API_BASE}/mc/medicos/graficoGeral`)
         .then(response => response.json())
         .then(data => {
             // Se o usuário for supervisor, filtra os dados pela especificação
@@ -77,8 +80,8 @@ function renderCalendar() {
     calendarDays.innerHTML = '';
     monthYear.innerText = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
-     // Altera o título baseado no nível de permissão
-     if (nivelPermissao === 'Supervisor') {
+    // Altera o título baseado no nível de permissão
+    if (nivelPermissao === 'Supervisor') {
         calendarioTitulo.innerHTML = 'Selecione o dia que você quer ver na sua <span>agenda</span>:'; // Define o novo título com span
     } else {
         calendarioTitulo.innerHTML = 'Selecione uma data para agendar uma <span>consulta</span>:'; // Título padrão para outros níveis
@@ -133,19 +136,21 @@ renderCalendar();
 
 async function buscarKPIsMedico() {
     try {
-        // Buscar o número total de Profissionais
-        const respostaTotalMedicos = await fetch('http://localhost:8080/mc/medicos');
+        // Buscar o número total de médicos
+        const respostaTotalMedicos = await fetch(`${API_BASE}/mc/medicos`);
         const listaMedicos = await respostaTotalMedicos.json();
         const totalMedicos = listaMedicos.length;
 
         // Buscar o número de Profissionais ativos
         const medicosAtivos = listaMedicos.filter(medico => medico.ativo).length;
 
-        const respostaPacientesAtivos = await fetch("http://localhost:8080/mc/pacientes/ativos");
+        // Buscar o número total de pacientes ativos
+        const respostaPacientesAtivos = await fetch(`${API_BASE}/mc/pacientes/ativos`);
         const pacientesAtivos = await respostaPacientesAtivos.json();
 
         // Buscar o número total de pacientes ativos
-        const respostaPacientes = await fetch("http://localhost:8080/mc/pacientes");
+        const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes`);
+
         const pacientes = await respostaPacientes.json();
         const totalpacientes = pacientes.length;
 
@@ -189,8 +194,8 @@ function gerenciarBotaoEditar() {
     const editProfileButton = document.getElementById("editProfile");
 
     if (nivelPermissao === 'Admin') {
-        editProfileButton.style.display = 'block'; 
-        editProfileButton.addEventListener('click', function() {
+        editProfileButton.style.display = 'block';
+        editProfileButton.addEventListener('click', function () {
             window.location.href = 'atualizarColaborador.html?id=' + idMedico; // Redireciona para a página de atualização
         });
     } else {

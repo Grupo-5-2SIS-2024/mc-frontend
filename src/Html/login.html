@@ -66,6 +66,8 @@
 
 <script>
 
+  const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+
   async function fazerLogin() {
     const valorEmailLogin = document.getElementById("email").value;
     const valorSenhaLogin = document.getElementById("password").value;
@@ -100,29 +102,46 @@
       email: valorEmailLogin,
       senha: valorSenhaLogin
     };
-    
-    try {
-        const respostaLogin = await fetch("http://localhost:8080/mc/medicos/login", {
-            method: "PUT",
+  try {
+    const respostaLogin = await fetch(`${API_BASE}/mc/medicos/login`, {
+            method: "POST",
             body: JSON.stringify(valoresLogin),
             headers: { "Content-type": "application/json; charset=UTF-8" }
         });
         if (respostaLogin.status === 200) {
             const json = await respostaLogin.json(); 
-            // Armazenamento de dados no sessionStorage
-            sessionStorage.setItem("ID_MEDICO", json.id);
-            sessionStorage.setItem("NOME_MEDICO", json.nome);
-            sessionStorage.setItem("SOBRENOME_MEDICO", json.sobrenome);
-            sessionStorage.setItem("EMAIL_MEDICO", json.email);
-            sessionStorage.setItem("TELEFONE_MEDICO", json.telefone);
-            sessionStorage.setItem("CARTEIRA_REPRESENTANTE", json.carterinha); 
-            sessionStorage.setItem("TIPO_MEDICO", json.tipo);
-            sessionStorage.setItem("ESPECIFICACAO_MEDICA", json.especificacaoMedica.area); 
-            sessionStorage.setItem("PERMISSIONAMENTO_MEDICO", json.permissao.nome); 
-            sessionStorage.setItem("CPF_MEDICO", json.cpf);
-            sessionStorage.setItem("ATIVO_MEDICO", json.ativo);
-            sessionStorage.setItem("DT_NASC", json.dataNascimento);
-            sessionStorage.setItem("FOTO", json.foto);
+            // Armazenamento de dados no sessionStorage (com tratamento de nulos)
+            const toSafeString = (v) => {
+              if (v === null || v === undefined) return '';
+              if (typeof v === 'object') return '';
+              return String(v);
+            };
+
+            const get = (obj, path, fallback = '') => {
+              try {
+                const value = path.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : undefined), obj);
+                return toSafeString(value ?? fallback);
+              } catch (_) { return toSafeString(fallback); }
+            };
+
+            sessionStorage.setItem("ID_MEDICO", toSafeString(json?.id));
+            sessionStorage.setItem("NOME_MEDICO", toSafeString(json?.nome));
+            sessionStorage.setItem("SOBRENOME_MEDICO", toSafeString(json?.sobrenome));
+            sessionStorage.setItem("EMAIL_MEDICO", toSafeString(json?.email));
+            sessionStorage.setItem("TELEFONE_MEDICO", toSafeString(json?.telefone));
+            sessionStorage.setItem("CARTEIRA_REPRESENTANTE", toSafeString(json?.carterinha)); 
+            sessionStorage.setItem("TIPO_MEDICO", toSafeString(json?.tipo));
+            sessionStorage.setItem("ESPECIFICACAO_MEDICA", get(json, 'especificacaoMedica.area'));
+            sessionStorage.setItem("PERMISSIONAMENTO_MEDICO", get(json, 'permissao.nome'));
+            sessionStorage.setItem("CPF_MEDICO", toSafeString(json?.cpf));
+            sessionStorage.setItem("ATIVO_MEDICO", toSafeString(json?.ativo));
+            sessionStorage.setItem("DT_NASC", toSafeString(json?.dataNascimento));
+            // FOTO com fallback para imagem padrão se vier vazia/nula
+            {
+              const fotoBruta = toSafeString(json?.foto).trim();
+              const fotoFinal = fotoBruta ? fotoBruta : '../AfterLogin/Assets/perfil.jpeg';
+              sessionStorage.setItem("FOTO", fotoFinal);
+            }
             Swal.fire({
                 icon: 'success',
                 title: 'Login bem-sucedido!',
@@ -130,12 +149,7 @@
                 showConfirmButton: false,
                 timer: 1500
             }).then(() => {
-                // Verificação de permissão e redirecionamento
-                if (json.permissao.nome === "Admin" || json.permissao.nome === "Supervisor") {
-                    window.location.href = "../AfterLogin/Html/homePosLoginAdm.html";
-                } else if (json.permissao.nome === "Profissional") {
-                    window.location.href = "../AfterLogin/Html/homePosLoginMedico.html";
-                }
+                    window.location.href = "/AfterLogin/Html/homePosLoginMedico.html";
             });
         } else {
             // Tratamento de erros de login

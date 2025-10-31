@@ -87,7 +87,8 @@
 
     <main>
     <div class="grid-container">
-        <div class="kpis">
+        <!-- Container KPIs Médico (padrão) -->
+        <div id="medicoKpis" class="kpis">
             <div id="fotoMedico" class="foto-medico-container">
                 <img id="userAvatar" src="../Assets/perfil.jpeg" alt="Foto do Profissional" class="foto-medico">
                 <p class="nome-medico"></p>
@@ -113,13 +114,40 @@
             </div>
         </div>
 
+        <!-- Container KPIs Admin (substitui quando perfil for Admin) -->
+        <div id="adminKpis" class="kpis" style="display:none">
+            <div id="fotoAdmin" class="foto-medico-container">
+                <img id="userAvatarAdmin" src="../Assets/perfil.jpeg" alt="Foto do Admin" class="foto-medico">
+                <p class="nome-medico"></p>
+                <span class="especialidade"></span>
+            </div>
+            <div class="kpi-items" id="kpiAdminCards">
+                <div class="kpi-item">
+                    <p id="kpiTotalMedicos">00</p>
+                    <h3>Total Médicos</h3>
+                </div>
+                <div class="kpi-item">
+                    <p id="kpiMedicosAtivos">00</p>
+                    <h3>Médicos Ativos</h3>
+                </div>
+                <div class="kpi-item">
+                    <p id="kpiTotalPacientes">00</p>
+                    <h3>Total Pacientes</h3>
+                </div>
+                <div class="kpi-item">
+                    <p id="kpiPacientesAtivos">00</p>
+                    <h3>Pacientes Ativos</h3>
+                </div>
+            </div>
+        </div>
+
         <div class="shortcuts">
             <h2>Consultas Restantes na Semana</h2>
             <p id="consultasRestantesSemana" class="shortcut-number">0</p>
         </div>
 
         <div class="agenda">
-            <h2>Agenda de Consultas</h2>
+            <h2>Painel do Dia</h2>
             <table>
                 <thead>
                     <tr>
