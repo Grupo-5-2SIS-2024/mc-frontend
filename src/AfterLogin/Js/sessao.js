@@ -1,6 +1,3 @@
-// Base da API: usa localhost em dev, vazio em produção
-const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
-
 function validarSessao() {
     var nomeMedico = sessionStorage.getItem("NOME_MEDICO");
     var sobrenomeMedico = sessionStorage.getItem("SOBRENOME_MEDICO");

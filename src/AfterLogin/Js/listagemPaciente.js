@@ -222,15 +222,36 @@ async function buscarKPIsPaciente() {
     try {
         const [porcentagemABA, pacientesAtivos, pacientesUltimoTrimestre, agendamentosVencidos] = await Promise.all([
             fetch(`${API_BASE}/mc/pacientes/porcentagem-aba`).then(r => r.json()),
-            fetch(`${API_BASE}/mc/pacientes/ativos`).then(r => r.json()),
+            fetch(`${API_BASE}/mc/pacientes`).then(r => r.json()),
             fetch(`${API_BASE}/mc/pacientes/ultimo-trimestre`).then(r => r.json()),
             fetch(`${API_BASE}/mc/pacientes/agendamentos-vencidos`).then(r => r.json())
         ]);
 
-        document.querySelector(".cardKpi:nth-child(1) .kpiNumber").textContent = `${parseFloat(porcentagemABA).toFixed(1)}%`;
-        document.querySelector(".cardKpi:nth-child(2) .kpiNumber").textContent = pacientesAtivos.toString().padStart(2, '0');
-        document.querySelector(".cardKpi:nth-child(3) .kpiNumber").textContent = pacientesUltimoTrimestre.toString().padStart(2, '0');
-        document.querySelector(".cardKpi:nth-child(4) .kpiNumber").textContent = agendamentosVencidos.toString().padStart(2, '0');
+        // Normaliza retornos para números evitando render de [object Object]
+        const pctAba = typeof porcentagemABA === 'number'
+            ? porcentagemABA
+            : Number((porcentagemABA && typeof porcentagemABA === 'object'
+                ? (porcentagemABA.percentual ?? porcentagemABA.valor ?? porcentagemABA.porcentagem)
+                : porcentagemABA) || 0);
+
+        const ativosCount = Array.isArray(pacientesAtivos)
+            ? pacientesAtivos.length
+            : Number(pacientesAtivos ?? 0);
+
+        const ultTrimestreCount = Array.isArray(pacientesUltimoTrimestre)
+            ? pacientesUltimoTrimestre.length
+            : Number(pacientesUltimoTrimestre ?? 0);
+
+        const vencidosCount = Array.isArray(agendamentosVencidos)
+            ? agendamentosVencidos.length
+            : Number(agendamentosVencidos ?? 0);
+
+        const format2 = (n) => String(Number.isFinite(n) ? n : 0).padStart(2, '0');
+
+        document.querySelector(".cardKpi:nth-child(1) .kpiNumber").textContent = `${Number.isFinite(pctAba) ? pctAba.toFixed(1) : '0.0'}%`;
+        document.querySelector(".cardKpi:nth-child(2) .kpiNumber").textContent = format2(ativosCount);
+        document.querySelector(".cardKpi:nth-child(3) .kpiNumber").textContent = format2(ultTrimestreCount);
+        document.querySelector(".cardKpi:nth-child(4) .kpiNumber").textContent = format2(vencidosCount);
     } catch (error) {
         console.error('Erro ao buscar KPIs:', error);
     }

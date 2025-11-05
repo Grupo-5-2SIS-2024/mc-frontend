@@ -75,10 +75,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             const listaMedicosAtivos = await respostaMedicosAtivos.json();
             const medicosAtivos = listaMedicosAtivos.length;
 
-            const respostaPacientesAtivos = await fetch(`${API_BASE}/mc/pacientes/ativos`);
+            const respostaPacientesAtivos = await fetch(`${API_BASE}/mc/pacientes`);
             const pacientesAtivos = await respostaPacientesAtivos.json();
 
-            const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes`);
+            const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes/todos`);
             const pacientes = await respostaPacientes.json();
             const totalPacientes = pacientes.length;
 

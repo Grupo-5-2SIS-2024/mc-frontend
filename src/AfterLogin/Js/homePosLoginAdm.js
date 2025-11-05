@@ -148,10 +148,10 @@ async function buscarKPIsMedico() {
         const respostaPacientesAtivos = await fetch(`${API_BASE}/mc/pacientes/ativos`);
         const pacientesAtivos = await respostaPacientesAtivos.json();
 
-        // Buscar o número total de pacientes ativos
-        const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes`);
+    // Buscar o número total de pacientes (todos, sem filtro de ativo)
+    const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes/todos`);
 
-        const pacientes = await respostaPacientes.json();
+    const pacientes = await respostaPacientes.json();
         const totalpacientes = pacientes.length;
 
         // Função para adicionar zero à esquerda se necessário
