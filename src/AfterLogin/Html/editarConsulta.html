@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiclinics | Editar Consulta</title>
+    <link rel="stylesheet" href="../Css/Sidebar.css">
+    <link rel="stylesheet" href="../Css/editarConsulta.css">
+    <link rel="shortcut icon" href="../../Assets/logo_Multclinics_branca_sem_nome.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+    <i id="hamburger-menu" class="fa-solid fa-bars"></i>
+    <div id="menu-overlay" class="menu-overlay">
+        <ul>
+            <li><a href="homePosLoginMedico.html">Home</a></li>
+            <li><a href="calendario.html">Agendamento</a></li>
+            <li><a href="listagemColaborador.html">Colaborador</a></li>
+            <li><a href="listagemPaciente.html">Paciente</a></li>
+            <li><a href="dashboards.html">Dashboards</a></li>
+            <li><a href="listagemLead.html">Leads</a></li>
+        </ul>
+    </div>
+    <nav id="sidebar">
+        <div id="sidebar_content">
+            <div id="user"> <img src="../Assets/perfil.jpeg" id="user_avatar" alt="Avatar">
+                <p id="user_infos"> <span id="user_nome" class="item-description">Silvia</span> <span
+                        id="user_permissao" class="item-description">ADM</span> </p>
+            </div>
+            <ul id="side_items">
+                <li class="side-item"><a href="homePosLoginMedico.html"><i class="fa-solid fa-home"></i><span
+                            class="item-description">Home</span></a></li>
+                <li class="side-item active"><a href="calendario.html"><i class="fa-solid fa-calendar"></i><span
+                            class="item-description">Agendamento</span></a></li>
+                <li class="side-item"><a href="listagemColaborador.html"><i class="fa-solid fa-user"></i><span
+                            class="item-description">Colaborador</span></a></li>
+                <li class="side-item"><a href="listagemPaciente.html"><i class="fa-solid fa-hospital-user"></i><span
+                            class="item-description">Paciente</span></a></li>
+                <li class="side-item"><a href="dashboards.html"><i class="fa-solid fa-chart-line"></i><span
+                            class="item-description">Dashboards</span></a></li>
+                <li class="side-item"><a href="listagemLead.html"><i class="fa-solid fa-filter"></i><span
+                            class="item-description">Leads</span></a></li>
+            </ul> <button id="open_btn"><i id="open_btn_icon" class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <div id="logout"> <button onclick="deslogar()" id="logout_btn"><i
+                    class="fa-solid fa-right-from-bracket"></i><span class="item-description">Logout</span></button>
+        </div>
+    </nav>
+    <main>
+        <div class="ContainerForm">
+            <h1>Atualize os dados da <span class="tituloAzul">Consulta</span></h1>
+            <div class="inputs_Container">
+                <div class="col">
+                    <div class="input">
+                        <input class="input__field" id="descricao" type="text" required>
+                        <label for="descricao" class="input__label">Descrição</label>
+                        <small class="error" id="erro-descricao"></small>
+                    </div>
+
+                    <div class="input">
+                        <input class="input__field" id="data" type="date" required>
+                        <label for="data" class="input__labelDate">Data</label>
+                        <small class="error" id="erro-data"></small>
+                    </div>
+
+                    <div class="input">
+                        <input class="input__field" id="hora" type="time" required>
+                        <label for="hora" class="input__labelDate">Hora</label>
+                        <small class="error" id="erro-hora"></small>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="input">
+                        <select class="input__field" id="medico" required></select>
+                        <label for="medico" class="input__label">Profissional</label>
+                        <small class="error" id="erro-medico"></small>
+                    </div>
+
+                    <div class="input">
+                        <select class="input__field" id="especificacao" required></select>
+                        <label for="especificacao" class="input__label">Área de Consulta</label>
+                        <small class="error" id="erro-especificacao"></small>
+                    </div>
+
+                    <div class="input">
+                        <select class="input__field" id="status" required></select>
+                        <label for="status" class="input__label">Status</label>
+                        <small class="error" id="erro-status"></small>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="input">
+                        <select class="input__field" id="paciente" required></select>
+                        <label for="paciente" class="input__label">Paciente</label>
+                        <small class="error" id="erro-paciente"></small>
+                    </div>
+
+                    <div class="input">
+                        <input class="input__field" id="duracao" type="time" step="1" required>
+                        <label for="duracao" class="input__labelDate">Duração</label>
+                        <small class="error" id="erro-duracao"></small>
+                    </div>
+
+                    <div class="actions">
+                        <button class="btnPrimario" id="btnAtualizar" type="button">Atualizar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="../Js/funcoesPadroes.js"></script>
+    <script src="../Js/editarConsulta.js"></script>
+    <script src="../Js/sessao.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</body>
+
+</html>

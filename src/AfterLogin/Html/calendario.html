@@ -12,7 +12,7 @@
 </head>
 
 <body>
-     <i id="hamburger-menu" class="fa-solid fa-bars"></i>
+    <i id="hamburger-menu" class="fa-solid fa-bars"></i>
 
     <div id="menu-overlay" class="menu-overlay">
         <ul>
@@ -111,7 +111,8 @@
                 <div class="header">
                     <h2>Veja o seu <span class="highlight">Calendário</span></h2>
                     <div class="buttons">
-                        <button class="filter-button" id="btnAdicionarConsulta"><a href="addAgendamento.html">Adicionar Consulta</a></button>
+                        <button class="filter-button" id="btnAdicionarConsulta"><a href="addAgendamento.html">Adicionar
+                                Consulta</a></button>
                         <button class="filter-button" onclick="abrirModalFiltro()"><i class="fas fa-filter"></i>
                             Filtrar</button>
                     </div>
@@ -175,8 +176,12 @@
                 </div>
 
                 <!-- Modal de Detalhes da Tarefa -->
+
                 <div id="modalDetalhes" class="modal">
                     <div class="modal-content">
+                        <button id="btnEditarConsulta" class="edit-button" title="Editar" type="button" aria-label="Editar">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
                         <span class="close" onclick="fecharModalDetalhes()">&times;</span>
                         <h3>Detalhes da Consulta</h3>
                         <div id="detalhesTarefa"></div>
@@ -423,7 +428,7 @@
             await buscarEspecificacoesMedicas();
             await buscarStatusConsulta();
             await buscarConsultas();
-            
+
             dataInicioAtual = obterInicioDaSemana(new Date());
             atualizarDisplayData(dataInicioAtual);
 
@@ -505,6 +510,10 @@
                 <p><strong>Status:</strong> ${consulta.statusConsulta.nomeStatus}</p>
                 <p><strong>Duração:</strong> ${consulta.duracaoConsulta}</p>
             `;
+            const btnEditar = document.getElementById('btnEditarConsulta');
+            btnEditar.onclick = () => {
+                window.location.href = `editarConsulta.html?id=${consulta.id}`;
+            };
             document.getElementById('modalDetalhes').style.display = 'flex';
         }
 
