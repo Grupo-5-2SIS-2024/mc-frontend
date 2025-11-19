@@ -49,9 +49,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        if (fotoMedico && fotoMedico !== 'null') {
-            if (userAvatar) userAvatar.src = fotoMedico;
-            if (userAvatarAdmin) userAvatarAdmin.src = fotoMedico;
+        // Normalize and assign fotoMedico to avoid incorrect relative resolution (e.g., AfterLogin/AfterLogin/...)
+        function normalizeFotoPath(foto) {
+            if (!foto || foto === 'null') return `${window.location.origin}/AfterLogin/Assets/perfil.jpeg`;
+            if (/^https?:\/\//i.test(foto)) return foto;
+            if (foto.startsWith('/')) return window.location.origin + foto;
+            if (foto.startsWith('.')) {
+                const a = document.createElement('a');
+                a.href = foto;
+                return a.href;
+            }
+            return `${window.location.origin}/${foto.replace(/^\/+/, '')}`;
+        }
+
+        if (userAvatar || userAvatarAdmin) {
+            const src = normalizeFotoPath(fotoMedico);
+            if (userAvatar) {
+                userAvatar.src = src;
+                userAvatar.onerror = () => { userAvatar.onerror = null; userAvatar.src = `${window.location.origin}/AfterLogin/Assets/perfil.jpeg`; };
+            }
+            if (userAvatarAdmin) {
+                userAvatarAdmin.src = src;
+                userAvatarAdmin.onerror = () => { userAvatarAdmin.onerror = null; userAvatarAdmin.src = `${window.location.origin}/AfterLogin/Assets/perfil.jpeg`; };
+            }
         }
 
         if (nivelPermissao) {
@@ -111,6 +131,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const fimDaSemana = new Date(hoje);
         fimDaSemana.setDate(hoje.getDate() + diasParaDomingo);
 
+        // Helper para status com fallback quando statusConsulta for null
+        const getStatusNome = (c) => c?.statusConsulta?.nomeStatus ?? 'Agendada';
+
         // Filtra consultas para hoje (qualquer status)
         const consultasHoje = consultas.filter(c => {
             const dataConsulta = new Date(c.datahoraConsulta);
@@ -121,13 +144,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Consultas RESTANTES na semana: apenas status Agendada e a partir de agora até o fim da semana
         const consultasSemana = consultas.filter(c => {
             const dataConsulta = new Date(c.datahoraConsulta);
-            const status = c.statusConsulta?.nomeStatus;
+            const status = getStatusNome(c);
             return status === 'Agendada' && dataConsulta >= agora && dataConsulta <= fimDaSemana;
         }).length;
 
-        const consultasMarcadas = consultas.filter(c => c.statusConsulta?.nomeStatus === 'Agendada').length;
-        const consultasConcluidas = consultas.filter(c => c.statusConsulta?.nomeStatus === 'Realizada').length;
-        const consultasCanceladas = consultas.filter(c => c.statusConsulta?.nomeStatus === 'Cancelada').length;
+        const consultasMarcadas = consultas.filter(c => getStatusNome(c) === 'Agendada').length;
+        const consultasConcluidas = consultas.filter(c => getStatusNome(c) === 'Atendida').length;
+        const consultasCanceladas = consultas.filter(c => getStatusNome(c) === 'Cancelada').length;
 
         document.getElementById('consultasHoje').textContent = consultasHoje;
         document.getElementById('consultasMarcadas').textContent = consultasMarcadas;
@@ -163,10 +186,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             return dt.getTime() === hoje.getTime();
         };
 
-        // Filtra apenas consultas do dia de hoje com status Agendada
+        // Filtra apenas consultas do dia de hoje com status Agendada (trata status null como 'Agendada')
         const consultasHoje = consultas
             .filter(c => c && c.datahoraConsulta && isHoje(c.datahoraConsulta))
-            .filter(c => c.statusConsulta && c.statusConsulta.nomeStatus === 'Agendada')
+            .filter(c => (c?.statusConsulta?.nomeStatus ?? 'Agendada') === 'Agendada')
             .sort((a, b) => new Date(a.datahoraConsulta) - new Date(b.datahoraConsulta));
 
         if (consultasHoje.length === 0) {
@@ -198,12 +221,117 @@ document.addEventListener('DOMContentLoaded', async () => {
             for (const consulta of grupos.get(hora)) {
                 const row = document.createElement('tr');
                 const horaExata = new Date(consulta.datahoraConsulta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                row.innerHTML = `
-                    <td>${horaExata}</td>
-                    <td>${consulta.paciente?.nome || ''} ${consulta.paciente?.sobrenome || ''}</td>
-                    <td>${consulta.statusConsulta?.nomeStatus || ''}</td>
-                `;
+                // Build cells: horario, paciente, status, acoes
+                const tdHora = document.createElement('td'); tdHora.textContent = horaExata;
+                const tdPaciente = document.createElement('td'); tdPaciente.textContent = `${consulta.paciente?.nome || ''} ${consulta.paciente?.sobrenome || ''}`;
+                const tdStatus = document.createElement('td');
+                // create a dedicated element for the status text and a separate container for action buttons
+                const spanStatusText = document.createElement('span');
+                spanStatusText.className = 'status-text';
+                // Show 'Agendada' when status is null so items remain visible
+                spanStatusText.textContent = consulta.statusConsulta?.nomeStatus ?? 'Agendada';
+                const divStatusActions = document.createElement('div');
+                divStatusActions.className = 'status-actions';
+                tdStatus.appendChild(spanStatusText);
+                tdStatus.appendChild(divStatusActions);
+
+                // Only show action buttons for 'Agendada' appointments (treat null status as 'Agendada')
+                if ((consulta?.statusConsulta?.nomeStatus ?? 'Agendada') === 'Agendada') {
+                    const btnAtendido = document.createElement('button');
+                    btnAtendido.className = 'btn-status atendido';
+                    btnAtendido.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i>';
+                    btnAtendido.title = 'Atendida';
+                    btnAtendido.setAttribute('aria-label', 'Atendida');
+
+                    const btnDesmarcado = document.createElement('button');
+                    btnDesmarcado.className = 'btn-status desmarcado';
+                    btnDesmarcado.innerHTML = '<i class="fa-solid fa-ban" aria-hidden="true"></i>';
+                    btnDesmarcado.title = 'Cancelada';
+                    btnDesmarcado.setAttribute('aria-label', 'Cancelada');
+
+                    const btnFalta = document.createElement('button');
+                    btnFalta.className = 'btn-status falta';
+                    btnFalta.innerHTML = '<i class="fa-solid fa-user-clock" aria-hidden="true"></i>';
+                    btnFalta.title = 'Faltou';
+                    btnFalta.setAttribute('aria-label', 'Faltou');
+
+                    // append buttons into the dedicated actions container so status text stays separate
+                    divStatusActions.appendChild(btnAtendido);
+                    divStatusActions.appendChild(btnDesmarcado);
+                    divStatusActions.appendChild(btnFalta);
+
+                    // Attach listeners (map to backend table: 3=Atendida, 4=Cancelada, 5=Faltou)
+                    btnAtendido.addEventListener('click', async () => {
+                        await atualizarStatusConsulta(consulta.id, 3, tdStatus); // 3 = Atendida
+                    });
+
+                    btnDesmarcado.addEventListener('click', async () => {
+                        await atualizarStatusConsulta(consulta.id, 4, tdStatus); // 4 = Cancelada
+                    });
+
+                    btnFalta.addEventListener('click', async () => {
+                        await atualizarStatusConsulta(consulta.id, 5, tdStatus); // 5 = Faltou
+                    });
+                }
+
+                row.appendChild(tdHora);
+                row.appendChild(tdPaciente);
+                row.appendChild(tdStatus);
                 agendaBody.appendChild(row);
+            }
+        }
+    }
+
+    // Update status of a consulta via PATCH and update UI
+    async function atualizarStatusConsulta(consultaId, statusId, tdStatusElement) {
+        // disable buttons while working (they are inside the status cell)
+        const buttons = tdStatusElement.querySelectorAll('button');
+        buttons.forEach(b => b.disabled = true);
+
+        try {
+            // Many backends expect the parameter named 'status' (not 'statusId').
+            // Send as query param `status` and handle empty/no-body responses defensively.
+            // Send both query params to be tolerant to backend variations (some expect 'status',
+            // others expect 'statusId'). If backend requires JSON body instead, adjust accordingly.
+            const resp = await fetch(`${API_BASE}/mc/consultas/${consultaId}/status?statusId=${statusId}&status=${statusId}`, {
+                method: 'PATCH'
+            });
+
+            if (!resp.ok) {
+                const txt = await resp.text().catch(() => '');
+                throw new Error(`Status update failed: ${resp.status} ${txt}`);
+            }
+
+            // Read response text and parse only if non-empty to avoid JSON parse errors
+            const respText = await resp.text().catch(() => '');
+            let updated = null;
+            if (respText && respText.trim().length > 0) {
+                try { updated = JSON.parse(respText); } catch (e) { updated = null; }
+            }
+
+            // Update status cell text (use returned object if available)
+            const novoStatus = updated && updated.statusConsulta && updated.statusConsulta.nomeStatus
+                ? updated.statusConsulta.nomeStatus
+                : (statusId === 3 ? 'Atendida' : statusId === 4 ? 'Cancelada' : statusId === 5 ? 'Faltou' : (statusId === 2 ? 'Confirmada' : 'Agendada'));
+            // update the status text span and remove the actions container
+            const span = tdStatusElement.querySelector('.status-text');
+            const actions = tdStatusElement.querySelector('.status-actions');
+            if (span) span.textContent = novoStatus;
+            if (actions) actions.remove();
+
+            // Show success alert
+            if (window.Swal) {
+                Swal.fire({ icon: 'success', title: 'Atualizado', text: 'Status da consulta atualizado.' });
+            } else {
+                alert('Status da consulta atualizado.');
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar status:', error);
+            buttons.forEach(b => b.disabled = false);
+            if (window.Swal) {
+                Swal.fire({ icon: 'error', title: 'Erro', text: 'Não foi possível atualizar o status.' });
+            } else {
+                alert('Não foi possível atualizar o status.');
             }
         }
     }
@@ -211,14 +339,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Atualizar anotações de consultas concluídas
     async function atualizarAnotacoes(consultas) {
         const concluidasList = document.getElementById('concluidas-list');
+        if (!concluidasList) return;
         concluidasList.innerHTML = ''; // Limpa a lista
 
-        consultas.filter(c => c.statusConsulta.nomeStatus === 'Realizada').forEach(consulta => {
-            const li = document.createElement('li');
-            li.innerHTML = `<h3>${consulta.paciente.nome} - ${new Date(consulta.datahoraConsulta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</h3>`;
-            li.addEventListener('click', () => showModal(consulta.paciente.nome, consulta.descricao || 'Sem anotações.'));
-            concluidasList.appendChild(li);
-        });
+        consultas
+            .filter(c => c?.statusConsulta?.nomeStatus === 'Atendida')
+            .forEach(consulta => {
+                const pacienteNome = consulta?.paciente ? `${consulta.paciente.nome || ''} ${consulta.paciente.sobrenome || ''}`.trim() : 'Desconhecido';
+                const hora = consulta?.datahoraConsulta ? new Date(consulta.datahoraConsulta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
+                const li = document.createElement('li');
+                li.innerHTML = `<h3>${pacienteNome} - ${hora}</h3>`;
+                li.addEventListener('click', () => showModal(pacienteNome, consulta?.descricao || 'Sem anotações.'));
+                concluidasList.appendChild(li);
+            });
     }
 
     // Função para exibir modal de anotações
@@ -248,9 +381,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Atualizar gráfico de desempenho
     async function atualizarGrafico(consultas) {
-        const consultasMarcadas = consultas.filter(c => c.statusConsulta.nomeStatus === 'Agendada').length;
-        const consultasConcluidas = consultas.filter(c => c.statusConsulta.nomeStatus === 'Realizada').length;
-        const consultasCanceladas = consultas.filter(c => c.statusConsulta.nomeStatus === 'Cancelada').length;
+        const consultasMarcadas = consultas.filter(c => c?.statusConsulta?.nomeStatus === 'Agendada').length;
+        const consultasConcluidas = consultas.filter(c => c?.statusConsulta?.nomeStatus === 'Atendida').length;
+        const consultasCanceladas = consultas.filter(c => c?.statusConsulta?.nomeStatus === 'Cancelada').length;
 
         const canvas = document.getElementById('consultasChart');
         if (!canvas) {
@@ -261,7 +394,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Agendadas', 'Realizadas', 'Canceladas'],
+                labels: ['Agendadas', 'Atendidas', 'Canceladas'],
                 datasets: [{
                     label: 'Consultas',
                     data: [consultasMarcadas, consultasConcluidas, consultasCanceladas],

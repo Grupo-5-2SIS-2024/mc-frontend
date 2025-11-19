@@ -63,37 +63,8 @@ async function buscarConsultas() {
         consultas = await resposta.json(); // Armazena as consultas na variável global
         console.log(consultas);
 
-        // Atualiza a listagem de consultas
-        const consultasContainer = document.getElementById("consultas-container");
-        consultasContainer.innerHTML = consultas.map((consulta) => {
-            return `
-                <div class="consulta">
-                    ${obterIconeGenero(consulta.paciente.genero)}
-                    <div class="consulta-info">
-                        <h3>${consulta.paciente.nome} ${consulta.paciente.sobrenome}</h3>
-                        <p>${formatarData(consulta.datahoraConsulta)}</p>
-                        <p>Profissional: ${consulta.medico.nome} ${consulta.medico.sobrenome} - ${consulta.especificacaoMedica.area}</p>
-                        <p>Status: ${consulta.statusConsulta.nomeStatus}</p>
-                        <div class="consulta-actions">
-                            <i class="fas fa-pen" onclick="alterarConsulta(${consulta.id})" title="Alterar Consulta"></i>
-                            <i class="fas fa-trash" onclick="excluirConsulta(${consulta.id})" title="Cancelar Consulta"></i>
-                            <i class="fas fa-download" onclick="baixarConsultaExcel(${consulta.id})" title="Baixar Excel da Consulta"></i>
-                            ${consulta.statusConsulta.nomeStatus === 'Agendada'
-                    ? `<i class="fas fa-notes-medical" onclick="AnaliseConsultasx(${consulta.id})" title="Bloco De Notas"></i>`
-                    : ''
-                }
-
-
-
-                              ${consulta.statusConsulta.nomeStatus === 'Realizada'
-                    ? `<i class="fas fa-eye" onclick="verFeedback(${consulta.id})" title="Visualizar Feedback"></i>`
-                    : ''
-                }
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        // (Removed inline list rendering: the agendamento page no longer shows the full consultas list.)
+        // consultas are still stored in the global `consultas` variable for other operations.
         return consultas;
     } catch (error) {
         console.error('Erro ao buscar consultas:', error);
@@ -320,7 +291,25 @@ async function updateAvailablePatients() {
         try {
             const consultas = await buscarConsultas();
             const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes`);
-            const pacientes = await respostaPacientes.json();
+            if (!respostaPacientes.ok) {
+                console.warn(`buscar pacientes responded with status ${respostaPacientes.status}`);
+                populateSelect('paciente', [{ label: 'Nenhum paciente encontrado', id: '' }], 'label', 'id');
+                return;
+            }
+
+            // Ler como texto e somente parsear se houver conteúdo (evita "Unexpected end of JSON input")
+            const texto = await respostaPacientes.text();
+            let pacientes = [];
+            if (texto && texto.trim().length > 0) {
+                try {
+                    pacientes = JSON.parse(texto);
+                } catch (err) {
+                    console.warn('Falha ao parsear JSON de pacientes, retornando lista vazia', err);
+                    pacientes = [];
+                }
+            } else {
+                pacientes = [];
+            }
 
             // Filtra os pacientes que têm consultas no horário selecionado
             const bookedPatients = consultas
@@ -670,34 +659,8 @@ document.getElementById('agendar').addEventListener('click', agendarConsulta);
 
 
 async function BaixarExcelGeral() {
-    try {
-        const resposta = await fetch(`${API_BASE}/mc/consultas/export/csv`, {
-            method: 'GET',
-            headers: {
-                "Accept": "text/csv"
-            }
-        });
-
-        if (!resposta.ok) {
-            throw new Error(`Erro ao baixar o arquivo: ${resposta.statusText}`);
-        }
-
-
-        const blob = await resposta.blob();
-
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'consultas.csv';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-
-
-        window.URL.revokeObjectURL(url);
-    } catch (error) {
-        console.error('Erro ao baixar o arquivo:', error);
-    }
+    // moved to shared downloads.js
+    console.warn('BaixarExcelGeral() moved to downloads.js — include that script on the page and call BaixarExcelGeral() there.');
 }
 
 
