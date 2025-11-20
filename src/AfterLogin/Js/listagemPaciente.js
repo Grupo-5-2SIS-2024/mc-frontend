@@ -496,7 +496,7 @@ function abrirDetalhesTarefa(consulta) {
         <p><strong>Descrição:</strong> ${consulta.descricao}</p>
         <p><strong>Data e Hora:</strong> ${dataFormatada} às ${horaFormatada}</p>
         <p><strong>Paciente:</strong> ${consulta.paciente.nome} ${consulta.paciente.sobrenome}</p>
-        <p><strong>Profissional:</strong> ${consulta.medico.nome} ${consulta.medico.sobrenome} - ${consulta.especificacaoMedica.area}</p>
+        <p><strong>Profissional:</strong> ${consulta.medico.nome} ${consulta.medico.sobrenome} - ${consulta.medico.especificacaoMedica.area}</p>
         <p><strong>Status:</strong> ${consulta.statusConsulta.nomeStatus}</p>
         <p><strong>Duração:</strong> ${consulta.duracaoConsulta}</p>
     `;
