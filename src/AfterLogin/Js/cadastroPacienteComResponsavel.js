@@ -239,7 +239,7 @@ async function cadastrarResponsavel() {
             "sobrenome": sobrenomeDigitado,
             "email": emailDigitado,
             "telefone": telefoneDigitado,
-            "cpf": cpfDigitado,
+            "cpf": cpfDigitado && cpfDigitado.trim() !== '' ? cpfDigitado : null,
             "genero": generoEscolhido,
             "dataNascimento": dataNascimentoDigitada
         };

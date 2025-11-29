@@ -352,6 +352,7 @@ function calcularIdade(dataNascimento) {
 
 // Função para preencher o calendário do paciente
 function preencherCalendario(pacienteId) {
+    currentPacienteId = pacienteId;
     buscarConsultasCliente(pacienteId);
 }
 
@@ -402,6 +403,7 @@ async function preencherEvolucoes(pacienteId) {
 let dataInicioAtual = obterInicioDaSemana(new Date());
 let consultasOriginais = [];
 let bancoDeDadosFiltrado = [];
+let currentPacienteId = null;
 
 // Ao carregar a página, inicialize o calendário
 document.addEventListener('DOMContentLoaded', () => {
@@ -484,6 +486,133 @@ function atualizarDisplayCalendario(consultasCliente) {
 
         colunasTarefasElement.appendChild(colunaElement);
     }
+
+    // Insere botões de exportação para a semana do paciente (CSV / PDF) alinhados na mesma linha do título
+    try {
+        const diasEl = document.getElementById('dias');
+        if (diasEl) {
+            // procura a barra que contém o título/contagem de dias
+            const headerBar = diasEl.closest('.count-dias') || diasEl.parentNode;
+            if (headerBar && !document.getElementById('patient-export-container')) {
+                headerBar.classList.add('patient-count-dias');
+
+                const container = document.createElement('div');
+                container.id = 'patient-export-container';
+                container.className = 'patient-export-container';
+
+                const btnCsv = document.createElement('button');
+                btnCsv.id = 'btn-export-week-csv-paciente';
+                btnCsv.className = 'patient-export-btn';
+                btnCsv.title = 'Baixar Semana (CSV)';
+                btnCsv.innerHTML = '<i class="fas fa-file-csv"></i>';
+                btnCsv.onclick = () => exportarSemanaPacienteCSV(currentPacienteId);
+
+                const btnPdf = document.createElement('button');
+                btnPdf.id = 'btn-export-week-pdf-paciente';
+                btnPdf.className = 'patient-export-btn';
+                btnPdf.title = 'Salvar PDF';
+                btnPdf.innerHTML = '<i class="fas fa-file-pdf"></i>';
+                btnPdf.onclick = () => exportarSemanaPacientePDF(currentPacienteId);
+
+                container.appendChild(btnCsv);
+                container.appendChild(btnPdf);
+
+                // adiciona container no final da barra, alinhado à direita
+                headerBar.appendChild(container);
+            }
+        }
+    } catch (err) {
+        console.warn('Não foi possível injetar botões de exportação do paciente:', err);
+    }
+}
+
+// Exporta a semana atualmente exibida para CSV filtrada pelo paciente atual
+function exportarSemanaPacienteCSV(pacienteId) {
+    if (!pacienteId) return alert('Paciente não definido para exportação.');
+    try {
+        const start = new Date(dataInicioAtual);
+        const rows = [];
+        rows.push(['Data','Hora','Paciente','CPF','Profissional','Área','Status','Descrição','Duração']);
+
+        for (let i=0;i<7;i++){
+            const d = new Date(start);
+            d.setDate(start.getDate()+i);
+            const tarefas = bancoDeDadosFiltrado.filter(t => t.datahoraConsulta.startsWith(formatarData(d)));
+            tarefas.forEach(t => {
+                const dataHora = new Date(t.datahoraConsulta);
+                const dataStr = dataHora.toLocaleDateString('pt-BR');
+                const horaStr = dataHora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+                const paciente = t.paciente ? `${t.paciente.nome || ''} ${t.paciente.sobrenome || ''}`.trim() : '';
+                const cpf = t.paciente ? (t.paciente.cpf || '') : '';
+                const medico = t.medico ? `${t.medico.nome || ''} ${t.medico.sobrenome || ''}`.trim() : '';
+                const area = t.medico?.especificacaoMedica?.area || t.especificacaoMedica?.area || '';
+                const status = t.statusConsulta?.nomeStatus || '';
+                const descricao = t.descricao ? String(t.descricao).replace(/\r?\n/g,' ') : '';
+                const rawDur = t.duracaoConsulta ?? t.duracao ?? null;
+                let duracao = '';
+                if (rawDur) duracao = typeof rawDur === 'number' ? `${rawDur} min` : String(rawDur);
+                rows.push([dataStr,horaStr,paciente,cpf,medico,area,status,descricao,duracao]);
+            });
+        }
+
+        const csvContent = rows.map(r => r.map(cell => '"' + String(cell).replace(/"/g,'""') + '"').join(',')).join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const stamp = formatarData(new Date(dataInicioAtual)).replace(/-/g,'');
+        a.download = `agenda_paciente_${pacienteId}_semana_${stamp}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error('Erro ao exportar semana CSV do paciente:', err);
+    }
+}
+
+// Exporta a semana do paciente em uma janela para impressão (PDF via print)
+function exportarSemanaPacientePDF(pacienteId) {
+    if (!pacienteId) return alert('Paciente não definido para exportação.');
+    try {
+        const start = new Date(dataInicioAtual);
+        let html = `<html><head><title>Agenda Semanal do Paciente</title><style>body{font-family:Arial,Helvetica,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#f4f4f4}</style></head><body>`;
+        html += `<h2>Agenda Semanal: ${document.getElementById('dias')?.innerText || ''}</h2>`;
+        html += `<table><thead><tr><th>Data</th><th>Hora</th><th>Paciente</th><th>Profissional</th><th>Área</th><th>Status</th><th>Descrição</th><th>Duração</th></tr></thead><tbody>`;
+
+        for (let i=0;i<7;i++){
+            const d = new Date(start);
+            d.setDate(start.getDate()+i);
+            const tarefas = bancoDeDadosFiltrado.filter(t => t.datahoraConsulta.startsWith(formatarData(d)));
+            if (tarefas.length === 0) {
+                html += `<tr><td>${d.toLocaleDateString('pt-BR')}</td><td colspan="7">Sem tarefas</td></tr>`;
+            } else {
+                tarefas.forEach(t => {
+                    const dataHora = new Date(t.datahoraConsulta);
+                    const dataStr = dataHora.toLocaleDateString('pt-BR');
+                    const horaStr = dataHora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+                    const paciente = t.paciente ? `${t.paciente.nome || ''} ${t.paciente.sobrenome || ''}`.trim() : '';
+                    const medico = t.medico ? `${t.medico.nome || ''} ${t.medico.sobrenome || ''}`.trim() : '';
+                    const area = t.medico?.especificacaoMedica?.area || t.especificacaoMedica?.area || '';
+                    const status = t.statusConsulta?.nomeStatus || '';
+                    const descricao = t.descricao ? String(t.descricao).replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+                    const rawDur = t.duracaoConsulta ?? t.duracao ?? null;
+                    let duracao = '';
+                    if (rawDur) duracao = typeof rawDur === 'number' ? `${rawDur} min` : String(rawDur);
+                    html += `<tr><td>${dataStr}</td><td>${horaStr}</td><td>${paciente}</td><td>${medico}</td><td>${area}</td><td>${status}</td><td>${descricao}</td><td>${duracao}</td></tr>`;
+                });
+            }
+        }
+
+        html += `</tbody></table></body></html>`;
+        const w = window.open('', '_blank');
+        if (!w) { alert('Permita popups para gerar o PDF.'); return; }
+        w.document.write(html);
+        w.document.close();
+        setTimeout(() => { w.print(); }, 500);
+    } catch (err) {
+        console.error('Erro ao gerar PDF da semana do paciente:', err);
+    }
 }
 
 function abrirDetalhesTarefa(consulta) {
@@ -492,13 +621,20 @@ function abrirDetalhesTarefa(consulta) {
     const horaFormatada = dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
     const detalhesDiv = document.getElementById('detalhesTarefa');
+    // Render defensivamente — alguns campos podem ser nulos
+    const pacienteNome = consulta?.paciente ? `${consulta.paciente.nome || ''} ${consulta.paciente.sobrenome || ''}`.trim() : 'Desconhecido';
+    const medicoNome = consulta?.medico ? `${consulta.medico.nome || ''} ${consulta.medico.sobrenome || ''}`.trim() : 'Desconhecido';
+    const medicoArea = consulta?.medico?.especificacaoMedica?.area || consulta?.especificacaoMedica?.area || 'Desconhecida';
+    const statusNome = consulta?.statusConsulta?.nomeStatus || 'Desconhecido';
+    const duracao = consulta?.duracaoConsulta ?? consulta?.duracao ?? '—';
+
     detalhesDiv.innerHTML = `
-        <p><strong>Descrição:</strong> ${consulta.descricao}</p>
+        <p><strong>Descrição:</strong> ${consulta.descricao || 'Sem descrição'}</p>
         <p><strong>Data e Hora:</strong> ${dataFormatada} às ${horaFormatada}</p>
-        <p><strong>Paciente:</strong> ${consulta.paciente.nome} ${consulta.paciente.sobrenome}</p>
-        <p><strong>Profissional:</strong> ${consulta.medico.nome} ${consulta.medico.sobrenome} - ${consulta.medico.especificacaoMedica.area}</p>
-        <p><strong>Status:</strong> ${consulta.statusConsulta.nomeStatus}</p>
-        <p><strong>Duração:</strong> ${consulta.duracaoConsulta}</p>
+        <p><strong>Paciente:</strong> ${pacienteNome}</p>
+        <p><strong>Profissional:</strong> ${medicoNome} - ${medicoArea}</p>
+        <p><strong>Status:</strong> ${statusNome}</p>
+        <p><strong>Duração:</strong> ${duracao}</p>
     `;
     document.getElementById('modalDetalhesTarefa').style.display = 'flex';
 }

@@ -594,6 +594,39 @@ a {
     margin-bottom: 20px;
 }
 
+/* quando usamos a barra no modal do paciente, deixamos espaço para botões alinhados à direita */
+.patient-count-dias {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between !important;
+    gap: 12px;
+}
+
+.patient-export-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+}
+
+.patient-export-btn {
+    background: linear-gradient(180deg,#2E86DE 0%,#1976D2 100%);
+    color: #fff;
+    border: 0;
+    width: 42px;
+    height: 34px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+.patient-export-btn i { font-size: 14px; }
+
+.patient-export-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.16); }
+
 /* Navegação entre semanas */
 .nav-button {
     background-color: transparent;

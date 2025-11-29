@@ -1,592 +1,148 @@
-// Base da API: usa localhost em dev, vazio em produção
+// Consolidated and cleaned atualizarColaborador.js
 const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
 
-// Inputs Especiais
-const inputIcon = document.querySelector(".input__icon");
-const inputIcon2 = document.querySelector(".input__icon2");
-const inputPassword = document.getElementById("password");
-const inputConfirmedPassword = document.getElementById("confirmedPassword");
-
-const inputFile = document.querySelector("#picture__input");
-const pictureImage = document.querySelector(".picture__image");
-const pictureImageTxt = "Choose an image";
-pictureImage.innerHTML = pictureImageTxt;
-
-// Toggle password visibility for password field
-if (inputIcon && inputPassword) {
-    inputIcon.addEventListener("click", () => {
-        inputIcon.classList.toggle("ri-eye-off-line");
-        inputIcon.classList.toggle("ri-eye-line");
-        inputPassword.type = inputPassword.type === "password" ? "text" : "password";
-    });
-}
-
-// Toggle password visibility for confirmed password field
-if (inputIcon2 && inputConfirmedPassword) {
-    inputIcon2.addEventListener("click", () => {
-        inputIcon2.classList.toggle("ri-eye-off-line");
-        inputIcon2.classList.toggle("ri-eye-line");
-        inputConfirmedPassword.type = inputConfirmedPassword.type === "password" ? "text" : "password";
-    });
-}
-
+// UI helpers (password toggles, image preview)
+const inputIcon = document.querySelector('.input__icon');
+const inputIcon2 = document.querySelector('.input__icon2');
+const inputPassword = document.getElementById('password');
+const inputConfirmedPassword = document.getElementById('confirmedPassword');
+const inputFile = document.querySelector('#picture__input');
+const pictureImage = document.querySelector('.picture__image');
+const pictureImageTxt = 'Choose an image';
+if (pictureImage) pictureImage.innerHTML = pictureImageTxt;
 let selectedImage = null;
 
-// Handle image file selection and preview
+if (inputIcon && inputPassword) inputIcon.addEventListener('click', () => { inputPassword.type = inputPassword.type === 'password' ? 'text' : 'password'; inputIcon.classList.toggle('ri-eye-off-line'); inputIcon.classList.toggle('ri-eye-line'); });
+if (inputIcon2 && inputConfirmedPassword) inputIcon2.addEventListener('click', () => { inputConfirmedPassword.type = inputConfirmedPassword.type === 'password' ? 'text' : 'password'; inputIcon2.classList.toggle('ri-eye-off-line'); inputIcon2.classList.toggle('ri-eye-line'); });
+
 if (inputFile && pictureImage) {
-    inputFile.addEventListener("change", function (e) {
-        const file = e.target.files[0];
-
-        if (file) {
-            const reader = new FileReader();
-
-            reader.addEventListener("load", function (e) {
-                const img = document.createElement("img");
-                img.src = e.target.result;
-                img.classList.add("picture__img");
-
-                pictureImage.innerHTML = "";
-                pictureImage.appendChild(img);
-
-                // Store the selected image
-                selectedImage = e.target.result;
-            });
-
-            reader.readAsDataURL(file);
-        } else {
-            pictureImage.innerHTML = pictureImageTxt;
-            selectedImage = null;
-        }
-    });
+  inputFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) { pictureImage.innerHTML = pictureImageTxt; selectedImage = null; return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => { const img = document.createElement('img'); img.src = ev.target.result; img.classList.add('picture__img'); pictureImage.innerHTML = ''; pictureImage.appendChild(img); selectedImage = ev.target.result; };
+    reader.readAsDataURL(file);
+  });
 }
-
-// Função para validar o cadastro do colaborador
 
 function validarCadastro() {
-    const nome = document.getElementById('nome').value.trim();
-    const sobrenome = document.getElementById('sobrenome').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const telefone = document.getElementById('telefone').value.trim();
-    const cpf = document.getElementById('cpf').value.trim();
-    const especificacao = document.getElementById('especificacao').value.trim();
-    const dataNascimento = document.getElementById('dataNascimento').value;
-    const carteirinha = document.getElementById('carteirinha').value.trim();
-    const password = document.getElementById('password').value;
-    const confirmedPassword = document.getElementById('confirmedPassword').value;
-    const nivelAcesso = document.getElementById('nivelAcesso').value.trim();
+  const nome = document.getElementById('nome')?.value.trim() || '';
+  const sobrenome = document.getElementById('sobrenome')?.value.trim() || '';
+  const email = document.getElementById('email')?.value.trim() || '';
+  const telefone = document.getElementById('telefone')?.value.trim() || '';
+  const especificacao = document.getElementById('especificacao')?.value || '';
+  const dataNascimento = document.getElementById('dataNascimento')?.value || '';
+  const password = document.getElementById('password')?.value || '';
+  const confirmedPassword = document.getElementById('confirmedPassword')?.value || '';
+  const nivelAcesso = document.getElementById('nivelAcesso')?.value || '';
 
-    // Expressões regulares para validações
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const telefoneRegex = /^\d{10,}$/; // Mínimo de 10 dígitos
-    const cpfRegex = /^\d{11}$/; // CPF tem 11 dígitos
-    const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/; // Senha: mínimo 8 caracteres, pelo menos uma letra maiúscula, uma letra minúscula e um número
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const telefoneRegex = /^\d{10,}$/;
+  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
 
-    // Validar cada campo
-    const errors = [];
+  const errors = [];
+  const set = (id,msg) => { const el = document.getElementById(id); if (el) el.textContent = msg; errors.push(msg); };
+  const clear = (id) => { const el = document.getElementById(id); if (el) el.textContent = ''; };
 
-    // Função auxiliar para adicionar erro
-    const addError = (fieldId, errorId, message) => {
-        const field = document.getElementById(fieldId);
-        const errorElement = document.getElementById(errorId);
-        if (field && errorElement) {
-            field.classList.add('error');
-            errorElement.textContent = message;
-        }
-        errors.push(message);
-    };
+  if (!nome) set('error-nome','Nome é obrigatório.'); else clear('error-nome');
+  if (!sobrenome) set('error-sobrenome','Sobrenome é obrigatório.'); else clear('error-sobrenome');
+  if (!emailRegex.test(email)) set('error-email','E-mail inválido.'); else clear('error-email');
+  if (!telefoneRegex.test(telefone)) set('error-telefone','Telefone inválido.'); else clear('error-telefone');
+  if (!especificacao) set('error-especificacao','Especificação é obrigatória.'); else clear('error-especificacao');
+  if (!dataNascimento) set('error-dataNascimento','Data de nascimento é obrigatória.'); else clear('error-dataNascimento');
+  if (password && !passwordRegex.test(password)) set('error-password','Senha inválida.'); else clear('error-password');
+  if (password !== confirmedPassword) set('error-confirmedPassword','As senhas não coincidem.'); else clear('error-confirmedPassword');
+  if (!nivelAcesso) set('error-nivelAcesso','Nível de acesso é obrigatório.'); else clear('error-nivelAcesso');
 
-    // Função auxiliar para remover erro
-    const removeError = (fieldId, errorId) => {
-        const field = document.getElementById(fieldId);
-        const errorElement = document.getElementById(errorId);
-        if (field && errorElement) {
-            field.classList.remove('error');
-            errorElement.textContent = "";
-        }
-    };
-
-    // Validações
-    if (!nome) {
-        addError('nome', 'error-nome', "Nome é obrigatório.");
-    } else {
-        removeError('nome', 'error-nome');
-    }
-
-    if (!sobrenome) {
-        addError('sobrenome', 'error-sobrenome', "Sobrenome é obrigatório.");
-    } else {
-        removeError('sobrenome', 'error-sobrenome');
-    }
-
-    if (!emailRegex.test(email)) {
-        addError('email', 'error-email', "E-mail inválido.");
-    } else {
-        removeError('email', 'error-email');
-    }
-
-    if (!telefoneRegex.test(telefone)) {
-        addError('telefone', 'error-telefone', "Telefone inválido. Deve conter no mínimo 10 dígitos.");
-    } else {
-        removeError('telefone', 'error-telefone');
-    }
-
-    if (!cpfRegex.test(cpf)) {
-        addError('cpf', 'error-cpf', "CPF inválido. Deve conter 11 dígitos.");
-    } else {
-        removeError('cpf', 'error-cpf');
-    }
-
-    if (!especificacao) {
-        addError('especificacao', 'error-especificacao', "Especificação é obrigatória.");
-    } else {
-        removeError('especificacao', 'error-especificacao');
-    }
-
-    if (!dataNascimento) {
-        addError('dataNascimento', 'error-dataNascimento', "Data de nascimento é obrigatória.");
-    } else {
-        removeError('dataNascimento', 'error-dataNascimento');
-    }
-
-    if (!carteirinha) {
-        addError('carteirinha', 'error-carteirinha', "Carteirinha é obrigatória.");
-    } else {
-        removeError('carteirinha', 'error-carteirinha');
-    }
-
-    if (!passwordRegex.test(password)) {
-        addError('password', 'error-password', "Senha deve conter no mínimo 8 caracteres, uma letra maiúscula, uma letra minúscula e um número.");
-    } else {
-        removeError('password', 'error-password');
-    }
-
-    if (password !== confirmedPassword) {
-        addError('confirmedPassword', 'error-confirmedPassword', "As senhas não coincidem.");
-    } else {
-        removeError('confirmedPassword', 'error-confirmedPassword');
-    }
-
-    if (!nivelAcesso) {
-        addError('nivelAcesso', 'error-nivelAcesso', "Nível de acesso é obrigatório.");
-    } else {
-        removeError('nivelAcesso', 'error-nivelAcesso');
-    }
-
-    // Exibir os erros se houverem
-    if (errors.length > 0) {
-        const errorMessageElement = document.querySelector('.error-message');
-        if (errorMessageElement) {
-            errorMessageElement.innerHTML = errors.join("<br>");
-        }
-        return false;
-    } else {
-        // Limpar mensagens de erro gerais
-        const errorMessageElement = document.querySelector('.error-message');
-        if (errorMessageElement) {
-            errorMessageElement.innerHTML = "";
-        }
-        return true;
-    }
+  if (errors.length) { const em = document.querySelector('.error-message'); if (em) em.innerHTML = errors.join('<br>'); return false; }
+  const em = document.querySelector('.error-message'); if (em) em.innerHTML = ''; return true;
 }
-
-// Função para buscar os valores do colaborador
 
 async function buscarValores(id) {
-    const nomeInput = document.getElementById("nome");
-    const sobrenomeInput = document.getElementById("sobrenome");
-    const emailInput = document.getElementById("email");
-    const telefoneInput = document.getElementById("telefone");
-    const cpfInput = document.getElementById("cpf");
-    const dataNascimentoInput = document.getElementById("dataNascimento");
-    const especificacaoInput = document.getElementById("especificacao");
-    const carteirinhaInput = document.getElementById("carteirinha");
-    const senhaInput = document.getElementById("password");
-    const nivelAcessoInput = document.getElementById("nivelAcesso");
-    const pictureImage = document.querySelector(".picture__image");
-
-
-    const response = await fetch(`${API_BASE}/mc/medicos/${id}`);
-    if (!response.ok) {
-        throw new Error(`Erro ao buscar dados: ${response.statusText}`);
-    }
-    const json = await response.json();
-
-    if (json) {
-        // Preencher os campos com os valores recebidos
-        if (nomeInput) nomeInput.value = json.nome || '';
-        if (sobrenomeInput) sobrenomeInput.value = json.sobrenome || '';
-        if (emailInput) emailInput.value = json.email || '';
-        if (telefoneInput) telefoneInput.value = json.telefone || '';
-        if (cpfInput) cpfInput.value = json.cpf || '';
-        if (dataNascimentoInput) dataNascimentoInput.value = json.dataNascimento || '';
-        if (carteirinhaInput) carteirinhaInput.value = json.carterinha || '';
-        if (senhaInput) senhaInput.value = json.senha || '';
-        if (nivelAcessoInput) nivelAcessoInput.value = json.permissao.nome || '';
-
-        // Carregar especificações e definir o valor
-        await carregarEspecificacoes();
-        if (especificacaoInput && json.especificacaoMedica && json.especificacaoMedica.id) {
-            especificacaoInput.value = json.especificacaoMedica.id;
-        }
-
-        // Exibir a imagem
-        if (pictureImage) {
-            if (json.foto) {
-                const img = document.createElement("img");
-                img.src = json.foto;
-                img.classList.add("picture__img");
-                pictureImage.innerHTML = "";
-                pictureImage.appendChild(img);
-                selectedImage = json.foto; // Atualizar selectedImage com a foto existente
-            } else {
-                pictureImage.innerHTML = pictureImageTxt;
-                selectedImage = null;
-            }
-        }
-    }
+  try {
+    const r = await fetch(`${API_BASE}/mc/medicos/${id}`);
+    if (!r.ok) throw new Error(`Status ${r.status}`);
+    const j = await r.json();
+    document.getElementById('nome').value = j.nome || '';
+    document.getElementById('sobrenome').value = j.sobrenome || '';
+    document.getElementById('email').value = j.email || '';
+    document.getElementById('telefone').value = j.telefone || '';
+    document.getElementById('cpf').value = j.cpf || '';
+    document.getElementById('dataNascimento').value = j.dataNascimento || '';
+    document.getElementById('carteirinha').value = j.carteirinha || '';
+    document.getElementById('password').value = j.senha || '';
+    // permissao may be an object or a primitive. Prefer permission id (number) for the select value.
+    try {
+      const nivelSelect = document.getElementById('nivelAcesso');
+      let nivelVal = '';
+      const perm = j.permissao;
+      if (perm && (perm.id !== undefined && perm.id !== null)) {
+        nivelVal = String(perm.id);
+      } else if (perm && perm.nome) {
+        const nameMap = { Admin: '1', Supervisor: '2', Profissional: '3', Medico: '3', 'Médico': '3' };
+        nivelVal = nameMap[perm.nome] || '';
+      } else if (typeof perm === 'number' || (typeof perm === 'string' && /^\d+$/.test(perm))) {
+        nivelVal = String(perm);
+      }
+      if (nivelSelect) nivelSelect.value = nivelVal;
+    } catch (e) { }
+    await carregarEspecificacoes();
+    if (j.especificacaoMedica?.id) document.getElementById('especificacao').value = j.especificacaoMedica.id;
+    if (j.foto && pictureImage) { pictureImage.innerHTML = ''; const img = document.createElement('img'); img.src = j.foto; img.classList.add('picture__img'); pictureImage.appendChild(img); selectedImage = j.foto; }
+  } catch (err) { console.error('buscarValores:', err); }
 }
-
-// Função assíncrona para carregar especificações
 
 async function carregarEspecificacoes() {
-    try {
-        const response = await fetch(`${API_BASE}/mc/especificacoes`);
-        if (!response.ok) {
-            throw new Error(`Erro ao carregar especificações: ${response.statusText}`);
-        }
-        const especificacoes = await response.json();
-        const especificacaoSelect = document.getElementById("especificacao");
-
-        if (especificacaoSelect) {
-            // Limpar o campo antes de adicionar as novas opções
-            especificacaoSelect.innerHTML = '<option value=""></option>';
-
-            especificacoes.forEach(especificacao => {
-                const option = document.createElement("option");
-                option.value = especificacao.id; // Usar o ID como valor
-                option.textContent = especificacao.area; // Exibir o nome da área no campo
-                especificacaoSelect.appendChild(option);
-            });
-        }
-    } catch (error) {
-        console.error("Erro ao carregar especificações:", error);
-        alert("Erro ao carregar especificações. Tente novamente mais tarde.");
-    }
+  try {
+    const r = await fetch(`${API_BASE}/mc/especificacoes`);
+    if (!r.ok) throw new Error(`Status ${r.status}`);
+    const arr = await r.json();
+    const sel = document.getElementById('especificacao'); if (!sel) return;
+    sel.innerHTML = '<option value=""></option>';
+    arr.forEach(e => { const o = document.createElement('option'); o.value = e.id; o.textContent = e.area; sel.appendChild(o); });
+  } catch (err) { console.error('carregarEspecificacoes:', err); }
 }
 
-// Função para obter o ID da URL
-
-function getIdFromURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('id');
-}
-
-// Função para atualizar o colaborador
+function getIdFromURL() { return new URLSearchParams(window.location.search).get('id'); }
 
 async function atualizarColaborador() {
-    const id = getIdFromURL();
-    const idColaboradorLogado = sessionStorage.getItem('ID_MEDICO');
+  const id = getIdFromURL(); if (!id) { alert('ID não encontrado'); return; }
+  if (!validarCadastro()) return;
+  const nome = document.getElementById('nome').value.trim();
+  const sobrenome = document.getElementById('sobrenome').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const telefone = document.getElementById('telefone').value.trim();
+  const cpf = document.getElementById('cpf').value.trim() || null;
+  const dataNascimento = document.getElementById('dataNascimento').value || null;
+  const especificacaoId = document.getElementById('especificacao').value || null;
+  const carteirinha = document.getElementById('carteirinha').value.trim() || null;
+  const senha = document.getElementById('password').value || null;
+  const nivelAcessoRaw = document.getElementById('nivelAcesso').value || null;
+  const nivelMap = { Admin:1, Supervisor:2, Profissional:3, Medico:3, 'Médico':3 };
+  const nivelId = nivelMap[nivelAcessoRaw] || (isFinite(Number(nivelAcessoRaw)) ? Number(nivelAcessoRaw) : null);
 
-    if (!id) {
-        alert("ID do colaborador não encontrado.");
-        return;
-    }
+  const payload = {
+    nome, sobrenome, email, telefone, cpf, dataNascimento,
+    especificacaoMedica: especificacaoId ? { id: Number(especificacaoId) } : null,
+    carteirinha, senha, permissao: nivelId ? { id: Number(nivelId) } : null,
+    foto: selectedImage || null
+  };
 
-    if (validarCadastro()) {
-        const nomeDigitado = document.getElementById("nome").value.trim();
-        const sobrenomeDigitado = document.getElementById("sobrenome").value.trim();
-        const emailDigitado = document.getElementById("email").value.trim();
-        const telefoneDigitado = document.getElementById("telefone").value.trim();
-        const cpfDigitado = document.getElementById("cpf").value.trim();
-        const dataNascimentoDigitada = document.getElementById("dataNascimento").value;
-        const especificacaoDigitada = document.getElementById("especificacao").value;
-        const carteirinhaDigitada = document.getElementById("carteirinha").value.trim();
-        const senhaDigitada = document.getElementById("password").value;
-        const nivelAcessoEscolhido = document.getElementById("nivelAcesso").value.trim();
-
-        const nivelAcessoMap = {
-            "Admin": 1,
-            "Supervisor": 2,
-            "Médico": 3
-        };
-
-        const nivelAcessoId = nivelAcessoMap[nivelAcessoEscolhido];
-
-        // Validações
-        if (!nome) {
-            addError('nome', 'error-nome', "Nome é obrigatório.");
-        } else {
-            removeError('nome', 'error-nome');
-        }
-
-        if (!sobrenome) {
-            addError('sobrenome', 'error-sobrenome', "Sobrenome é obrigatório.");
-        } else {
-            removeError('sobrenome', 'error-sobrenome');
-        }
-
-        if (!emailRegex.test(email)) {
-            addError('email', 'error-email', "E-mail inválido.");
-        } else {
-            removeError('email', 'error-email');
-        }
-
-        if (!telefoneRegex.test(telefone)) {
-            addError('telefone', 'error-telefone', "Telefone inválido. Deve conter no mínimo 10 dígitos.");
-        } else {
-            removeError('telefone', 'error-telefone');
-        }
-
-        if (!cpfRegex.test(cpf)) {
-            addError('cpf', 'error-cpf', "CPF inválido. Deve conter 11 dígitos.");
-        } else {
-            removeError('cpf', 'error-cpf');
-        }
-
-        if (!especificacao) {
-            addError('especificacao', 'error-especificacao', "Especificação é obrigatória.");
-        } else {
-            removeError('especificacao', 'error-especificacao');
-        }
-
-        if (!dataNascimento) {
-            addError('dataNascimento', 'error-dataNascimento', "Data de nascimento é obrigatória.");
-        } else {
-            removeError('dataNascimento', 'error-dataNascimento');
-        }
-
-        if (!carteirinha) {
-            addError('carteirinha', 'error-carteirinha', "Carteirinha é obrigatória.");
-        } else {
-            removeError('carteirinha', 'error-carteirinha');
-        }
-
-        if (!passwordRegex.test(password)) {
-            addError('password', 'error-password', "Senha deve conter no mínimo 8 caracteres, uma letra maiúscula, uma letra minúscula e um número.");
-        } else {
-            removeError('password', 'error-password');
-        }
-
-        if (password !== confirmedPassword) {
-            addError('confirmedPassword', 'error-confirmedPassword', "As senhas não coincidem.");
-        } else {
-            removeError('confirmedPassword', 'error-confirmedPassword');
-        }
-
-        if (!nivelAcesso) {
-            addError('nivelAcesso', 'error-nivelAcesso', "Nível de acesso é obrigatório.");
-        } else {
-            removeError('nivelAcesso', 'error-nivelAcesso');
-        }
-
-        // Exibir os erros se houverem
-        if (errors.length > 0) {
-            const errorMessageElement = document.querySelector('.error-message');
-            if (errorMessageElement) {
-                errorMessageElement.innerHTML = errors.join("<br>");
-            }
-            return false;
-        } else {
-            // Limpar mensagens de erro gerais
-            const errorMessageElement = document.querySelector('.error-message');
-            if (errorMessageElement) {
-                errorMessageElement.innerHTML = "";
-            }
-            return true;
-        }
-    }
-
-    // Função para buscar os valores do colaborador
-
-    async function buscarValores(id) {
-        const nomeInput = document.getElementById("nome");
-        const sobrenomeInput = document.getElementById("sobrenome");
-        const emailInput = document.getElementById("email");
-        const telefoneInput = document.getElementById("telefone");
-        const cpfInput = document.getElementById("cpf");
-        const dataNascimentoInput = document.getElementById("dataNascimento");
-        const especificacaoInput = document.getElementById("especificacao");
-        const carteirinhaInput = document.getElementById("carteirinha");
-        const senhaInput = document.getElementById("password");
-        const nivelAcessoInput = document.getElementById("nivelAcesso");
-        const pictureImage = document.querySelector(".picture__image");
-
-      
-            const response = await fetch(`http://localhost:8080/mc/medicos/${id}`);
-            if (!response.ok) {
-                throw new Error(`Erro ao buscar dados: ${response.statusText}`);
-            }
-            const json = await response.json();
-
-            if (json) {
-                // Preencher os campos com os valores recebidos
-                if (nomeInput) nomeInput.value = json.nome || '';
-                if (sobrenomeInput) sobrenomeInput.value = json.sobrenome || '';
-                if (emailInput) emailInput.value = json.email || '';
-                if (telefoneInput) telefoneInput.value = json.telefone || '';
-                if (cpfInput) cpfInput.value = json.cpf || '';
-                if (dataNascimentoInput) dataNascimentoInput.value = json.dataNascimento || '';
-                if (carteirinhaInput) carteirinhaInput.value = json.carterinha || '';
-                if (senhaInput) senhaInput.value = json.senha || '';
-                if (nivelAcessoInput) nivelAcessoInput.value = json.permissao.nome || '';
-
-                // Carregar especificações e definir o valor
-                await carregarEspecificacoes();
-                if (especificacaoInput && json.especificacaoMedica && json.especificacaoMedica.id) {
-                    especificacaoInput.value = json.especificacaoMedica.id;
-                }
-
-                // Exibir a imagem
-                if (pictureImage) {
-                    if (json.foto) {
-                        const img = document.createElement("img");
-                        img.src = json.foto;
-                        img.classList.add("picture__img");
-                        pictureImage.innerHTML = "";
-                        pictureImage.appendChild(img);
-                        selectedImage = json.foto; // Atualizar selectedImage com a foto existente
-                    } else {
-                        pictureImage.innerHTML = pictureImageTxt;
-                        selectedImage = null;
-                    }
-                }
-            }
-    }
-
-    // Função assíncrona para carregar especificações
-
-    async function carregarEspecificacoes() {
-        try {
-            const response = await fetch("http://localhost:8080/mc/especificacoes");
-            if (!response.ok) {
-                throw new Error(`Erro ao carregar especificações: ${response.statusText}`);
-            }
-            const especificacoes = await response.json();
-            const especificacaoSelect = document.getElementById("especificacao");
-
-            if (especificacaoSelect) {
-                // Limpar o campo antes de adicionar as novas opções
-                especificacaoSelect.innerHTML = '<option value=""></option>';
-
-                especificacoes.forEach(especificacao => {
-                    const option = document.createElement("option");
-                    option.value = especificacao.id; // Usar o ID como valor
-                    option.textContent = especificacao.area; // Exibir o nome da área no campo
-                    especificacaoSelect.appendChild(option);
-                });
-            }
-        } catch (error) {
-            console.error("Erro ao carregar especificações:", error);
-            alert("Erro ao carregar especificações. Tente novamente mais tarde.");
-        }
-    }
-
-    // Função para obter o ID da URL
-
-    function getIdFromURL() {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('id');
-    }
-
-    // Função para atualizar o colaborador
-
-    async function atualizarColaborador() {
-        const id = getIdFromURL();
-        const idColaboradorLogado = sessionStorage.getItem('ID_MEDICO');
-    
-        if (!id) {
-            alert("ID do colaborador não encontrado.");
-            return;
-        }
-    
-        if (validarCadastro()) {
-            const nomeDigitado = document.getElementById("nome").value.trim();
-            const sobrenomeDigitado = document.getElementById("sobrenome").value.trim();
-            const emailDigitado = document.getElementById("email").value.trim();
-            const telefoneDigitado = document.getElementById("telefone").value.trim();
-            const cpfDigitado = document.getElementById("cpf").value.trim();
-            const dataNascimentoDigitada = document.getElementById("dataNascimento").value;
-            const especificacaoDigitada = document.getElementById("especificacao").value;
-            const carteirinhaDigitada = document.getElementById("carteirinha").value.trim();
-            const senhaDigitada = document.getElementById("password").value;
-            const nivelAcessoEscolhido = document.getElementById("nivelAcesso").value.trim();
-    
-            const nivelAcessoMap = {
-                "Admin": 1,
-                "Supervisor": 2,
-                "Profissional": 3
-            };
-          
-            const nivelAcessoId = nivelAcessoMap[nivelAcessoEscolhido];
-          
- 
-        if (!nivelAcessoId) {
-            alert("Opções inválidas selecionadas.");
-            return;
-        }
-
-        const dadosColaborador = {
-            "nome": nomeDigitado,
-            "sobrenome": sobrenomeDigitado,
-            "email": emailDigitado,
-            "telefone": telefoneDigitado,
-            "cpf": cpfDigitado,
-            "dataNascimento": dataNascimentoDigitada,
-            "especificacaoMedica": {
-                "id": especificacaoDigitada
-            },
-            "carterinha": carteirinhaDigitada,
-            "senha": senhaDigitada,
-            "permissao": {
-                "id": nivelAcessoId
-            },
-            "foto": selectedImage
-        };
-
-        try {
-            const respostaAtualizacao = await fetch(`${API_BASE}/mc/medicos/${id}`, {
-                method: "PUT",
-                body: JSON.stringify(dadosColaborador),
-                headers: { "Content-Type": "application/json; charset=UTF-8" }
-            });
-
-            if (respostaAtualizacao.ok) {
-                // Apenas armazene a foto no sessionStorage se o colaborador que está sendo atualizado for o mesmo que está logado
-                if (id === idColaboradorLogado) {
-                    sessionStorage.setItem('FOTO', selectedImage);
-                    const userAvatar = document.getElementById("user_avatar");
-                    if (userAvatar) {
-                        userAvatar.src = selectedImage;
-                    }
-                }
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Atualização realizada com sucesso!',
-                    text: 'Redirecionando para a área do colaborador...',
-                    showConfirmButton: false,
-                    timer: 1500
-                }).then(() => {
-                    window.location.href = "listagemColaborador.html";
-                });
-            } else {
-                const errorResponse = await respostaAtualizacao.json();
-                const errorMsg = errorResponse.message || "Ocorreu um erro ao atualizar.";
-                alert(errorMsg);
-            }
-        } catch (error) {
-            console.error("Erro ao tentar atualizar:", error);
-            alert("Ocorreu um erro ao tentar atualizar: " + error.message);
-        }
-    }
-}
-window.onload = function () {
-    const id = getIdFromURL();
-    if (id) {
-        buscarValores(id);
+  try {
+    const r = await fetch(`${API_BASE}/mc/medicos/${id}`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+    if (r.ok) {
+      const logged = sessionStorage.getItem('ID_MEDICO');
+      if (logged && String(logged) === String(id) && selectedImage) { sessionStorage.setItem('FOTO', selectedImage); const ua = document.getElementById('user_avatar'); if (ua) ua.src = selectedImage; }
+      Swal.fire({ icon:'success', title:'Atualização realizada com sucesso!', showConfirmButton:false, timer:1500 }).then(() => window.location.href = 'listagemColaborador.html');
     } else {
-        console.error('ID do médico não encontrado na URL.');
+      const txt = await r.text(); let msg = txt || 'Erro ao atualizar'; try { const j = JSON.parse(txt); msg = j.message || msg; } catch(e){}
+      alert(msg);
     }
-    carregarEspecificacoes();
-};
+  } catch (err) { console.error('atualizarColaborador:', err); alert('Erro ao atualizar. Veja console.'); }
 }
+
+// Inicialização
+window.addEventListener('DOMContentLoaded', () => {
+  const id = getIdFromURL(); if (id) buscarValores(id); carregarEspecificacoes();
+  const btn = document.getElementById('btnSalvarColaborador'); if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); atualizarColaborador(); });
+});

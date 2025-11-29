@@ -350,3 +350,33 @@ cursor: pointer;
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* Export buttons (patient calendar) */
+.export-week-btn,
+#btn-export-week-csv-paciente,
+#btn-export-week-pdf-paciente {
+        background: linear-gradient(180deg, #2E86DE 0%, #1976D2 100%);
+        color: #fff;
+        border: 0;
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-weight: 600;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        cursor: pointer;
+        margin-left: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+}
+
+#btn-export-week-csv-paciente i,
+#btn-export-week-pdf-paciente i { font-size: 0.95em; }
+
+#btn-export-week-csv-paciente:hover,
+#btn-export-week-pdf-paciente:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.16);
+}
+
+/* Keep main calendar header compact: hide patient export buttons if somehow injected there */
+#download-week-csv, #download-week-pdf { display: none !important; }

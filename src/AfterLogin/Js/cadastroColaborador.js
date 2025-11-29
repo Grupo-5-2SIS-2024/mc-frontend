@@ -123,12 +123,7 @@ function validarCadastro() {
     document.getElementById('error-dataNascimento').textContent = "";
   }
 
-  if (!carteirinha.trim()) {
-    document.getElementById('error-carteirinha').textContent = "Carteirinha é obrigatória.";
-    errors.push("Carteirinha é obrigatória.");
-  } else {
-    document.getElementById('error-carteirinha').textContent = "";
-  }
+  document.getElementById('error-carteirinha').textContent = "";
 
   if (!passwordRegex.test(password)) {
     document.getElementById('error-password').textContent = "Senha: 8+ caracteres, 1 maiúscula, 1 minúscula, 1 número.";

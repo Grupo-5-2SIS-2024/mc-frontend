@@ -28,6 +28,100 @@ async function BaixarExcelGeral() {
     }
 }
 
+// Exporta a semana atual para CSV (abre para Excel)
+function exportarSemanaCSV() {
+    try {
+        const start = new Date(dataInicioAtual);
+        const rows = [];
+        rows.push(['Data','Hora','Paciente','CPF','Profissional','Área','Status','Descrição','Duração']);
+
+        for (let i=0;i<7;i++){
+            const d = new Date(start);
+            d.setDate(start.getDate()+i);
+            const tarefas = obterTarefasParaData(d);
+            tarefas.forEach(t => {
+                const dataHora = new Date(t.datahoraConsulta);
+                const dataStr = dataHora.toLocaleDateString('pt-BR');
+                const horaStr = dataHora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+                const paciente = t.paciente ? `${t.paciente.nome || ''} ${t.paciente.sobrenome || ''}`.trim() : '';
+                const cpf = t.paciente ? (t.paciente.cpf || '') : '';
+                const medico = t.medico ? `${t.medico.nome || ''} ${t.medico.sobrenome || ''}`.trim() : '';
+                const area = t.medico?.especificacaoMedica?.area || t.especificacaoMedica?.area || '';
+                const status = t.statusConsulta?.nomeStatus || '';
+                const descricao = t.descricao ? String(t.descricao).replace(/\r?\n/g,' ') : '';
+                let duracao = '';
+                const rawDur = t.duracaoConsulta ?? t.duracao ?? null;
+                if (rawDur) {
+                    if (typeof rawDur === 'number') duracao = `${rawDur} min`;
+                    else duracao = String(rawDur);
+                }
+                rows.push([dataStr,horaStr,paciente,cpf,medico,area,status,descricao,duracao]);
+            });
+        }
+
+        const csvContent = rows.map(r => r.map(cell => '"' + String(cell).replace(/"/g,'""') + '"').join(',')).join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const stamp = formatarData(new Date(dataInicioAtual)).replace(/-/g,'');
+        a.download = `agenda_semana_${stamp}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error('Erro ao exportar semana CSV:', err);
+    }
+}
+
+// Abre uma nova janela com a tabela da semana atual para imprimir/salvar como PDF
+function exportarSemanaPDF() {
+    try {
+        const start = new Date(dataInicioAtual);
+        let html = `<html><head><title>Agenda Semanal</title><style>body{font-family:Arial,Helvetica,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#f4f4f4}</style></head><body>`;
+        html += `<h2>Agenda Semanal: ${document.getElementById('dias').innerText}</h2>`;
+        html += `<table><thead><tr><th>Data</th><th>Hora</th><th>Paciente</th><th>Profissional</th><th>Área</th><th>Status</th><th>Descrição</th><th>Duração</th></tr></thead><tbody>`;
+
+        for (let i=0;i<7;i++){
+            const d = new Date(start);
+            d.setDate(start.getDate()+i);
+            const tarefas = obterTarefasParaData(d);
+            if (tarefas.length === 0) {
+                html += `<tr><td>${d.toLocaleDateString('pt-BR')}</td><td colspan="7">Sem tarefas</td></tr>`;
+            } else {
+                tarefas.forEach(t => {
+                    const dataHora = new Date(t.datahoraConsulta);
+                    const dataStr = dataHora.toLocaleDateString('pt-BR');
+                    const horaStr = dataHora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+                    const paciente = t.paciente ? `${t.paciente.nome || ''} ${t.paciente.sobrenome || ''}`.trim() : '';
+                    const medico = t.medico ? `${t.medico.nome || ''} ${t.medico.sobrenome || ''}`.trim() : '';
+                    const area = t.medico?.especificacaoMedica?.area || t.especificacaoMedica?.area || '';
+                    const status = t.statusConsulta?.nomeStatus || '';
+                    const descricao = t.descricao ? String(t.descricao).replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+                    const rawDur = t.duracaoConsulta ?? t.duracao ?? null;
+                    let duracao = '';
+                    if (rawDur) duracao = typeof rawDur === 'number' ? `${rawDur} min` : String(rawDur);
+                    html += `<tr><td>${dataStr}</td><td>${horaStr}</td><td>${paciente}</td><td>${medico}</td><td>${area}</td><td>${status}</td><td>${descricao}</td><td>${duracao}</td></tr>`;
+                });
+            }
+        }
+
+        html += `</tbody></table></body></html>`;
+        const w = window.open('', '_blank');
+        if (!w) {
+            alert('Permita popups para gerar o PDF.');
+            return;
+        }
+        w.document.write(html);
+        w.document.close();
+        // Pequeno atraso para garantir que o conteúdo carregue antes do print
+        setTimeout(() => { w.print(); }, 500);
+    } catch (err) {
+        console.error('Erro ao gerar PDF da semana:', err);
+    }
+}
+
 
 //Agendamento - calendario
 
@@ -343,12 +437,12 @@ async function BaixarExcelGeral() {
             const idadePaciente = idadeRaw ? Number(idadeRaw) : null;
 
             bancoDeDadosFiltrado = consultasOriginais.filter(consulta => {
-                const filtroMedico = medicoId == null || (consulta.medico && consulta.medico.id === medicoId);
-                const filtroPaciente = pacienteId == null || (consulta.paciente && consulta.paciente.id === pacienteId);
-                const filtroStatus = statusId == null || (consulta.statusConsulta && consulta.statusConsulta.id === statusId);
-                const filtroAreaConsulta = areaConsultaId == null || (consulta.especificacaoMedica && consulta.especificacaoMedica.id === areaConsultaId);
+                const filtroMedico = medicoId == null || (consulta.medico && Number(consulta.medico.id) === medicoId);
+                const filtroPaciente = pacienteId == null || (consulta.paciente && Number(consulta.paciente.id) === pacienteId);
+                const filtroStatus = statusId == null || (consulta.statusConsulta && Number(consulta.statusConsulta.id) === statusId);
+                const filtroAreaConsulta = areaConsultaId == null || (consulta.especificacaoMedica && Number(consulta.especificacaoMedica.id) === areaConsultaId);
                 const filtroIdade = idadePaciente == null || (consulta.paciente && calcularIdade(consulta.paciente.dtNasc) === idadePaciente);
-                const filtroGenero = !generoPaciente || (consulta.paciente && consulta.paciente.genero === generoPaciente);
+                const filtroGenero = !generoPaciente || (consulta.paciente && (consulta.paciente.genero || '') === generoPaciente);
 
                 // Filtra por data de início e data de fim
                 const dataConsulta = new Date(consulta.datahoraConsulta);
