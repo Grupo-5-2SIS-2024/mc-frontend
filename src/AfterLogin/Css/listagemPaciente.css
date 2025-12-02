@@ -35,7 +35,8 @@ body {
 }
 
 .header h1 span {
-    color: #1976D2; /* azul médio */
+    color: #1976D2;
+    /* azul médio */
 }
 
 .containerBotao {
@@ -49,7 +50,8 @@ body {
     padding: 1rem;
     border-radius: 0.5rem;
     font-size: 1rem;
-    background-color: #1976D2; /* azul médio */
+    background-color: #1976D2;
+    /* azul médio */
     color: whitesmoke;
     font-weight: bold;
     outline: none;
@@ -58,7 +60,8 @@ body {
 }
 
 .registrar:hover {
-    background-color: #1565C0; /* hover azul escuro */
+    background-color: #1565C0;
+    /* hover azul escuro */
 }
 
 .filtro {
@@ -68,7 +71,8 @@ body {
     border-radius: 0.5rem;
     font-size: 1rem;
     background-color: #ffffff;
-    color: #1976D2; /* azul médio */
+    color: #1976D2;
+    /* azul médio */
     border: 2px solid #1976D2;
     font-weight: bold;
     outline: none;
@@ -85,7 +89,8 @@ body {
 }
 
 .registrar:hover {
-    background-color: #1565C0; /* hover azul escuro */
+    background-color: #1565C0;
+    /* hover azul escuro */
     transform: translateY(-0.4rem);
     transition: 0.2s;
     box-shadow: 0rem 0.5rem 0.8rem rgb(0, 0, 0);
@@ -150,7 +155,8 @@ a {
     font-size: 3rem;
     font-weight: bold;
     margin: 0;
-    color: #1976D2; /* azul médio */
+    color: #1976D2;
+    /* azul médio */
 }
 
 .kpiText {
@@ -176,7 +182,7 @@ a {
     border-radius: 10px;
     overflow-y: auto;
     align-items: center;
-    justify-content: flex-start; 
+    justify-content: flex-start;
 }
 
 .cardPaciente {
@@ -243,7 +249,8 @@ a {
 }
 
 .cardPaciente .actions button:hover {
-    color: #1976D2; /* azul médio */
+    color: #1976D2;
+    /* azul médio */
 }
 
 /* MODAIS */
@@ -265,8 +272,8 @@ a {
     margin: 2% auto;
     padding: 20px;
     border-radius: 8px;
-    width: 90%; 
-    max-width: 600px; 
+    width: 90%;
+    max-width: 600px;
     text-align: center;
 }
 
@@ -276,7 +283,7 @@ a {
 }
 
 .modal-content input {
-    width: 80%; 
+    width: 80%;
     padding: 8px;
     margin-bottom: 10px;
     border: 1px solid #ccc;
@@ -285,7 +292,8 @@ a {
 
 .modal-content button {
     padding: 8px 16px;
-    background-color: #1976D2; /* azul médio */
+    background-color: #1976D2;
+    /* azul médio */
     color: #fff;
     border: none;
     border-radius: 4px;
@@ -301,38 +309,40 @@ a {
 }
 
 .lista-filtros-ativos {
-    display: flex; 
-    flex-wrap: wrap; 
+    display: flex;
+    flex-wrap: wrap;
     list-style-type: none;
     padding: 0;
-    margin: 0; 
+    margin: 0;
 }
 
 .lista-filtros-ativos li {
-    background-color: #BBDEFB; /* azul muito claro */
-    color: #1976D2; /* azul médio */
+    background-color: #BBDEFB;
+    /* azul muito claro */
+    color: #1976D2;
+    /* azul médio */
     border-radius: 5px;
     padding: 8px 12px;
-    margin: 5px; 
+    margin: 5px;
     font-size: 14px;
     font-weight: bold;
     height: 8vh;
     text-align: center;
     flex: 1 1 auto;
-    max-width: calc(43.33% - 10px); 
-    box-sizing: border-box; 
+    max-width: calc(43.33% - 10px);
+    box-sizing: border-box;
 }
 
 .lista-filtros-ativos li button {
-    position: absolute; 
-    top: 5px; 
-    right: 5px; 
+    position: absolute;
+    top: 5px;
+    right: 5px;
     background: none;
     border: none;
     color: #555;
-    font-size: 12px; 
+    font-size: 12px;
     cursor: pointer;
-    padding: 0; 
+    padding: 0;
     transition: color 0.3s;
 }
 
@@ -354,12 +364,14 @@ a {
     font-weight: bold;
     cursor: pointer;
     transition: background-color 0.3s ease;
-    background-color: #1976D2; /* azul médio */
+    background-color: #1976D2;
+    /* azul médio */
     color: #fff;
 }
 
 .botoes-container .btn-aplicar:hover {
-    background-color: #1565C0; /* hover azul escuro */
+    background-color: #1565C0;
+    /* hover azul escuro */
 }
 
 .botoes-container .btn-limpar {
@@ -384,6 +396,7 @@ a {
     transition: color 0.3s;
     z-index: 10;
 }
+
 .modal-content {
     position: relative;
 }
@@ -404,7 +417,8 @@ a {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Fundo preto com opacidade */
+    background-color: rgba(0, 0, 0, 0.5);
+    /* Fundo preto com opacidade */
     z-index: 1000;
     display: none;
     align-items: center;
@@ -419,11 +433,13 @@ a {
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    background-color: #c8f2cc; /* Cor clara para o conteúdo interno */
+    background-color: #c8f2cc;
+    /* Cor clara para o conteúdo interno */
     display: flex;
     gap: 20px;
     flex-direction: row;
-    background-color: #BBDEFB; /* azul muito claro */
+    background-color: #BBDEFB;
+    /* azul muito claro */
 }
 
 /* Conteúdo do modal */
@@ -458,6 +474,7 @@ a {
 .patient-name {
     font-size: 1.8rem;
     font-weight: bold;
+    text-align: center;
     color: #020617;
 }
 
@@ -494,16 +511,19 @@ a {
 }
 
 .tab-btn.active {
-    background-color: #BBDEFB; /* azul muito claro */
+    background-color: #BBDEFB;
+    /* azul muito claro */
 }
 
 .tab-btn:hover {
-    background-color: #2196F3; /* azul claro */
+    background-color: #2196F3;
+    /* azul claro */
 }
 
 .tab-contents {
     flex: 1;
-    background-color: #E3F2FD; /* azul claro */
+    background-color: #E3F2FD;
+    /* azul claro */
     border-radius: 0 0 8px 8px;
     padding: 16px;
     overflow-y: auto;
@@ -610,7 +630,7 @@ a {
 }
 
 .patient-export-btn {
-    background: linear-gradient(180deg,#2E86DE 0%,#1976D2 100%);
+    background: linear-gradient(180deg, #2E86DE 0%, #1976D2 100%);
     color: #fff;
     border: 0;
     width: 42px;
@@ -620,12 +640,17 @@ a {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
-.patient-export-btn i { font-size: 14px; }
+.patient-export-btn i {
+    font-size: 14px;
+}
 
-.patient-export-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.16); }
+.patient-export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+}
 
 /* Navegação entre semanas */
 .nav-button {
@@ -729,6 +754,7 @@ a {
         opacity: 0;
         transform: scale(0.8);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -799,6 +825,7 @@ a {
         opacity: 0;
         transform: scale(0.8);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -863,11 +890,16 @@ a {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Fundo transparente cobrindo a tela toda */
-    display: flex; /* Alinha o modal com flexbox */
-    justify-content: center; /* Alinha o modal horizontalmente no centro */
-    align-items: center; /* Alinha o modal verticalmente no centro */
-    visibility: hidden; /* Inicialmente invisível */
+    background-color: rgba(0, 0, 0, 0.5);
+    /* Fundo transparente cobrindo a tela toda */
+    display: flex;
+    /* Alinha o modal com flexbox */
+    justify-content: center;
+    /* Alinha o modal horizontalmente no centro */
+    align-items: center;
+    /* Alinha o modal verticalmente no centro */
+    visibility: hidden;
+    /* Inicialmente invisível */
 }
 
 .containerEvolucao {
@@ -878,11 +910,13 @@ a {
     width: 100%;
     max-width: 600px;
     display: flex;
-    flex-direction: column; /* Organiza os campos do formulário em uma coluna */
+    flex-direction: column;
+    /* Organiza os campos do formulário em uma coluna */
 }
 
 .headerModal h1 {
-    font-size: 22px; /* Tamanho de fonte reduzido */
+    font-size: 22px;
+    /* Tamanho de fonte reduzido */
     color: #2E7D32;
     margin: 0 0 10px 0;
     display: flex;
@@ -899,7 +933,7 @@ a {
     align-items: center;
 }
 
-#feedbackForm{
+#feedbackForm {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -932,35 +966,43 @@ a {
 
 .form-row {
     display: flex;
-    justify-content: space-between; /* Cria um espaçamento entre as colunas */
+    justify-content: space-between;
+    /* Cria um espaçamento entre as colunas */
     gap: 3rem;
 }
 
 .form-left,
 .form-right {
-    width: 70%; /* Ajuste para as colunas ficarem do lado esquerdo e direito */
+    width: 70%;
+    /* Ajuste para as colunas ficarem do lado esquerdo e direito */
 }
 
 .buttonEvolucao {
-    background-color: #1976D2; /* azul médio */
+    background-color: #1976D2;
+    /* azul médio */
     color: white;
     padding: 10px 20px;
     border: none;
     border-radius: 5px;
     font-size: 16px;
     cursor: pointer;
-    width: 100%; /* Faz o botão ocupar toda a largura */
+    width: 100%;
+    /* Faz o botão ocupar toda a largura */
 }
 
 .buttonEvolucao:hover {
-    background-color: #1565C0; /* hover azul escuro */
+    background-color: #1565C0;
+    /* hover azul escuro */
 }
 
 .botao-container {
     display: flex;
-    justify-content: flex-start; /* Alinha os botões à esquerda */
-    gap: 10px; /* Reduz o espaço entre os botões */
-    margin-top: 20px; /* Ajuste a margem superior conforme necessário */
+    justify-content: flex-start;
+    /* Alinha os botões à esquerda */
+    gap: 10px;
+    /* Reduz o espaço entre os botões */
+    margin-top: 20px;
+    /* Ajuste a margem superior conforme necessário */
 }
 
 

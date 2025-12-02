@@ -14,7 +14,8 @@ body {
 }
 
 .sidebar {
-    background-color: #0D47A1; /* azul escuro */
+    background-color: #0D47A1;
+    /* azul escuro */
     width: 250px;
     padding: 20px;
     color: white;
@@ -39,7 +40,8 @@ body {
 }
 
 .menu li.active {
-    background-color: #1565C0; /* hover azul escuro */
+    background-color: #1565C0;
+    /* hover azul escuro */
     border-radius: 5px;
 }
 
@@ -60,17 +62,19 @@ body {
 }
 
 .header .highlight {
-    color: #1976D2; /* azul médio */
+    color: #1976D2;
+    /* azul médio */
 }
 
-.buttons{
+.buttons {
     display: flex;
     flex-direction: row;
     gap: 1rem;
 }
 
 .filter-button {
-    background-color: #1976D2; /* azul médio */
+    background-color: #1976D2;
+    /* azul médio */
     color: white;
     border: none;
     padding: 10px 20px;
@@ -83,7 +87,8 @@ body {
 }
 
 .filter-button:hover {
-    background-color: #1565C0; /* hover azul escuro */
+    background-color: #1565C0;
+    /* hover azul escuro */
 }
 
 .filter-group {
@@ -188,7 +193,8 @@ body {
 }
 
 .task {
-    background-color: #1E88E5; /* azul intermediário */
+    background-color: #1E88E5;
+    /* azul intermediário */
     color: white;
     padding: 10px;
     margin-bottom: 10px;
@@ -202,7 +208,8 @@ body {
 
 .task:hover {
     transform: translateY(-3px);
-    background-color: #1976D2; /* azul médio */
+    background-color: #1976D2;
+    /* azul médio */
 }
 
 .task.inactive {
@@ -240,6 +247,7 @@ body {
         opacity: 0;
         transform: scale(0.8);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -248,7 +256,8 @@ body {
 
 .modal-content h3 {
     margin-top: 0;
-    color: #1976D2; /* azul médio */
+    color: #1976D2;
+    /* azul médio */
     text-align: center;
 }
 
@@ -271,14 +280,16 @@ body {
 }
 
 .modal-content button {
-    background-color: #1976D2; /* azul médio */
+    background-color: #1976D2;
+    /* azul médio */
     color: white;
     cursor: pointer;
     font-weight: bold;
 }
 
 .modal-content button:hover {
-    background-color: #1565C0; /* hover azul escuro */
+    background-color: #1565C0;
+    /* hover azul escuro */
 }
 
 .filter-buttons {
@@ -315,68 +326,73 @@ body {
 }
 
 .edit-button {
-position: absolute;
-top: 10px;
-right: 45px;
-background: transparent;
-border: none;
-cursor: pointer;
-font-size: 1.2em;
-color: #1976D2;
+    position: absolute;
+    top: 10px;
+    right: 45px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    color: #1976D2;
 }
 
 
 .modal-content .edit-button {
-position: absolute;
-top: 10px;
-right: 45px;
-width: 32px;
-height: 32px;
-padding: 0;
-background: transparent;
-border: 0;
-box-shadow: none;
-display: inline-flex;
-align-items: center;
-justify-content: center;
-color: #1976D2;
-cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 45px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #1976D2;
+    cursor: pointer;
 }
 
 .edit-button,
 .edit-button:hover,
 .edit-button:focus {
-  background: transparent !important;
-  outline: none !important;
-  box-shadow: none !important;
+    background: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 /* Export buttons (patient calendar) */
 .export-week-btn,
 #btn-export-week-csv-paciente,
 #btn-export-week-pdf-paciente {
-        background: linear-gradient(180deg, #2E86DE 0%, #1976D2 100%);
-        color: #fff;
-        border: 0;
-        padding: 8px 14px;
-        border-radius: 6px;
-        font-weight: 600;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-        cursor: pointer;
-        margin-left: 6px;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+    background: linear-gradient(180deg, #2E86DE 0%, #1976D2 100%);
+    color: #fff;
+    border: 0;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    margin-left: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 #btn-export-week-csv-paciente i,
-#btn-export-week-pdf-paciente i { font-size: 0.95em; }
+#btn-export-week-pdf-paciente i {
+    font-size: 0.95em;
+}
 
 #btn-export-week-csv-paciente:hover,
 #btn-export-week-pdf-paciente:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 18px rgba(0,0,0,0.16);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
 }
 
 /* Keep main calendar header compact: hide patient export buttons if somehow injected there */
-#download-week-csv, #download-week-pdf { display: none !important; }
+#download-week-csv,
+#download-week-pdf {
+    display: none !important;
+}

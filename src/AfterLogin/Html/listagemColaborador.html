@@ -117,7 +117,7 @@
                     <button id="btnAdicionarColaborador" class="registrar"><a href="cadastroColaborador.html">Adicionar
                             Colaborador</a></button>
                     <button id="btnAdicionarArea" class="registrarArea" onclick="abrirModal()">Adicionar Área</button>
-                    <button class="filtro" onclick="abrirModalFiltro()"><i class="fas fa-filter"></i>  Filtrar</button>
+                    <button class="filtro" onclick="abrirModalFiltro()"><i class="fas fa-filter"></i> Filtrar</button>
                 </div>
             </div>
 
@@ -134,25 +134,26 @@
             </div>
 
             <div id="modalFiltro" class="modal">
-               
+
                 <div class="modal-content">
-                     <button onclick="fecharModalFiltro()" class="btn-fechar">&times;</button>
-                    <span class="close" style="float: right; cursor: pointer;" onclick="fecharModalFiltro()">&times;</span>
+                    <button onclick="fecharModalFiltro()" class="btn-fechar">&times;</button>
+                    <span class="close" style="float: right; cursor: pointer;"
+                        onclick="fecharModalFiltro()">&times;</span>
                     <h2>Filtrar Profissionais</h2>
                     <label for="filtroNome">Nome:</label>
                     <input type="text" id="filtroNome" placeholder="Nome do Profissional">
-                    
+
                     <label for="filtroEmail">Email:</label>
                     <input type="text" id="filtroEmail" placeholder="Email do Profissional">
-                    
+
                     <label for="filtroEspecialidade">Especialidade:</label>
                     <input type="text" id="filtroEspecialidade" placeholder="Especialidade do Profissional">
-                    
+
                     <div id="filtrosAtivosContainer">
                         <h3>Filtros Ativos</h3>
                         <ul id="listaFiltrosAtivos" class="lista-filtros-ativos"></ul>
                     </div>
-                    
+
                     <div class="botoes-container">
                         <button onclick="aplicarFiltros()" class="btn-aplicar">Aplicar Filtros</button>
                         <button onclick="limparFiltros()" class="btn-limpar">Limpar Filtros</button>
@@ -219,6 +220,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../Js/sessao.js"></script>
 
-    </body>
+</body>
 
 </html>

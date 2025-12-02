@@ -114,47 +114,48 @@
             <div class="header">
                 <h1>Área dos <span>Leads</span></h1>
                 <div class="containerBotao">
-                    <button class="filtro" onclick="abrirModalFiltroLeads()"><i class="fas fa-filter"></i>  Filtrar</button>
+                    <button class="filtro" onclick="abrirModalFiltroLeads()"><i class="fas fa-filter"></i>
+                        Filtrar</button>
                 </div>
             </div>
             <div id="modalFiltroLeads" class="modal">
                 <div class="modal-content">
                     <button class="btn-fechar" onclick="fecharModalFiltroLeads()">&times;</button>
                     <h2>Filtrar Leads</h2>
-            
+
                     <!-- Campos de Filtro -->
                     <div class="input-group">
                         <label for="filtroNomeLead">Nome:</label>
                         <input type="text" id="filtroNomeLead" placeholder="Nome do Lead">
                     </div>
-            
+
                     <div class="input-group">
                         <label for="filtroEmailLead">Email:</label>
                         <input type="text" id="filtroEmailLead" placeholder="Email do Lead">
                     </div>
-            
+
                     <div class="input-group">
                         <label for="filtroDataEntradaLead">Data de Entrada:</label>
                         <input type="date" id="filtroDataEntradaLead" placeholder="Data de Entrada">
                     </div>
-            
+
                     <div class="input-group">
                         <label for="filtroFaseLead">Fase:</label>
                         <input type="text" id="filtroFaseLead" placeholder="Fase do Lead">
                     </div>
-            
+
                     <div id="filtrosAtivosContainerLeads">
                         <h3>Filtros Ativos</h3>
                         <ul id="listaFiltrosAtivosLeads" class="lista-filtros-ativos"></ul>
                     </div>
-            
+
                     <div class="botoes-container">
                         <button onclick="aplicarFiltrosLeads()" class="btn-aplicar">Aplicar Filtros</button>
                         <button onclick="limparFiltrosLeads()" class="btn-limpar">Limpar Filtros</button>
                     </div>
                 </div>
             </div>
-            
+
             <div class="KPIS">
                 <div class="cardKpi">
                     <div class="kpiContent">

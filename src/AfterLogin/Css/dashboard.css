@@ -72,48 +72,66 @@ body {
 }
 
 .upcoming-appointments {
-    grid-column: 2 / 4; /* Ocupar duas colunas no meio superior */
+    grid-column: 2 / 4;
+    /* Ocupar duas colunas no meio superior */
     grid-row: 1 / 2;
-    padding: 15px; /* Ajusta o espaçamento interno da caixa */
+    padding: 15px;
+    /* Ajusta o espaçamento interno da caixa */
     display: flex;
-    flex-direction: column; /* Organiza o título e conteúdo em coluna */
-    justify-content: center; /* Centraliza o conteúdo verticalmente */
-    align-items: center; /* Centraliza o conteúdo horizontalmente */
+    flex-direction: column;
+    /* Organiza o título e conteúdo em coluna */
+    justify-content: center;
+    /* Centraliza o conteúdo verticalmente */
+    align-items: center;
+    /* Centraliza o conteúdo horizontalmente */
     background-color: #ffffff;
-    border-radius: 8px; /* Arredonda os cantos da caixa */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Adiciona sombra para destaque */
-    text-align: center; /* Centraliza o texto dentro da caixa */
+    border-radius: 8px;
+    /* Arredonda os cantos da caixa */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    /* Adiciona sombra para destaque */
+    text-align: center;
+    /* Centraliza o texto dentro da caixa */
 }
 
 .upcoming-appointments h2 {
-    margin: 0 0 15px 0; /* Margem inferior para separar o título dos dados */
-    font-size: 20px; /* Aumenta o tamanho da fonte do título */
-    font-weight: bold; /* Torna o título mais destacado */
+    margin: 0 0 15px 0;
+    /* Margem inferior para separar o título dos dados */
+    font-size: 20px;
+    /* Aumenta o tamanho da fonte do título */
+    font-weight: bold;
+    /* Torna o título mais destacado */
     color: #333;
 }
 
 .upcoming-appointments table {
-    width: calc(100% - 30px); /* Ajusta a largura da tabela para deixar um espaço de 15px em cada lado */
+    width: calc(100% - 30px);
+    /* Ajusta a largura da tabela para deixar um espaço de 15px em cada lado */
     border-collapse: collapse;
-    margin: 0 auto; /* Centraliza a tabela horizontalmente */
+    margin: 0 auto;
+    /* Centraliza a tabela horizontalmente */
 }
 
-.upcoming-appointments th, 
+.upcoming-appointments th,
 .upcoming-appointments td {
     border: 1px solid #ddd;
-    padding: 8px; /* Aumenta o espaçamento interno das células */
-    text-align: center; /* Centraliza o texto dentro das células */
-    font-size: 14px; /* Aumenta o tamanho da fonte para melhor legibilidade */
+    padding: 8px;
+    /* Aumenta o espaçamento interno das células */
+    text-align: center;
+    /* Centraliza o texto dentro das células */
+    font-size: 14px;
+    /* Aumenta o tamanho da fonte para melhor legibilidade */
 }
 
 .upcoming-appointments th {
-    background-color: #f0f0f0; /* Ajusta a cor de fundo do cabeçalho para contraste */
+    background-color: #f0f0f0;
+    /* Ajusta a cor de fundo do cabeçalho para contraste */
     color: #333;
     font-weight: 600;
 }
 
 .retention {
-    grid-column: 1 / 4; /* Ocupar três colunas no meio inferior */
+    grid-column: 1 / 4;
+    /* Ocupar três colunas no meio inferior */
     grid-row: 2 / 3;
 }
 
@@ -128,7 +146,8 @@ table {
     margin-top: 10px;
 }
 
-th, td {
+th,
+td {
     border: 1px solid #ddd;
     padding: 5px;
     text-align: left;
@@ -188,7 +207,8 @@ th {
 
 .buttons {
     display: flex;
-    justify-content: flex-end; /* Move o conteúdo para o lado direito */
+    justify-content: flex-end;
+    /* Move o conteúdo para o lado direito */
     align-items: center;
     padding: 20px;
     gap: 1rem;
@@ -198,16 +218,20 @@ th {
     color: #333;
     font-size: 24px;
     font-weight: 600;
-    margin: 0 auto; /* Centraliza o título na tela */
+    margin: 0 auto;
+    /* Centraliza o título na tela */
     text-align: center;
-    flex-grow: 1; /* Permite que o h1 ocupe o espaço necessário para centralização */
+    flex-grow: 1;
+    /* Permite que o h1 ocupe o espaço necessário para centralização */
 }
 
 .filter-button {
-    background-color: #1976D2; /* azul médio */
+    background-color: #1976D2;
+    /* azul médio */
     color: white;
     border: none;
-    padding: 10px 20px; /* Ajuste do padding para um tamanho mais compacto */
+    padding: 10px 20px;
+    /* Ajuste do padding para um tamanho mais compacto */
     cursor: pointer;
     border-radius: 5px;
     transition: background-color 0.3s;
@@ -217,7 +241,8 @@ th {
 }
 
 .filter-button:hover {
-    background-color: #1565C0; /* hover azul escuro */
+    background-color: #1565C0;
+    /* hover azul escuro */
 }
 
 .modal {
@@ -249,6 +274,7 @@ th {
         opacity: 0;
         transform: scale(0.8);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -257,7 +283,8 @@ th {
 
 .modal-content h3 {
     margin-top: 0;
-    color: #1976D2; /* azul médio */
+    color: #1976D2;
+    /* azul médio */
     text-align: center;
 }
 

@@ -241,7 +241,8 @@ td>.btn-status {
     display: flex;
     flex-direction: row;
     gap: 1rem;
-    justify-content: flex-start; /* keep status text and buttons together on the left */
+    justify-content: flex-start;
+    /* keep status text and buttons together on the left */
     align-items: center;
 }
 

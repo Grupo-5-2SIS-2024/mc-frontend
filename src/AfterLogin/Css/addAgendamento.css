@@ -40,7 +40,9 @@ body {
     margin-top: 20px;
 }
 
-.swal2-input, .swal2-textarea, .swal2-select {
+.swal2-input,
+.swal2-textarea,
+.swal2-select {
     width: 90%;
     margin: 0 auto;
     padding: 8px;
@@ -242,7 +244,8 @@ button#agendar:hover {
 
 .btn-delete-pilha,
 .btn-delete-fila {
-    background-color: #d32f2f; /* Mantido vermelho para deletar */
+    background-color: #d32f2f;
+    /* Mantido vermelho para deletar */
     color: white;
     padding: 10px 20px;
     border: none;

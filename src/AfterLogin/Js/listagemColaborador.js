@@ -48,7 +48,7 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
         const areaEspecializacaoSupervisor = sessionStorage.getItem("ESPECIFICACAO_MEDICA");
         const idMedicoLogado = Number(sessionStorage.getItem("ID_MEDICO"));
 
-    const resposta = await fetch(`${API_BASE}/mc/medicos`);
+        const resposta = await fetch(`${API_BASE}/mc/medicos`);
         const listaMedicos = await resposta.json();
 
         let medicosFiltrados = listaMedicos.filter(medico => medico.id !== idMedicoLogado);
@@ -169,8 +169,8 @@ async function deletarMedico(id) {
             console.warn('Nenhuma nota para deletar ou erro ao deletar notas:', erro);
         }
 
-    // Deleta o médico
-    const resposta4 = await fetch(`${API_BASE}/mc/medicos/${id}`, {
+        // Deleta o médico
+        const resposta4 = await fetch(`${API_BASE}/mc/medicos/${id}`, {
             method: 'DELETE'
         });
         if (!resposta4.ok) {
@@ -187,22 +187,22 @@ async function deletarMedico(id) {
 
 async function buscarKPIsMedico() {
     try {
-    // Buscar o número total de médicos
-    const respostaTotalMedicos = await fetch(`${API_BASE}/mc/medicos/todos`);
-    const listaMedicos = await respostaTotalMedicos.json();
-    const totalMedicos = listaMedicos.length;
+        // Buscar o número total de médicos
+        const respostaTotalMedicos = await fetch(`${API_BASE}/mc/medicos/todos`);
+        const listaMedicos = await respostaTotalMedicos.json();
+        const totalMedicos = listaMedicos.length;
 
-    // Buscar o número de médicos ativos
-    const respostaMedicosAtivos = await fetch(`${API_BASE}/mc/medicos`);
-    const listaMedicosAtivos = await respostaMedicosAtivos.json();
-    const medicosAtivos = listaMedicosAtivos.length;
+        // Buscar o número de médicos ativos
+        const respostaMedicosAtivos = await fetch(`${API_BASE}/mc/medicos`);
+        const listaMedicosAtivos = await respostaMedicosAtivos.json();
+        const medicosAtivos = listaMedicosAtivos.length;
 
-    // Buscar o total de administradores
-    const respostaTotalAdmins = await fetch(`${API_BASE}/mc/medicos/totalAdministradores`);
-    const totalAdmins = await respostaTotalAdmins.json();
+        // Buscar o total de administradores
+        const respostaTotalAdmins = await fetch(`${API_BASE}/mc/medicos/totalAdministradores`);
+        const totalAdmins = await respostaTotalAdmins.json();
 
-    // Buscar o número de administradores ativos
-    const respostaAdminsAtivos = await fetch(`${API_BASE}/mc/medicos/totalAdministradoresAtivos`);
+        // Buscar o número de administradores ativos
+        const respostaAdminsAtivos = await fetch(`${API_BASE}/mc/medicos/totalAdministradoresAtivos`);
         const totalAdminsAtivos = await respostaAdminsAtivos.json();
 
         // Função para adicionar zero à esquerda se necessário
@@ -223,7 +223,7 @@ buscarKPIsMedico();
 
 async function buscarAreasClinica() {
     try {
-    const resposta = await fetch(`${API_BASE}/mc/especificacoes`);
+        const resposta = await fetch(`${API_BASE}/mc/especificacoes`);
         const listaAreas = await resposta.json();
         console.log('Áreas recebidas:', listaAreas);
 
@@ -271,7 +271,7 @@ async function atualizarArea(areaId) {
     const novoNome = inputArea.value.trim();
 
     try {
-    const resposta = await fetch(`${API_BASE}/mc/especificacoes/${areaId}`, {
+        const resposta = await fetch(`${API_BASE}/mc/especificacoes/${areaId}`, {
             method: "PUT",
             body: JSON.stringify({ area: novoNome }),
             headers: { "Content-type": "application/json; charset=UTF-8" }
@@ -327,7 +327,7 @@ async function cadastrarArea() {
     };
 
     try {
-    const respostaCadastro = await fetch(`${API_BASE}/mc/especificacoes`, {
+        const respostaCadastro = await fetch(`${API_BASE}/mc/especificacoes`, {
             method: "POST",
             body: JSON.stringify(dadosArea),
             headers: { "Content-type": "application/json; charset=UTF-8" }

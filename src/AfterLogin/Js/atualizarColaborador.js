@@ -41,18 +41,18 @@ function validarCadastro() {
   const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
 
   const errors = [];
-  const set = (id,msg) => { const el = document.getElementById(id); if (el) el.textContent = msg; errors.push(msg); };
+  const set = (id, msg) => { const el = document.getElementById(id); if (el) el.textContent = msg; errors.push(msg); };
   const clear = (id) => { const el = document.getElementById(id); if (el) el.textContent = ''; };
 
-  if (!nome) set('error-nome','Nome é obrigatório.'); else clear('error-nome');
-  if (!sobrenome) set('error-sobrenome','Sobrenome é obrigatório.'); else clear('error-sobrenome');
-  if (!emailRegex.test(email)) set('error-email','E-mail inválido.'); else clear('error-email');
-  if (!telefoneRegex.test(telefone)) set('error-telefone','Telefone inválido.'); else clear('error-telefone');
-  if (!especificacao) set('error-especificacao','Especificação é obrigatória.'); else clear('error-especificacao');
-  if (!dataNascimento) set('error-dataNascimento','Data de nascimento é obrigatória.'); else clear('error-dataNascimento');
-  if (password && !passwordRegex.test(password)) set('error-password','Senha inválida.'); else clear('error-password');
-  if (password !== confirmedPassword) set('error-confirmedPassword','As senhas não coincidem.'); else clear('error-confirmedPassword');
-  if (!nivelAcesso) set('error-nivelAcesso','Nível de acesso é obrigatório.'); else clear('error-nivelAcesso');
+  if (!nome) set('error-nome', 'Nome é obrigatório.'); else clear('error-nome');
+  if (!sobrenome) set('error-sobrenome', 'Sobrenome é obrigatório.'); else clear('error-sobrenome');
+  if (!emailRegex.test(email)) set('error-email', 'E-mail inválido.'); else clear('error-email');
+  if (!telefoneRegex.test(telefone)) set('error-telefone', 'Telefone inválido.'); else clear('error-telefone');
+  if (!especificacao) set('error-especificacao', 'Especificação é obrigatória.'); else clear('error-especificacao');
+  if (!dataNascimento) set('error-dataNascimento', 'Data de nascimento é obrigatória.'); else clear('error-dataNascimento');
+  if (password && !passwordRegex.test(password)) set('error-password', 'Senha inválida.'); else clear('error-password');
+  if (password !== confirmedPassword) set('error-confirmedPassword', 'As senhas não coincidem.'); else clear('error-confirmedPassword');
+  if (!nivelAcesso) set('error-nivelAcesso', 'Nível de acesso é obrigatório.'); else clear('error-nivelAcesso');
 
   if (errors.length) { const em = document.querySelector('.error-message'); if (em) em.innerHTML = errors.join('<br>'); return false; }
   const em = document.querySelector('.error-message'); if (em) em.innerHTML = ''; return true;
@@ -118,7 +118,7 @@ async function atualizarColaborador() {
   const carteirinha = document.getElementById('carteirinha').value.trim() || null;
   const senha = document.getElementById('password').value || null;
   const nivelAcessoRaw = document.getElementById('nivelAcesso').value || null;
-  const nivelMap = { Admin:1, Supervisor:2, Profissional:3, Medico:3, 'Médico':3 };
+  const nivelMap = { Admin: 1, Supervisor: 2, Profissional: 3, Medico: 3, 'Médico': 3 };
   const nivelId = nivelMap[nivelAcessoRaw] || (isFinite(Number(nivelAcessoRaw)) ? Number(nivelAcessoRaw) : null);
 
   const payload = {
@@ -129,13 +129,13 @@ async function atualizarColaborador() {
   };
 
   try {
-    const r = await fetch(`${API_BASE}/mc/medicos/${id}`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+    const r = await fetch(`${API_BASE}/mc/medicos/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (r.ok) {
       const logged = sessionStorage.getItem('ID_MEDICO');
       if (logged && String(logged) === String(id) && selectedImage) { sessionStorage.setItem('FOTO', selectedImage); const ua = document.getElementById('user_avatar'); if (ua) ua.src = selectedImage; }
-      Swal.fire({ icon:'success', title:'Atualização realizada com sucesso!', showConfirmButton:false, timer:1500 }).then(() => window.location.href = 'listagemColaborador.html');
+      Swal.fire({ icon: 'success', title: 'Atualização realizada com sucesso!', showConfirmButton: false, timer: 1500 }).then(() => window.location.href = 'listagemColaborador.html');
     } else {
-      const txt = await r.text(); let msg = txt || 'Erro ao atualizar'; try { const j = JSON.parse(txt); msg = j.message || msg; } catch(e){}
+      const txt = await r.text(); let msg = txt || 'Erro ao atualizar'; try { const j = JSON.parse(txt); msg = j.message || msg; } catch (e) { }
       alert(msg);
     }
   } catch (err) { console.error('atualizarColaborador:', err); alert('Erro ao atualizar. Veja console.'); }

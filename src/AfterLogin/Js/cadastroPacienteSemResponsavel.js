@@ -169,11 +169,11 @@ async function cadastrarPacienteSemResponsavel() {
             "sobrenome": sobrenomeDigitado,
             "email": emailDigitado,
             "telefone": telefoneDigitado,
-            "cpf": cpfDigitado,
+            "cpf": cpfDigitado && cpfDigitado.trim() !== '' ? cpfDigitado : null,
             "genero": generoEscolhido,
             "dataNascimento": dataNascimentoDigitada,
             "cns": cnsDigitado,
-            "foto": await toBase64(fotoEscolhida),
+            "foto": fotoEscolhida ? await toBase64(fotoEscolhida) : null,
             "endereco": {
                 "id": null,
                 "cep": cepDigitado,

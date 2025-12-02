@@ -515,6 +515,10 @@ function exportarSemanaPDF() {
                 <p><strong>Status:</strong> ${statusNome}</p>
                 <p><strong>Duração:</strong> ${duracao}</p>
             `;
+            const btnEditar = document.getElementById('btnEditarConsulta');
+            if (btnEditar) {
+                btnEditar.onclick = () => { window.location.href = `editarConsulta.html?id=${consulta.id}`; };
+            }
             const modal = document.getElementById('modalDetalhes');
             if (modal) modal.style.display = 'flex';
         }

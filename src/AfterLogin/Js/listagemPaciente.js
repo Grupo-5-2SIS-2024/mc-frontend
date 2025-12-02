@@ -425,7 +425,7 @@ function obterInicioDaSemana(date) {
 
 async function buscarConsultasCliente(pacienteId) {
     try {
-    const resposta = await fetch(`${API_BASE}/mc/consultas`);
+        const resposta = await fetch(`${API_BASE}/mc/consultas`);
         if (!resposta.ok) throw new Error(`HTTP error! Status: ${resposta.status}`);
         const todasConsultas = await resposta.json();
         consultasOriginais = todasConsultas.filter(consulta => consulta.paciente.id === pacienteId);
@@ -532,35 +532,35 @@ function exportarSemanaPacienteCSV(pacienteId) {
     try {
         const start = new Date(dataInicioAtual);
         const rows = [];
-        rows.push(['Data','Hora','Paciente','CPF','Profissional','Área','Status','Descrição','Duração']);
+        rows.push(['Data', 'Hora', 'Paciente', 'CPF', 'Profissional', 'Área', 'Status', 'Descrição', 'Duração']);
 
-        for (let i=0;i<7;i++){
+        for (let i = 0; i < 7; i++) {
             const d = new Date(start);
-            d.setDate(start.getDate()+i);
+            d.setDate(start.getDate() + i);
             const tarefas = bancoDeDadosFiltrado.filter(t => t.datahoraConsulta.startsWith(formatarData(d)));
             tarefas.forEach(t => {
                 const dataHora = new Date(t.datahoraConsulta);
                 const dataStr = dataHora.toLocaleDateString('pt-BR');
-                const horaStr = dataHora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+                const horaStr = dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                 const paciente = t.paciente ? `${t.paciente.nome || ''} ${t.paciente.sobrenome || ''}`.trim() : '';
                 const cpf = t.paciente ? (t.paciente.cpf || '') : '';
                 const medico = t.medico ? `${t.medico.nome || ''} ${t.medico.sobrenome || ''}`.trim() : '';
                 const area = t.medico?.especificacaoMedica?.area || t.especificacaoMedica?.area || '';
                 const status = t.statusConsulta?.nomeStatus || '';
-                const descricao = t.descricao ? String(t.descricao).replace(/\r?\n/g,' ') : '';
+                const descricao = t.descricao ? String(t.descricao).replace(/\r?\n/g, ' ') : '';
                 const rawDur = t.duracaoConsulta ?? t.duracao ?? null;
                 let duracao = '';
                 if (rawDur) duracao = typeof rawDur === 'number' ? `${rawDur} min` : String(rawDur);
-                rows.push([dataStr,horaStr,paciente,cpf,medico,area,status,descricao,duracao]);
+                rows.push([dataStr, horaStr, paciente, cpf, medico, area, status, descricao, duracao]);
             });
         }
 
-        const csvContent = rows.map(r => r.map(cell => '"' + String(cell).replace(/"/g,'""') + '"').join(',')).join('\r\n');
+        const csvContent = rows.map(r => r.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')).join('\r\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const stamp = formatarData(new Date(dataInicioAtual)).replace(/-/g,'');
+        const stamp = formatarData(new Date(dataInicioAtual)).replace(/-/g, '');
         a.download = `agenda_paciente_${pacienteId}_semana_${stamp}.csv`;
         document.body.appendChild(a);
         a.click();
@@ -580,9 +580,9 @@ function exportarSemanaPacientePDF(pacienteId) {
         html += `<h2>Agenda Semanal: ${document.getElementById('dias')?.innerText || ''}</h2>`;
         html += `<table><thead><tr><th>Data</th><th>Hora</th><th>Paciente</th><th>Profissional</th><th>Área</th><th>Status</th><th>Descrição</th><th>Duração</th></tr></thead><tbody>`;
 
-        for (let i=0;i<7;i++){
+        for (let i = 0; i < 7; i++) {
             const d = new Date(start);
-            d.setDate(start.getDate()+i);
+            d.setDate(start.getDate() + i);
             const tarefas = bancoDeDadosFiltrado.filter(t => t.datahoraConsulta.startsWith(formatarData(d)));
             if (tarefas.length === 0) {
                 html += `<tr><td>${d.toLocaleDateString('pt-BR')}</td><td colspan="7">Sem tarefas</td></tr>`;
@@ -590,12 +590,12 @@ function exportarSemanaPacientePDF(pacienteId) {
                 tarefas.forEach(t => {
                     const dataHora = new Date(t.datahoraConsulta);
                     const dataStr = dataHora.toLocaleDateString('pt-BR');
-                    const horaStr = dataHora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+                    const horaStr = dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                     const paciente = t.paciente ? `${t.paciente.nome || ''} ${t.paciente.sobrenome || ''}`.trim() : '';
                     const medico = t.medico ? `${t.medico.nome || ''} ${t.medico.sobrenome || ''}`.trim() : '';
                     const area = t.medico?.especificacaoMedica?.area || t.especificacaoMedica?.area || '';
                     const status = t.statusConsulta?.nomeStatus || '';
-                    const descricao = t.descricao ? String(t.descricao).replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+                    const descricao = t.descricao ? String(t.descricao).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
                     const rawDur = t.duracaoConsulta ?? t.duracao ?? null;
                     let duracao = '';
                     if (rawDur) duracao = typeof rawDur === 'number' ? `${rawDur} min` : String(rawDur);

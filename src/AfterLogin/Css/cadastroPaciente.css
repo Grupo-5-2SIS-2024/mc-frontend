@@ -70,7 +70,8 @@ body {
 }
 
 .equipe {
-    color: #2196F3; /* azul claro */
+    color: #2196F3;
+    /* azul claro */
 }
 
 .error {
@@ -99,7 +100,7 @@ body {
 .input_linha_dupla {
     display: flex;
     gap: 1.5rem;
-    width: 100%; 
+    width: 100%;
 }
 
 .input_linha_dupla .input {
@@ -134,8 +135,8 @@ body {
 
 .input__labelComplemento {
     position: absolute;
-    top: 0; 
-    left: 0; 
+    top: 0;
+    left: 0;
     transform: translate(0.625rem, 0.625rem);
     transform-origin: left;
     transition: transform 0.25s;
@@ -171,7 +172,8 @@ body {
     padding: 1rem;
     border-radius: 0.5rem;
     font-size: 1rem;
-    background-color: #1976D2; /* azul médio */
+    background-color: #1976D2;
+    /* azul médio */
     font-weight: bold;
     outline: none;
     border: none;
@@ -183,7 +185,8 @@ body {
     transform: translateY(-0.4rem);
     transition: 0.2s;
     box-shadow: 0rem 0.5rem 0.8rem rgb(0, 0, 0);
-    background-color: #1565C0; /* hover azul escuro */
+    background-color: #1565C0;
+    /* hover azul escuro */
 }
 
 /* Media Queries para ajuste em telas menores */

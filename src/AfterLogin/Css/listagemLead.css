@@ -1,7 +1,8 @@
 body {
     display: flex;
     height: 100vh;
-    background-color: #BBDEFB; /* azul muito claro */
+    background-color: #BBDEFB;
+    /* azul muito claro */
     background-size: cover;
     background-position: 100%;
     overflow-x: hidden;
@@ -35,7 +36,8 @@ body {
 }
 
 .header h1 span {
-    color: #1976D2; /* azul médio */
+    color: #1976D2;
+    /* azul médio */
 }
 
 a {
@@ -123,7 +125,8 @@ a {
     font-size: 3rem;
     font-weight: bold;
     margin: 0;
-    color: #1976D2; /* azul médio */
+    color: #1976D2;
+    /* azul médio */
 }
 
 .kpiText {
@@ -149,7 +152,7 @@ a {
     border-radius: 10px;
     overflow-y: auto;
     align-items: center;
-    justify-content: flex-start; 
+    justify-content: flex-start;
 }
 
 .cardLead {
@@ -207,7 +210,8 @@ a {
 }
 
 .cardLead .actions button:hover {
-    color: #1976D2; /* azul médio */
+    color: #1976D2;
+    /* azul médio */
 }
 
 /* Modal de Cadastro de Área */
@@ -227,8 +231,8 @@ a {
     margin: 10% auto;
     padding: 20px;
     border-radius: 8px;
-    width: 90%; 
-    max-width: 600px; 
+    width: 90%;
+    max-width: 600px;
     text-align: center;
 }
 
@@ -268,20 +272,23 @@ a {
 }
 
 .lista-filtros-ativos {
-    display: flex; 
+    display: flex;
     flex-wrap: wrap;
     list-style-type: none;
     padding: 0;
-    margin: 0; 
+    margin: 0;
 }
 
 .lista-filtros-ativos li {
-    position: relative; /* Permite o posicionamento absoluto do botão "X" */
-    background-color: #BBDEFB; /* azul muito claro */
+    position: relative;
+    /* Permite o posicionamento absoluto do botão "X" */
+    background-color: #BBDEFB;
+    /* azul muito claro */
     border-radius: 5px;
     padding: 8px 12px;
     margin: 5px;
-    color: #1976D2; /* azul médio */
+    color: #1976D2;
+    /* azul médio */
     font-size: 14px;
     font-weight: bold;
     height: 5vh;
@@ -291,15 +298,15 @@ a {
 }
 
 .lista-filtros-ativos li button {
-    position: absolute; 
-    top: 5px; 
-    right: 5px; 
+    position: absolute;
+    top: 5px;
+    right: 5px;
     background: none;
     border: none;
     color: #555;
-    font-size: 12px; 
+    font-size: 12px;
     cursor: pointer;
-    padding: 0; 
+    padding: 0;
     transition: color 0.3s;
 }
 
@@ -362,6 +369,7 @@ a {
     transition: color 0.3s;
     z-index: 10;
 }
+
 .modal-content {
     position: relative;
 }

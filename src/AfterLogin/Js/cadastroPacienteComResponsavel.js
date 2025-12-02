@@ -83,9 +83,14 @@ function validarCadastro() {
         document.getElementById('error-telefone').textContent = "";
     }
 
-    if (!cpfRegex.test(cpf)) {
-        document.getElementById('error-cpf').textContent = "CPF inválido. Deve conter 11 dígitos.";
-        errors.push("CPF inválido.");
+    // CPF agora é opcional; se preenchido, valida formato
+    if (cpf.trim() !== "") {
+        if (!cpfRegex.test(cpf)) {
+            document.getElementById('error-cpf').textContent = "CPF inválido. Deve conter 11 dígitos.";
+            errors.push("CPF inválido.");
+        } else {
+            document.getElementById('error-cpf').textContent = "";
+        }
     } else {
         document.getElementById('error-cpf').textContent = "";
     }
@@ -323,7 +328,7 @@ async function cadastrarPacienteComResponsavel() {
             "sobrenome": sobrenomeDigitado,
             "email": emailDigitado,
             "telefone": telefoneDigitado,
-            "cpf": cpfDigitado,
+            "cpf": cpfDigitado && cpfDigitado.trim() !== '' ? cpfDigitado : null,
             "genero": generoEscolhido,
             "dataNascimento": dataNascimentoDigitada,
             "cns": cnsDigitado,

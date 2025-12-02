@@ -100,21 +100,21 @@ async function buscarPacientesEMedicos() {
     console.log("Buscando pacientes e Profissionais...");
 
     try {
-    const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes`);
+        const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes`);
         if (!respostaPacientes.ok) {
             throw new Error(`HTTP error! Status: ${respostaPacientes.status}`);
         }
         const pacientes = await respostaPacientes.json();
         console.log(pacientes);
 
-    const respostaMedicos = await fetch(`${API_BASE}/mc/medicos`);
+        const respostaMedicos = await fetch(`${API_BASE}/mc/medicos`);
         if (!respostaMedicos.ok) {
             throw new Error(`HTTP error! Status: ${respostaMedicos.status}`);
         }
         const medicos = await respostaMedicos.json();
         console.log(medicos);
 
-    // Adiciona a opção padrão antes de popular as opções reais
+        // Adiciona a opção padrão antes de popular as opções reais
         const pacientesLabel = withLabelNomeSobrenome(pacientes);
         const medicosLabel = withLabelNomeSobrenome(medicos);
 
