@@ -115,7 +115,7 @@
             </div><br>
             <div class="ContainerData">
                 <div class="input">
-                    <input class="input__field" id="dataNascimento" type="date" required />
+                    <input class="input__field" id="dataNascimento" type="date" min="1900-01-01" max="2020-12-31" required />
                     <label for="dataNascimento" class="input__labelDate">Data de Nascimento</label>
                     <small class="error" id="error-dataNascimento"></small>
                 </div>
@@ -125,6 +125,19 @@
             </div>
         </div>
     </main>
+    <script>
+        // Define o max dinamicamente como a data de hoje para campos de data de nascimento
+        document.addEventListener('DOMContentLoaded', function() {
+            const hoje = new Date();
+            const anoAtual = hoje.getFullYear();
+            const dataMax = anoAtual + '-12-31';
+            const inputData = document.getElementById('dataNascimento');
+            if (inputData) {
+                inputData.setAttribute('max', dataMax);
+            }
+        });
+    </script>
+    <script src="../Js/datePickerHelper.js"></script>
     <script src="../Js/cadastroPacienteComResponsavel.js"></script>
     <script src="../Js/funcoesPadroes.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

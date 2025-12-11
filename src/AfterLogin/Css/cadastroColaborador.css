@@ -112,6 +112,11 @@ body {
     width: 100%;
 }
 
+.input input[type="date"] {
+    min-height: 2.5rem;
+    display: block;
+}
+
 .input__field {
     padding: 0.625rem;
     width: 100%;
@@ -121,6 +126,13 @@ body {
     color: #0a0a0a;
     background-color: transparent;
     outline: 0.125rem solid #000000;
+    position: relative;
+    z-index: 2;
+}
+
+.input__field[type="date"] {
+    padding-right: 3.5rem;
+    cursor: pointer;
 }
 
 .input__label {
@@ -139,6 +151,8 @@ body {
     transform: translate(0, -1.825rem);
     transform-origin: left;
     transition: transform 0.25s;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .input__label--active,
