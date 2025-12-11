@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (consultasHoje.length === 0) {
             const vazio = document.createElement('tr');
-            vazio.innerHTML = `<td colspan="3">Sem agendamentos para hoje.</td>`;
+            vazio.innerHTML = `<td colspan="4">Sem agendamentos para hoje.</td>`;
             agendaBody.appendChild(vazio);
             return;
         }
@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Linha separadora do horário
             const sep = document.createElement('tr');
             sep.className = 'time-separator';
-            sep.innerHTML = `<td colspan="3"><strong>${hora}</strong></td>`;
+            sep.innerHTML = `<td colspan="4"><strong>${hora}</strong></td>`;
             agendaBody.appendChild(sep);
 
             // Linhas das consultas do horário
@@ -225,6 +225,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Build cells: horario, paciente, status, acoes
                 const tdHora = document.createElement('td'); tdHora.textContent = horaExata;
                 const tdPaciente = document.createElement('td'); tdPaciente.textContent = `${consulta.paciente?.nome || ''} ${consulta.paciente?.sobrenome || ''}`;
+                const tdMedico = document.createElement('td');
+                tdMedico.textContent = `${consulta.medico?.nome || ''} ${consulta.medico?.sobrenome || ''}`.trim();
                 const tdStatus = document.createElement('td');
                 // create a dedicated element for the status text and a separate container for action buttons
                 const spanStatusText = document.createElement('span');
@@ -277,6 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 row.appendChild(tdHora);
                 row.appendChild(tdPaciente);
+                row.appendChild(tdMedico);
                 row.appendChild(tdStatus);
                 agendaBody.appendChild(row);
             }

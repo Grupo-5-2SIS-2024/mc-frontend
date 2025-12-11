@@ -228,16 +228,16 @@ td>.btn-status {
     margin-bottom: 0.375rem;
 }
 
-/* Reduce width of the status column (3rd column) and place action buttons inside it */
-.agenda th:nth-child(3),
-.agenda td:nth-child(3) {
+/* Reduce width of the status column (now 4th column) and place action buttons inside it */
+.agenda th:nth-child(4),
+.agenda td:nth-child(4) {
     width: 260px;
     text-align: center;
     vertical-align: middle;
 }
 
 /* Place the action buttons side-by-side inside the status cell with a small gap; allow wrapping on very small screens */
-.agenda td:nth-child(3) {
+.agenda td:nth-child(4) {
     display: flex;
     flex-direction: row;
     gap: 1rem;
@@ -247,7 +247,7 @@ td>.btn-status {
 }
 
 /* status text (auto width) */
-.agenda td:nth-child(3) .status-text {
+.agenda td:nth-child(4) .status-text {
     flex: 0 0 auto;
     text-align: left;
     padding-right: 6px;
@@ -255,7 +255,7 @@ td>.btn-status {
 }
 
 /* actions container (immediately after status text) */
-.agenda td:nth-child(3) .status-actions {
+.agenda td:nth-child(4) .status-actions {
     display: flex;
     gap: 6px;
     align-items: center;
@@ -263,7 +263,7 @@ td>.btn-status {
     margin-left: 4px;
 }
 
-.agenda td:nth-child(3) .btn-status {
+.agenda td:nth-child(4) .btn-status {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -276,7 +276,7 @@ td>.btn-status {
 }
 
 /* Slightly reduce icon size inside the button for a compact look */
-.agenda td:nth-child(3) .btn-status i {
+.agenda td:nth-child(4) .btn-status i {
     font-size: 0.875rem;
 }
 

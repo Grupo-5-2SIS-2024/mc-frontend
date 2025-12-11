@@ -236,7 +236,7 @@ async function cadastrarColaborador() {
       },
       "carterinha": carteirinhaDigitada,
       "senha": senhaDigitada,
-      "ativo": false,
+      "ativo": true,
       "permissao": {
         "id": nivelAcessoId
       },

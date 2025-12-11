@@ -332,6 +332,7 @@ async function cadastrarPacienteComResponsavel() {
             "genero": generoEscolhido,
             "dataNascimento": dataNascimentoDigitada,
             "cns": cnsDigitado,
+            "ativo": true,
             "foto": fotoEscolhida ? await toBase64(fotoEscolhida) : null,
             "responsavel": {
                 "id": idResponsavel,
