@@ -77,10 +77,21 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
         cardsMedicos.innerHTML = medicosFiltradosFinal.map((medico) => {
             const status = medico.ativo ? 'Ativo' : 'Inativo';
             const foto = medico.foto || "../Assets/perfil.jpeg";
+            
+            // Verifica se é Admin logado
+            const isAdmin = nivelPermissao && nivelPermissao.toLowerCase().includes('admin');
+            
+            // Botão de permissões (apenas Admin pode ver)
+            const botaoPermissoes = isAdmin ? `
+                <button class="permissions" style="background: #2196F3; color: white; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; margin-top: 5px;" title="Gerenciar Permissões">
+                    <i class="fas fa-key"></i> Permissões
+                </button>` : '';
+            
             const acoes = nivelPermissao === "Supervisor" ? '' : `
                 <div class="actions">
                     <button class="update"><i class="fas fa-pencil-alt"></i></button>
                     <button class="delete"><i class="fas fa-trash-alt"></i></button>
+                    ${botaoPermissoes}
                 </div>`;
 
             return `
@@ -120,6 +131,15 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
                 botao.addEventListener('click', function () {
                     const id = this.closest('.cardColaborador').dataset.medicoId;
                     if (id) window.location.href = `atualizarColaborador.html?id=${id}`;
+                });
+            });
+            
+            // Adicionar evento aos botões de permissões
+            cardsMedicos.querySelectorAll('.permissions').forEach((botao) => {
+                botao.addEventListener('click', function () {
+                    const id = this.closest('.cardColaborador').dataset.medicoId;
+                    const nomeCompleto = this.closest('.cardColaborador').querySelector('.field:first-child p').textContent;
+                    if (id) abrirModalPermissoes(id, nomeCompleto);
                 });
             });
         }
@@ -356,5 +376,115 @@ async function cadastrarArea() {
     }
 }
 
+// ===== SISTEMA DE PERMISSÕES INDIVIDUAIS =====
+
+let colaboradorAtualId = null;
+
+// Abre o modal de permissões
+function abrirModalPermissoes(medicoId, nomeCompleto) {
+    colaboradorAtualId = Number(medicoId);
+    document.getElementById('nomeColaboradorPermissoes').textContent = `Colaborador: ${nomeCompleto}`;
+    
+    // Carrega permissões salvas
+    carregarPermissoes(Number(medicoId));
+    
+    document.getElementById('modalPermissoes').style.display = 'flex';
+}
+
+// Fecha o modal de permissões
+function fecharModalPermissoes() {
+    document.getElementById('modalPermissoes').style.display = 'none';
+    colaboradorAtualId = null;
+}
+
+// Carrega as permissões do colaborador
+async function carregarPermissoes(medicoId) {
+    try {
+        // Busca permissões salvas no backend
+        const resposta = await fetch(`${API_BASE}/mc/permissoes-individuais/buscar/${medicoId}`);
+        const resultado = await resposta.json();
+        
+        if (resultado.permissoes) {
+            const permissoes = JSON.parse(resultado.permissoes);
+            
+            // Marca os checkboxes de menus
+            document.getElementById('perm_menu_Colaborador').checked = permissoes.menus.includes('Colaborador');
+            document.getElementById('perm_menu_Paciente').checked = permissoes.menus.includes('Paciente');
+            document.getElementById('perm_menu_Dash').checked = permissoes.menus.includes('Dash');
+            document.getElementById('perm_menu_Lead').checked = permissoes.menus.includes('Lead');
+            document.getElementById('perm_menu_AgendaDiaria').checked = permissoes.menus.includes('AgendaDiaria');
+            
+            // Marca os checkboxes de botões
+            document.getElementById('perm_btn_btnAdicionarColaborador').checked = permissoes.botoes.includes('btnAdicionarColaborador');
+            document.getElementById('perm_btn_addPacienteBtn').checked = permissoes.botoes.includes('addPacienteBtn');
+            document.getElementById('perm_btn_btnAdicionarConsulta').checked = permissoes.botoes.includes('btnAdicionarConsulta');
+            document.getElementById('perm_btn_btnAdicionarArea').checked = permissoes.botoes.includes('btnAdicionarArea');
+        } else {
+            // Se não houver permissões salvas, desmarca tudo
+            document.querySelectorAll('#modalPermissoes input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
+    } catch (erro) {
+        console.error('Erro ao carregar permissões:', erro);
+        // Em caso de erro, desmarca tudo
+        document.querySelectorAll('#modalPermissoes input[type="checkbox"]').forEach(cb => cb.checked = false);
+    }
+}
+
+// Salva as permissões do colaborador
+async function salvarPermissoes() {
+    if (!colaboradorAtualId) return;
+    
+    try {
+        // Coleta menus marcados
+        const menus = [];
+        if (document.getElementById('perm_menu_Colaborador').checked) menus.push('Colaborador');
+        if (document.getElementById('perm_menu_Paciente').checked) menus.push('Paciente');
+        if (document.getElementById('perm_menu_Dash').checked) menus.push('Dash');
+        if (document.getElementById('perm_menu_Lead').checked) menus.push('Lead');
+        if (document.getElementById('perm_menu_AgendaDiaria').checked) menus.push('AgendaDiaria');
+        
+        // Coleta botões marcados
+        const botoes = [];
+        if (document.getElementById('perm_btn_btnAdicionarColaborador').checked) botoes.push('btnAdicionarColaborador');
+        if (document.getElementById('perm_btn_addPacienteBtn').checked) botoes.push('addPacienteBtn');
+        if (document.getElementById('perm_btn_btnAdicionarConsulta').checked) botoes.push('btnAdicionarConsulta');
+        if (document.getElementById('perm_btn_btnAdicionarArea').checked) botoes.push('btnAdicionarArea');
+        
+        // Monta o objeto de permissões
+        const permissoes = { menus, botoes };
+        
+        // Salva no backend
+        const resposta = await fetch(`${API_BASE}/mc/permissoes-individuais/salvar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                medicoId: colaboradorAtualId,
+                permissoes: JSON.stringify(permissoes)
+            })
+        });
+        
+        if (!resposta.ok) {
+            throw new Error('Erro ao salvar permissões');
+        }
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Permissões Salvas!',
+            text: 'As permissões foram atualizadas com sucesso no banco de dados.',
+            showConfirmButton: false,
+            timer: 1500
+        });
+        
+        fecharModalPermissoes();
+    } catch (erro) {
+        console.error('Erro ao salvar permissões:', erro);
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro!',
+            text: 'Não foi possível salvar as permissões. Tente novamente.',
+            confirmButtonText: 'OK'
+        });
+    }
+}
 
 

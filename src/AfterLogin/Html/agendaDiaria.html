@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiclinics | Agenda Diária</title>
+    <link rel="stylesheet" href="../Css/agendaDiaria.css">
+    <link rel="stylesheet" href="../Css/Sidebar.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="shortcut icon" href="../../Assets/logo_Multclinics_branca_sem_nome.png" type="image/x-icon">
+</head>
+
+<body>
+    <i id="hamburger-menu" class="fa-solid fa-bars"></i>
+
+    <div id="menu-overlay" class="menu-overlay">
+        <ul>
+            <li><a href="homePosLoginMedico.html">Home</a></li>
+            <li><a href="calendario.html">Agendamento</a></li>
+            <li><a href="agendaDiaria.html">Agenda Diária</a></li>
+            <li><a href="listagemColaborador.html">Colaborador</a></li>
+            <li><a href="listagemPaciente.html">Paciente</a></li>
+            <li><a href="dashboards.html">Dashboards</a></li>
+            <li><a href="listagemLead.html">Leads</a></li>
+        </ul>
+    </div>
+
+    <nav id="sidebar">
+        <div id="sidebar_content">
+            <div id="user">
+                <img src="../Assets/perfil.jpeg" id="user_avatar" alt="Avatar">
+                <p id="user_infos">
+                    <span id="user_nome" class="item-description">Usuário</span>
+                    <span id="user_permissao" class="item-description">Médico</span>
+                </p>
+            </div>
+
+            <ul id="side_items">
+                <li class="side-item">
+                    <a href="homePosLoginMedico.html">
+                        <i class="fa-solid fa-home"></i>
+                        <span class="item-description">Home</span>
+                    </a>
+                </li>
+
+                <li class="side-item">
+                    <a href="calendario.html">
+                        <i class="fa-solid fa-calendar"></i>
+                        <span class="item-description">Agendamento</span>
+                    </a>
+                </li>
+
+                <li class="side-item active" id="AgendaDiaria">
+                    <a href="agendaDiaria.html">
+                        <i class="fa-solid fa-calendar-day"></i>
+                        <span class="item-description">Agenda Diária</span>
+                    </a>
+                </li>
+
+                <li id="Colaborador" class="side-item">
+                    <a href="listagemColaborador.html">
+                        <i class="fa-solid fa-user"></i>
+                        <span class="item-description">Colaborador</span>
+                    </a>
+                </li>
+
+                <li id="Paciente" class="side-item">
+                    <a href="listagemPaciente.html">
+                        <i class="fa-solid fa-hospital-user"></i>
+                        <span class="item-description">Paciente</span>
+                    </a>
+                </li>
+
+                <li id="Dash" class="side-item">
+                    <a href="dashboards.html">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span class="item-description">Dashboards</span>
+                    </a>
+                </li>
+
+                <li id="Lead" class="side-item">
+                    <a href="listagemLead.html">
+                        <i class="fa-solid fa-filter"></i>
+                        <span class="item-description">Leads</span>
+                    </a>
+                </li>
+            </ul>
+
+            <button id="open_btn">
+                <i id="open_btn_icon" class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <div id="logout">
+            <button onclick="deslogar()" id="logout_btn">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="item-description">Logout</span>
+            </button>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <div class="main-content">
+                <div class="header">
+                    <h2>Agenda de <span class="highlight">Hoje</span></h2>
+                    <div class="buttons">
+                        <button class="filter-button" onclick="atualizarAgenda()">
+                            <i class="fas fa-sync-alt"></i> Atualizar
+                        </button>
+                        <button class="filter-button" onclick="abrirModalFiltro()">
+                            <i class="fas fa-filter"></i> Filtrar
+                        </button>
+                        <button class="filter-button" onclick="imprimirAgenda()">
+                            <i class="fas fa-print"></i> Imprimir
+                        </button>
+                    </div>
+                </div>
+
+                <div class="data-header">
+                    <i class="fas fa-calendar-day"></i>
+                    <span id="dataAtual"></span>
+                </div>
+
+                <!-- Modal de Filtro -->
+                <div id="modalFiltro" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="fecharModalFiltro()">&times;</span>
+                        <h3><i class="fas fa-filter"></i> Filtrar Consultas</h3>
+
+                        <div class="filter-group">
+                            <label for="filtroMedico"><i class="fas fa-user-md"></i> Profissional:</label>
+                            <select id="filtroMedico">
+                                <option value="">Todos os Profissionais</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-buttons">
+                            <button onclick="aplicarFiltroMedico()"><i class="fas fa-check"></i> Aplicar Filtro</button>
+                            <button onclick="limparFiltros()" class="limpar-button"><i class="fas fa-times"></i> Limpar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal de Detalhes -->
+                <div id="modalDetalhes" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="fecharModal()">&times;</span>
+                        <h3><i class="fas fa-info-circle"></i> Detalhes da Consulta</h3>
+                        <div id="detalhesConsulta"></div>
+                    </div>
+                </div>
+
+                <!-- Cards de Resumo -->
+                <div class="count-dias">
+                    <div class="kpi-card">
+                        <i class="fas fa-calendar-check"></i>
+                        <div class="kpi-info">
+                            <h3 id="totalConsultas">0</h3>
+                            <p>Total</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <i class="fas fa-clock" style="color: #2196F3;"></i>
+                        <div class="kpi-info">
+                            <h3 id="consultasAgendadas">0</h3>
+                            <p>Agendadas</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <i class="fas fa-check-circle" style="color: #4CAF50;"></i>
+                        <div class="kpi-info">
+                            <h3 id="consultasRealizadas">0</h3>
+                            <p>Realizadas</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <i class="fas fa-times-circle" style="color: #f44336;"></i>
+                        <div class="kpi-info">
+                            <h3 id="consultasCanceladas">0</h3>
+                            <p>Canceladas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline da Agenda -->
+                <div class="calendar">
+                    <div class="agenda-title">
+                        <i class="fas fa-list"></i> Consultas do Dia
+                    </div>
+                    <div class="tasks-columns" id="agendaTimeline">
+                        <!-- Consultas serão inseridas aqui via JavaScript -->
+                    </div>
+                    <div class="agenda-empty" id="agendaEmpty" style="display: none;">
+                        <i class="fas fa-calendar-times"></i>
+                        <p>Nenhuma consulta agendada para hoje</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../Js/funcoesPadroes.js"></script>
+    <script src="../Js/agendaDiaria.js"></script>
+    <script src="../Js/sessao.js"></script>
+</body>
+
+</html>
+

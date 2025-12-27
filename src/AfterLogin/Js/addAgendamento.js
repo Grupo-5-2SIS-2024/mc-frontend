@@ -1,10 +1,22 @@
-// Definição dos novos slots de 50 minutos a partir de 06/10
-const SLOT_DURATION = '00:50:00';
-// Apenas horários de início (start times) conforme nova regra (manhã e tarde)
-const SCHEDULE_SLOTS = [
+// Definição dos slots para ABA (50 minutos) e Terapia Convencional (30 minutos)
+const SLOT_DURATION_ABA = '00:50:00';
+const SLOT_DURATION_CONVENCIONAL = '00:30:00';
+
+// Slots para ABA (50min) - conforme regra existente (manhã e tarde)
+const SCHEDULE_SLOTS_ABA = [
     '08:00', '08:50', '09:40', '10:30', // manhã termina 11:20
     '13:40', '14:30', '15:20', '16:10', '17:00' // tarde termina 17:50 (encerrando 18:00)
 ];
+
+// Slots para Terapia Convencional (30min) - intervalos de :00 e :30
+const SCHEDULE_SLOTS_CONVENCIONAL = [
+    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', // manhã
+    '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30' // tarde
+];
+
+// Variáveis para controlar o procedimento atual selecionado
+let procedimentoAtual = null;
+let procedimentosList = [];
 
 // Base da API: usa localhost em dev, vazio em produção
 const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
@@ -83,6 +95,9 @@ async function buscarEspecificacoes() {
         const resp = await fetch(`${API_BASE}/mc/especificacoes`);
         if (!resp.ok) throw new Error(`HTTP error! Status: ${resp.status}`);
         const especificacoes = await resp.json();
+        
+        // Armazena lista global para referência
+        procedimentosList = especificacoes;
 
         // Opção padrão + lista
         populateSelect('procedimento', [{ area: 'Selecione um Procedimento', id: '' }, ...especificacoes], 'area', 'id');
@@ -120,7 +135,7 @@ async function buscarPacientesEMedicos() {
 
         // Adiciona a opção padrão antes de popular as opções reais
         populateSelect('paciente', [{ label: 'Selecione um Paciente', id: '' }, ...pacientesLabel], 'label', 'id');
-        populateSelect('medico', [{ label: 'Selecione um Profissionais', id: '' }, ...medicosLabel], 'label', 'id');
+        populateSelect('medico', [{ label: 'Selecione um Profissional', id: '' }, ...medicosLabel], 'label', 'id');
     } catch (error) {
         console.error('Erro ao buscar pacientes e Profissionais:', error);
     }
@@ -157,55 +172,115 @@ function populateSelect(selectId, options, textKey = 'nome', valueKey = 'id') {
     });
 }
 
-// Função para obter horários disponíveis (slots de 50min). Considera que um slot está indisponível
-// se todos os médicos já possuem consulta iniciando exatamente nesse horário.
-async function getAvailableHours(dia) {
-    console.log('Obtendo slots disponíveis para o dia:', dia);
-    const consultas = await buscarConsultas();
-    // Filtra consultas do dia e mapeia horários de início existentes
-    const consultasDoDia = consultas.filter(c => c.datahoraConsulta.startsWith(dia));
-    // Monta um mapa horário -> quantidade de médicos ocupados
-    const ocupadoPorHorario = {};
-    consultasDoDia.forEach(c => {
-        const horaInicio = c.datahoraConsulta.split('T')[1].substring(0, 5); // HH:MM
-        ocupadoPorHorario[horaInicio] = (ocupadoPorHorario[horaInicio] || 0) + 1;
-    });
+// Função auxiliar para determinar se procedimento é Terapia Convencional
+function isTerapiaConvencional(procedimentoId) {
+    if (!procedimentoId) return false;
+    const proc = procedimentosList.find(p => String(p.id) === String(procedimentoId));
+    if (!proc) return false;
+    // Verifica se o nome do procedimento contém "Terapia Convencional" (case insensitive)
+    const area = (proc.area || '').toLowerCase();
+    return area.includes('terapia convencional') || area.includes('convencional');
+}
 
-    // Se quisermos saber total de médicos para marcar slot como totalmente ocupado, precisamos da lista de medicos
-    // Para simplicidade, só consideramos ocupado se pelo menos uma consulta existe naquele start time (ou podemos manter livre se quiser permitir multi-sala)
-    // Ajuste: slot indisponível somente se TODOS os médicos estão ocupados naquele horário -> requer fetch de medicos
+// Função auxiliar para verificar se há sobreposição entre dois horários
+function verificarSobreposicao(inicio1, duracao1Min, inicio2, duracao2Min) {
+    // Converte horários para minutos desde meia-noite
+    const [h1, m1] = inicio1.split(':').map(Number);
+    const minutos1Inicio = h1 * 60 + m1;
+    const minutos1Fim = minutos1Inicio + duracao1Min;
+    
+    const [h2, m2] = inicio2.split(':').map(Number);
+    const minutos2Inicio = h2 * 60 + m2;
+    const minutos2Fim = minutos2Inicio + duracao2Min;
+    
+    // Verifica sobreposição: início de uma está dentro do período da outra
+    return (minutos1Inicio < minutos2Fim && minutos1Fim > minutos2Inicio);
+}
+
+// Função para obter horários disponíveis baseado no procedimento (ABA ou Terapia Convencional)
+// Verifica conflitos considerando a duração das consultas existentes
+async function getAvailableHours(dia, procedimentoId = null) {
+    console.log('Obtendo slots disponíveis para o dia:', dia, 'procedimento:', procedimentoId);
+    const consultas = await buscarConsultas();
+    
+    // Define qual conjunto de slots usar baseado no procedimento
+    const isConvencional = isTerapiaConvencional(procedimentoId);
+    const slotsToUse = isConvencional ? SCHEDULE_SLOTS_CONVENCIONAL : SCHEDULE_SLOTS_ABA;
+    const duracaoNova = isConvencional ? 30 : 50; // minutos
+    
+    // Filtra consultas do dia
+    const consultasDoDia = consultas.filter(c => c.datahoraConsulta.startsWith(dia));
+    
+    // Busca total de médicos do procedimento
     let totalMedicos = 0;
+    let medicosFiltrados = [];
     try {
         const respMed = await fetch(`${API_BASE}/mc/medicos`);
         if (respMed.ok) {
             const medicos = await respMed.json();
-            totalMedicos = medicos.length;
+            // Filtra médicos do procedimento se especificado
+            if (procedimentoId) {
+                medicosFiltrados = medicos.filter(m => String(m.especificacaoMedica.id) === String(procedimentoId));
+                totalMedicos = medicosFiltrados.length;
+            } else {
+                medicosFiltrados = medicos;
+                totalMedicos = medicos.length;
+            }
         }
     } catch (e) { console.warn('Falha ao obter total de médicos, assumindo 0 para lógica liberal.', e); }
 
-    const available = SCHEDULE_SLOTS.filter(slot => {
+    const available = slotsToUse.filter(slot => {
         // Se não conseguimos determinar total de médicos, não bloqueamos nenhum slot
         if (totalMedicos <= 0) return true;
-        const ocupados = ocupadoPorHorario[slot] || 0;
-        return ocupados < totalMedicos; // pelo menos um médico livre
+        
+        // Para cada slot, verifica quantos médicos estão ocupados (considerando sobreposição)
+        let medicosOcupados = 0;
+        
+        // Verifica cada consulta do dia para ver se há sobreposição com este slot
+        consultasDoDia.forEach(consulta => {
+            const horaConsulta = consulta.datahoraConsulta.split('T')[1].substring(0, 5); // HH:MM
+            
+            // Determina duração da consulta existente
+            let duracaoExistente = 50; // padrão ABA
+            if (consulta.duracaoConsulta) {
+                // duracaoConsulta vem como "HH:MM:SS"
+                const [hh, mm] = consulta.duracaoConsulta.split(':').map(Number);
+                duracaoExistente = hh * 60 + mm;
+            }
+            
+            // Verifica se há sobreposição entre o slot proposto e a consulta existente
+            if (verificarSobreposicao(slot, duracaoNova, horaConsulta, duracaoExistente)) {
+                medicosOcupados++;
+            }
+        });
+        
+        // Slot disponível se ainda há médicos livres
+        return medicosOcupados < totalMedicos;
     });
 
-    console.log('Slots disponíveis:', available);
+    console.log('Slots disponíveis (', isConvencional ? 'Terapia Convencional' : 'ABA', '):', available);
     return available.length ? available : ['Sem horários disponíveis'];
 }
 
-// Função para atualizar as horas disponíveis após a seleção da data
+// Função para atualizar as horas disponíveis após a seleção da data e procedimento
 async function updateAvailableHours() {
     const dia = document.getElementById('dia').value;
+    const procedimentoId = document.getElementById('procedimento').value;
     const select = document.getElementById('hora');
     if (!select) return;
+    
     if (dia) {
-        const availableHours = await getAvailableHours(dia);
+        const availableHours = await getAvailableHours(dia, procedimentoId);
+        
+        // Determina a duração baseada no procedimento
+        const isConvencional = isTerapiaConvencional(procedimentoId);
+        const duracao = isConvencional ? 30 : 50; // minutos
+        
         // Monta opções com intervalo completo (inicio - fim)
         const options = availableHours.map(start => {
             if (start === 'Sem horários disponíveis') return start;
             const [h, m] = start.split(':').map(Number);
-            const endDate = new Date(0, 0, 0, h, m + 50, 0);
+            const endDate = new Date(0, 0, 0, h, m + duracao, 0);
             const endH = String(endDate.getHours()).padStart(2, '0');
             const endM = String(endDate.getMinutes()).padStart(2, '0');
             return { label: `${start} - ${endH}:${endM}`, value: start };
@@ -376,6 +451,10 @@ async function agendarConsulta() {
         }
 
         const especificacaoMedicaId = procedimentoId;
+        
+        // Determina duração baseada no procedimento
+        const isConvencional = isTerapiaConvencional(procedimentoId);
+        const duracaoConsulta = isConvencional ? SLOT_DURATION_CONVENCIONAL : SLOT_DURATION_ABA;
 
         // Função para criar o objeto da consulta
         const criarDadosConsulta = (dataConsulta) => ({
@@ -385,7 +464,7 @@ async function agendarConsulta() {
             especificacaoMedica: { id: especificacaoMedicaId },
             statusConsulta: { id: 1 },
             paciente: { id: pacienteId },
-            duracaoConsulta: SLOT_DURATION
+            duracaoConsulta: duracaoConsulta
         });
 
         // Agendar a consulta original
@@ -646,6 +725,7 @@ async function alterarConsulta(idConsulta) {
 
 document.getElementById('procedimento').addEventListener('change', () => {
     updateAvailableDoctors(); // refiltra profissionais pelo procedimento
+    updateAvailableHours(); // atualiza horários disponíveis baseado no procedimento
 });
 // Eventos de mudança nos selects
 document.getElementById('dia').addEventListener('change', updateAvailableHours);

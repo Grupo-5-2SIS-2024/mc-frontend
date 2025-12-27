@@ -21,6 +21,7 @@
         <ul>
             <li><a href="homePosLoginAdm.html">Home</a></li>
             <li><a href="calendario.html">Agendamento</a></li>
+            <li><a href="agendaDiaria.html">Agenda Diária</a></li>
             <li><a href="listagemColaborador.html">Colaborador</a></li>
             <li><a href="listagemPaciente.html">Paciente</a></li>
             <li><a href="dashboards.html">Dashboards</a></li>
@@ -53,6 +54,15 @@
                         <i class="fa-solid fa-calendar"></i>
                         <span class="item-description">
                             Agendamento
+                        </span>
+                    </a>
+                </li>
+
+                <li class="side-item" id="AgendaDiaria">
+                    <a href="agendaDiaria.html">
+                        <i class="fa-solid fa-calendar-day"></i>
+                        <span class="item-description">
+                            Agenda Diária
                         </span>
                     </a>
                 </li>
@@ -157,6 +167,70 @@
                     <div class="botoes-container">
                         <button onclick="aplicarFiltros()" class="btn-aplicar">Aplicar Filtros</button>
                         <button onclick="limparFiltros()" class="btn-limpar">Limpar Filtros</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Gerenciar Permissões -->
+            <div id="modalPermissoes" class="modal">
+                <div class="modal-content" style="max-width: 600px;">
+                    <span class="close" onclick="fecharModalPermissoes()">&times;</span>
+                    <h2>Gerenciar Permissões</h2>
+                    <p id="nomeColaboradorPermissoes" style="margin-bottom: 20px; font-weight: bold; color: #666;"></p>
+                    
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <h3 style="margin-top: 0;">📋 Menus</h3>
+                        <div style="display: grid; gap: 10px; margin-bottom: 20px;">
+                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                                <input type="checkbox" id="perm_menu_Colaborador" style="margin-right: 10px; transform: scale(1.2);">
+                                <span>👥 Colaboradores</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                                <input type="checkbox" id="perm_menu_Paciente" style="margin-right: 10px; transform: scale(1.2);">
+                                <span>🏥 Pacientes</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                                <input type="checkbox" id="perm_menu_Dash" style="margin-right: 10px; transform: scale(1.2);">
+                                <span>📊 Dashboards</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                                <input type="checkbox" id="perm_menu_Lead" style="margin-right: 10px; transform: scale(1.2);">
+                                <span>📞 Leads</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                                <input type="checkbox" id="perm_menu_AgendaDiaria" style="margin-right: 10px; transform: scale(1.2);">
+                                <span>📅 Agenda Diária</span>
+                            </label>
+                        </div>
+
+                        <h3>🔘 Botões/Ações</h3>
+                        <div style="display: grid; gap: 10px;">
+                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                                <input type="checkbox" id="perm_btn_btnAdicionarColaborador" style="margin-right: 10px; transform: scale(1.2);">
+                                <span>➕ Adicionar Colaborador</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                                <input type="checkbox" id="perm_btn_addPacienteBtn" style="margin-right: 10px; transform: scale(1.2);">
+                                <span>➕ Adicionar Paciente</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                                <input type="checkbox" id="perm_btn_btnAdicionarConsulta" style="margin-right: 10px; transform: scale(1.2);">
+                                <span>➕ Adicionar Consulta</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                                <input type="checkbox" id="perm_btn_btnAdicionarArea" style="margin-right: 10px; transform: scale(1.2);">
+                                <span>➕ Adicionar Área</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button onclick="salvarPermissoes()" style="flex: 1; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                            💾 Salvar Permissões
+                        </button>
+                        <button onclick="fecharModalPermissoes()" style="flex: 1; padding: 12px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                            ❌ Cancelar
+                        </button>
                     </div>
                 </div>
             </div>

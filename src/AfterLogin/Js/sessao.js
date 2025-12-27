@@ -1,7 +1,28 @@
 if (!window.API_BASE) {
     window.API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
 }
-// Use window.API_BASE directly to avoid duplicate top-level declarations across scripts
+
+// ===== CONFIGURAÇÃO SIMPLES DE PERMISSÕES =====
+// Defina aqui o que cada perfil pode ver/fazer
+
+const PERMISSOES = {
+    'admin': {
+        menus: ['Home', 'Colaborador', 'Paciente', 'Dash', 'Lead', 'AgendaDiaria'],
+        botoes: ['btnAdicionarColaborador', 'addPacienteBtn', 'btnAdicionarConsulta', 'btnAdicionarArea']
+    },
+    'supervisor': {
+        menus: ['Home', 'Colaborador', 'Paciente', 'AgendaDiaria'],
+        botoes: [] // Supervisor não pode adicionar
+    },
+    'medico': {
+        menus: ['Home', 'AgendaDiaria'],
+        botoes: [] // Médico não pode adicionar
+    },
+    'profissional': {
+        menus: ['Home', 'AgendaDiaria'],
+        botoes: [] // Profissional não pode adicionar
+    }
+};
 
 function validarSessao() {
     var nomeMedico = sessionStorage.getItem("NOME_MEDICO");
@@ -14,11 +35,7 @@ function validarSessao() {
     var userNome = document.getElementById("user_nome");
     var userPermissao = document.getElementById("user_permissao");
     var userAvatar = document.getElementById("user_avatar");
-    // elementos usados por múltiplos ramos
-    const Dashboards = document.getElementById("Dash");
-    const Leads = document.getElementById("Lead");
 
-    // Defensive: avoid printing literal 'null' and ensure elements exist
     if (userNome) {
         const safeNome = nomeMedico && nomeMedico !== 'null' ? nomeMedico : '';
         const safeSobrenome = sobrenomeMedico && sobrenomeMedico !== 'null' ? sobrenomeMedico : '';
@@ -31,102 +48,135 @@ function validarSessao() {
     }
 
     if (userAvatar) {
-        // Normalize fotoPerfil to an absolute URL to avoid wrong relative resolves
         let src = '';
         if (!fotoPerfil || fotoPerfil === 'null') {
-            // default avatar (serve from the AfterLogin assets folder)
             src = `${window.location.origin}/AfterLogin/Assets/perfil.jpeg`;
         } else if (/^https?:\/\//i.test(fotoPerfil)) {
             src = fotoPerfil;
         } else if (fotoPerfil.startsWith('/')) {
             src = window.location.origin + fotoPerfil;
         } else if (fotoPerfil.startsWith('.')) {
-            // relative path like ../Assets/perfil.jpeg — let the browser resolve it against the document
             const a = document.createElement('a');
             a.href = fotoPerfil;
             src = a.href;
         } else {
-            // likely stored as 'AfterLogin/Assets/..' or 'Assets/..' — make absolute
             src = `${window.location.origin}/${fotoPerfil.replace(/^\/+/, '')}`;
         }
 
         userAvatar.src = src;
-        // fallback to default if the image fails to load
         userAvatar.onerror = () => {
             userAvatar.onerror = null;
             userAvatar.src = `${window.location.origin}/AfterLogin/Assets/perfil.jpeg`;
         };
     }
 
+    // ===== APLICAR PERMISSÕES =====
+    aplicarPermissoes(nivelPermissao);
+}
 
-    // Normalize permission string: remove diacritics and compare case-insensitively
+async function aplicarPermissoes(nivelPermissao) {
+    // Normaliza o nome do perfil
     const normalize = (s) => {
         if (!s) return '';
         try {
             return s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
         } catch (e) {
-            // fallback if environment doesn't support Unicode property escapes
             return s.replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         }
     };
 
     const nivelNorm = normalize(nivelPermissao);
-    console.debug('validarSessao: nivelPermissao=', nivelPermissao, '->', nivelNorm);
+    let perfil = 'medico'; // padrão
+    
+    if (nivelNorm.includes('admin')) {
+        perfil = 'admin';
+    } else if (nivelNorm.includes('supervi')) {
+        perfil = 'supervisor';
+    } else if (nivelNorm.includes('medic')) {
+        perfil = 'medico';
+    }
 
-    if (nivelNorm === 'admin' || nivelNorm.includes('admin')) {
-        // ADM pode acessar tudo, nenhuma ação necessária
+    console.log('Perfil detectado:', perfil);
 
-    } else if (nivelNorm === 'supervisor' || nivelNorm.includes('supervi')) {
+    // ===== BUSCA PERMISSÕES INDIVIDUAIS DO BACKEND =====
+    const userId = sessionStorage.getItem('ID_MEDICO');
+    let permissoesIndividuais = null;
+    
+    if (userId && perfil !== 'admin') {
+        try {
+            const resposta = await fetch(`${window.API_BASE}/mc/permissoes-individuais/buscar/${userId}`);
+            const resultado = await resposta.json();
+            
+            if (resultado.permissoes) {
+                permissoesIndividuais = JSON.parse(resultado.permissoes);
+                console.log('Permissões individuais carregadas do backend:', permissoesIndividuais);
+            }
+        } catch (erro) {
+            console.warn('Erro ao buscar permissões individuais, usando permissões padrão:', erro);
+        }
+    }
+    
+    if (permissoesIndividuais && perfil !== 'admin') {
+        // USA PERMISSÕES INDIVIDUAIS (configuradas pelo Admin)
+        console.log('Aplicando permissões individuais para usuário:', userId);
+        const config = permissoesIndividuais;
+        
+        // Ocultar TODOS os menus e botões primeiro
+        const todosMenus = ['Colaborador', 'Paciente', 'Dash', 'Lead', 'AgendaDiaria'];
+        todosMenus.forEach(menuId => {
+            const menu = document.getElementById(menuId);
+            if (menu) menu.style.display = 'none';
+        });
+        
+        const todosBotoes = ['btnAdicionarColaborador', 'addPacienteBtn', 'btnAdicionarConsulta', 'btnAdicionarArea'];
+        todosBotoes.forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) btn.style.display = 'none';
+        });
+        
+        // Mostrar apenas o que foi configurado
+        config.menus.forEach(menuId => {
+            const menu = document.getElementById(menuId);
+            if (menu) menu.style.display = '';
+        });
+        
+        config.botoes.forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) btn.style.display = '';
+        });
+        
+    } else {
+        // USA PERMISSÕES PADRÃO DO PERFIL
+        console.log('Aplicando permissões padrão do perfil:', perfil);
+        
+        // Ocultar TODOS os menus primeiro
+        const todosMenus = ['Colaborador', 'Paciente', 'Dash', 'Lead', 'AgendaDiaria'];
+        todosMenus.forEach(menuId => {
+            const menu = document.getElementById(menuId);
+            if (menu) menu.style.display = 'none';
+        });
 
-        // Supervisor: remover funções de adicionar pacientes e cadastrar colaboradores
+        // Ocultar TODOS os botões primeiro
+        const todosBotoes = ['btnAdicionarColaborador', 'addPacienteBtn', 'btnAdicionarConsulta', 'btnAdicionarArea'];
+        todosBotoes.forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) btn.style.display = 'none';
+        });
 
-        const cadastrarPacienteBtn = document.getElementById("addPacienteBtn");
-        const adicionarColaboradorBtn = document.getElementById("btnAdicionarColaborador");
-        const adicionarAreaBtn = document.getElementById("btnAdicionarArea");
-        const adicionarConsultaBtn = document.getElementById("btnAdicionarConsulta");
+        // Mostrar apenas o que o perfil pode ver
+        const config = PERMISSOES[perfil];
+        if (config) {
+            // Mostrar menus permitidos
+            config.menus.forEach(menuId => {
+                const menu = document.getElementById(menuId);
+                if (menu) menu.style.display = '';
+            });
 
-        if (cadastrarPacienteBtn) {
-            cadastrarPacienteBtn.style.display = "none";
-        }
-        if (adicionarAreaBtn) {
-            adicionarAreaBtn.style.display = "none";
-        }
-        if (adicionarConsultaBtn) {
-            adicionarConsultaBtn.style.display = "none";
-        }
-        if (adicionarColaboradorBtn) {
-            adicionarColaboradorBtn.style.display = "none";
-        }
-        if (Leads) {
-            Leads.style.display = "none"
-        }
-        if (Dashboards) {
-            Dashboards.style.display = "none"
-        }
-    } else if (nivelNorm === 'medico' || nivelNorm.includes('medic')) {
-        // Médico: remover botoes de Colaboradores, Pacientes e Dashboards
-        if (Dashboards) {
-            Dashboards.style.display = "none"
-        }
-        const Colaboradores = document.getElementById("Colaborador");
-        const Pacientes = document.getElementById("Paciente");
-        const adicionarConsultaBtn = document.getElementById("btnAdicionarConsulta");
-
-        if (adicionarConsultaBtn) {
-            adicionarConsultaBtn.style.display = "none";
-        }
-
-        if (Colaboradores) {
-            Colaboradores.style.display = "none";
-        }
-        if (Pacientes) {
-            Pacientes.style.display = "none"
-        }
-        if (Dashboards) {
-            Dashboards.style.display = "none"
-        }
-        if (Leads) {
-            Leads.style.display = "none"
+            // Mostrar botões permitidos
+            config.botoes.forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                if (btn) btn.style.display = '';
+            });
         }
     }
 }
@@ -134,12 +184,9 @@ function validarSessao() {
 validarSessao();
 
 function deslogar() {
-
     var emailMedico = sessionStorage.getItem("EMAIL_MEDICO");
 
-
     if (!emailMedico) {
-        // Redirect to application root index — use absolute path to avoid wrong relative resolution
         window.location = `${window.location.origin}/index.html`;
         return;
     }
@@ -156,7 +203,6 @@ function deslogar() {
         .then(response => {
             if (response.ok) {
                 sessionStorage.clear();
-                // Redirect to application root index after logout
                 window.location = `${window.location.origin}/index.html`;
             } else {
                 console.error('Erro ao deslogar o médico.');

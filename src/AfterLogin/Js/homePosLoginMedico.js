@@ -416,6 +416,161 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // Função para verificar pacientes cuja última consulta agendada está na próxima semana (apenas para admin)
+    async function verificarAgendamentosVencendo(consultas) {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        
+        // Data daqui a 7 dias (janela de alerta)
+        const umaSemana = new Date(hoje);
+        umaSemana.setDate(hoje.getDate() + 7);
+        umaSemana.setHours(23, 59, 59, 999);
+        
+        // Filtrar apenas consultas futuras com status "Agendada"
+        const consultasFuturas = consultas.filter(c => {
+            const dataConsulta = new Date(c.datahoraConsulta);
+            const status = c?.statusConsulta?.nomeStatus ?? 'Agendada';
+            return status === 'Agendada' && dataConsulta >= hoje;
+        });
+        
+        // Agrupar consultas por PACIENTE + ESPECIALIDADE
+        const consultasPorPacienteEspecialidade = {};
+        consultasFuturas.forEach(c => {
+            const pacienteId = c.paciente?.id;
+            const especialidadeId = c.especificacaoMedica?.id || c.medico?.especificacaoMedica?.id;
+            const especialidadeNome = c.especificacaoMedica?.area || c.medico?.especificacaoMedica?.area || 'Não especificada';
+            
+            if (!pacienteId || !especialidadeId) return;
+            
+            // Criar chave única: pacienteId + especialidadeId
+            const chave = `${pacienteId}_${especialidadeId}`;
+            
+            if (!consultasPorPacienteEspecialidade[chave]) {
+                consultasPorPacienteEspecialidade[chave] = {
+                    pacienteNome: `${c.paciente?.nome || ''} ${c.paciente?.sobrenome || ''}`.trim(),
+                    especialidadeNome: especialidadeNome,
+                    consultas: []
+                };
+            }
+            consultasPorPacienteEspecialidade[chave].consultas.push(c);
+        });
+        
+        // Para cada combinação paciente+especialidade, pegar a ÚLTIMA consulta agendada
+        const pacientesComUltimaConsultaProxima = [];
+        
+        Object.values(consultasPorPacienteEspecialidade).forEach(grupo => {
+            // Ordenar consultas por data (mais antiga primeiro)
+            grupo.consultas.sort((a, b) => 
+                new Date(a.datahoraConsulta) - new Date(b.datahoraConsulta)
+            );
+            
+            // Pegar a ÚLTIMA consulta (mais distante no futuro)
+            const ultimaConsulta = grupo.consultas[grupo.consultas.length - 1];
+            const dataUltimaConsulta = new Date(ultimaConsulta.datahoraConsulta);
+            
+            // Verificar se a última consulta está dentro da próxima semana
+            if (dataUltimaConsulta >= hoje && dataUltimaConsulta <= umaSemana) {
+                pacientesComUltimaConsultaProxima.push({
+                    pacienteNome: grupo.pacienteNome,
+                    especialidadeNome: grupo.especialidadeNome,
+                    ultimaConsulta: ultimaConsulta,
+                    dataUltima: dataUltimaConsulta,
+                    totalConsultas: grupo.consultas.length
+                });
+            }
+        });
+        
+        // Se houver pacientes com última consulta na próxima semana, mostrar alerta
+        if (pacientesComUltimaConsultaProxima.length > 0) {
+            // Ordenar por data (mais próximas primeiro)
+            pacientesComUltimaConsultaProxima.sort((a, b) => a.dataUltima - b.dataUltima);
+            
+            // Criar HTML para o popup
+            let htmlConsultas = '<div style="text-align: left; max-height: 400px; overflow-y: auto;">';
+            htmlConsultas += '<table style="width: 100%; border-collapse: collapse;">';
+            htmlConsultas += '<thead><tr style="background-color: #f0f0f0;">';
+            htmlConsultas += '<th style="padding: 10px; border: 1px solid #ddd;">Paciente</th>';
+            htmlConsultas += '<th style="padding: 10px; border: 1px solid #ddd;">Especialidade</th>';
+            htmlConsultas += '<th style="padding: 10px; border: 1px solid #ddd;">Última Consulta</th>';
+            htmlConsultas += '<th style="padding: 10px; border: 1px solid #ddd;">Sessões Restantes</th>';
+            htmlConsultas += '</tr></thead><tbody>';
+            
+            pacientesComUltimaConsultaProxima.forEach(item => {
+                const dataFormatada = item.dataUltima.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+                const horaFormatada = item.dataUltima.toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                htmlConsultas += '<tr>';
+                htmlConsultas += `<td style="padding: 8px; border: 1px solid #ddd;"><strong>${item.pacienteNome}</strong></td>`;
+                htmlConsultas += `<td style="padding: 8px; border: 1px solid #ddd;">${item.especialidadeNome}</td>`;
+                htmlConsultas += `<td style="padding: 8px; border: 1px solid #ddd;">${dataFormatada} às ${horaFormatada}</td>`;
+                htmlConsultas += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.totalConsultas}</td>`;
+                htmlConsultas += '</tr>';
+            });
+            
+            htmlConsultas += '</tbody></table></div>';
+            
+            // Exibir pop-up usando SweetAlert2
+            if (window.Swal) {
+                Swal.fire({
+                    title: '<strong>⚠️ Pacientes Precisam Reagendar!</strong>',
+                    html: `
+                        <p style="margin-bottom: 15px;">
+                            <strong>Silvia</strong>, os seguintes pacientes têm sua <strong>última consulta agendada</strong> 
+                            (por especialidade) na próxima semana. É necessário <strong>reagendar mais sessões</strong>:
+                        </p>
+                        ${htmlConsultas}
+                        <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                            <em>💡 Cada linha representa a última sessão de uma especialidade para aquele paciente.</em>
+                        </p>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-calendar-plus"></i> Ir para Agendamento',
+                    cancelButtonText: '<i class="fas fa-check"></i> Entendi',
+                    confirmButtonColor: '#1976D2',
+                    cancelButtonColor: '#388E3C',
+                    width: '900px',
+                    customClass: {
+                        popup: 'agendamentos-vencendo-popup',
+                        confirmButton: 'btn-ir-agendamento',
+                        cancelButton: 'btn-entendi'
+                    },
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Redireciona para a página de calendário/agendamento
+                        window.location.href = 'calendario.html';
+                    }
+                    // Se clicar em "Entendi" (cancel), apenas fecha o modal
+                });
+            } else {
+                // Fallback para alert simples se SweetAlert2 não estiver disponível
+                let mensagem = 'AVISO: Pacientes precisam reagendar!\n\n';
+                pacientesComUltimaConsultaProxima.forEach(item => {
+                    const dataFormatada = item.dataUltima.toLocaleDateString('pt-BR');
+                    const horaFormatada = item.dataUltima.toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    mensagem += `\nPaciente: ${item.pacienteNome}\n`;
+                    mensagem += `  Especialidade: ${item.especialidadeNome}\n`;
+                    mensagem += `  Última consulta: ${dataFormatada} às ${horaFormatada}\n`;
+                    mensagem += `  Sessões restantes: ${item.totalConsultas}\n`;
+                });
+                if (confirm(mensagem + '\n\nDeseja ir para a tela de agendamento?')) {
+                    window.location.href = 'calendario.html';
+                }
+            }
+        }
+    }
+
     // Inicialização
     const idMedico = sessionStorage.getItem('ID_MEDICO'); // Pega o ID do Profissional armazenado no sessionStorage
     console.log(idMedico);
@@ -439,6 +594,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Atualiza painel do dia (todas as consultas de hoje) e gráfico geral
                 atualizarAgenda(todas);
                 atualizarGrafico(todas);
+                // Verificar agendamentos que vencem em 1 semana
+                verificarAgendamentosVencendo(todas);
             } else {
                 console.error('Falha ao buscar consultas para gráfico admin. Status:', resp.status);
             }

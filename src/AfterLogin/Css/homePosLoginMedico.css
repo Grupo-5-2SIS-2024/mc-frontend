@@ -505,3 +505,33 @@ td {
         font-size: 36px;
     }
 }
+
+/* Estilos para o popup de agendamentos vencendo */
+.agendamentos-vencendo-popup {
+    font-family: Arial, sans-serif;
+}
+
+.agendamentos-vencendo-popup table {
+    font-size: 14px;
+}
+
+.agendamentos-vencendo-popup th {
+    background-color: #1976D2 !important;
+    color: white !important;
+    font-weight: bold;
+    text-align: left;
+}
+
+.agendamentos-vencendo-popup tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.agendamentos-vencendo-popup tr:hover {
+    background-color: #e8f4f8;
+    transition: background-color 0.2s;
+}
+
+.agendamentos-vencendo-popup .swal2-html-container {
+    max-height: 500px;
+    overflow-y: auto;
+}

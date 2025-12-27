@@ -127,6 +127,8 @@ function exportarSemanaPDF() {
 
         let dataInicioAtual = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
         let consultasOriginais = []; // Para armazenar todas as consultas
+        let modoCalendario = 'ABA'; // Modo padrão: ABA ou CONVENCIONAL
+        let procedimentosList = []; // Lista de procedimentos/especificações
 
         async function buscarMedicos() {
             try {
@@ -187,6 +189,9 @@ function exportarSemanaPDF() {
                     throw new Error(`HTTP error! Status: ${resposta.status}`);
                 }
                 const especificacoes = await resposta.json();
+                
+                // Armazena lista global para referência
+                procedimentosList = especificacoes;
 
                 const filtroAreaConsulta = document.getElementById('filtroAreaConsulta');
                 filtroAreaConsulta.innerHTML = '<option value="">Todas as Áreas</option>';
@@ -302,10 +307,31 @@ function exportarSemanaPDF() {
             return idade;
         }
 
+        // Função auxiliar para determinar se procedimento é Terapia Convencional
+        function isTerapiaConvencional(especificacaoArea) {
+            if (!especificacaoArea) return false;
+            const area = (especificacaoArea || '').toLowerCase();
+            return area.includes('terapia convencional') || area.includes('convencional');
+        }
+
         function obterTarefasParaData(date) {
             const formattedDate = formatarData(date);
             // Filtra todas as consultas para a data específica
-            const entries = bancoDeDadosFiltrado.filter(entry => entry.datahoraConsulta.startsWith(formattedDate));
+            let entries = bancoDeDadosFiltrado.filter(entry => entry.datahoraConsulta.startsWith(formattedDate));
+            
+            // Filtra por modo do calendário (ABA ou Terapia Convencional)
+            if (modoCalendario === 'ABA') {
+                entries = entries.filter(entry => {
+                    const area = entry?.especificacaoMedica?.area || entry?.medico?.especificacaoMedica?.area || '';
+                    return !isTerapiaConvencional(area);
+                });
+            } else if (modoCalendario === 'CONVENCIONAL') {
+                entries = entries.filter(entry => {
+                    const area = entry?.especificacaoMedica?.area || entry?.medico?.especificacaoMedica?.area || '';
+                    return isTerapiaConvencional(area);
+                });
+            }
+            
             return entries; // Retorna todas as consultas como objetos completos
         }
 
@@ -525,4 +551,48 @@ function exportarSemanaPDF() {
 
         function fecharModalDetalhes() {
             document.getElementById('modalDetalhes').style.display = 'none';
+        }
+
+        // Função para alternar entre modos ABA e Terapia Convencional
+        function alternarModoCalendario(modo) {
+            modoCalendario = modo;
+            console.log('Modo do calendário alterado para:', modo);
+            
+            // Atualiza visual dos botões
+            const btnABA = document.getElementById('btnModoABA');
+            const btnConvencional = document.getElementById('btnModoConvencional');
+            const labelModo = document.getElementById('modoAtualLabel');
+            
+            if (modo === 'ABA') {
+                btnABA.style.background = '#4CAF50';
+                btnABA.style.color = 'white';
+                btnABA.style.borderColor = '#4CAF50';
+                btnABA.classList.add('active');
+                
+                btnConvencional.style.background = 'white';
+                btnConvencional.style.color = '#666';
+                btnConvencional.style.borderColor = '#ccc';
+                btnConvencional.classList.remove('active');
+                
+                labelModo.textContent = 'Modo: ABA (50min)';
+                labelModo.style.background = '#e8f5e9';
+                labelModo.style.color = '#2e7d32';
+            } else {
+                btnConvencional.style.background = '#2196F3';
+                btnConvencional.style.color = 'white';
+                btnConvencional.style.borderColor = '#2196F3';
+                btnConvencional.classList.add('active');
+                
+                btnABA.style.background = 'white';
+                btnABA.style.color = '#666';
+                btnABA.style.borderColor = '#ccc';
+                btnABA.classList.remove('active');
+                
+                labelModo.textContent = 'Modo: Terapia Convencional (30min)';
+                labelModo.style.background = '#e3f2fd';
+                labelModo.style.color = '#1565c0';
+            }
+            
+            // Re-renderiza o calendário com o novo filtro
+            atualizarDisplayData(dataInicioAtual);
         }
