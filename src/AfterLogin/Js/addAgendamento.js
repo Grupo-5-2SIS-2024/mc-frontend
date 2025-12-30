@@ -197,69 +197,12 @@ function verificarSobreposicao(inicio1, duracao1Min, inicio2, duracao2Min) {
     return (minutos1Inicio < minutos2Fim && minutos1Fim > minutos2Inicio);
 }
 
-// Função para obter horários disponíveis baseado no procedimento (ABA ou Terapia Convencional)
-// Verifica conflitos considerando a duração das consultas existentes
+// Função para obter horários disponíveis baseado apenas no procedimento (sem buscar consultas)
 async function getAvailableHours(dia, procedimentoId = null) {
-    console.log('Obtendo slots disponíveis para o dia:', dia, 'procedimento:', procedimentoId);
-    const consultas = await buscarConsultas();
-    
-    // Define qual conjunto de slots usar baseado no procedimento
+    console.log('Obtendo slots (sem consulta ao backend) para o dia:', dia, 'procedimento:', procedimentoId);
     const isConvencional = isTerapiaConvencional(procedimentoId);
     const slotsToUse = isConvencional ? SCHEDULE_SLOTS_CONVENCIONAL : SCHEDULE_SLOTS_ABA;
-    const duracaoNova = isConvencional ? 30 : 50; // minutos
-    
-    // Filtra consultas do dia
-    const consultasDoDia = consultas.filter(c => c.datahoraConsulta.startsWith(dia));
-    
-    // Busca total de médicos do procedimento
-    let totalMedicos = 0;
-    let medicosFiltrados = [];
-    try {
-        const respMed = await fetch(`${API_BASE}/mc/medicos`);
-        if (respMed.ok) {
-            const medicos = await respMed.json();
-            // Filtra médicos do procedimento se especificado
-            if (procedimentoId) {
-                medicosFiltrados = medicos.filter(m => String(m.especificacaoMedica.id) === String(procedimentoId));
-                totalMedicos = medicosFiltrados.length;
-            } else {
-                medicosFiltrados = medicos;
-                totalMedicos = medicos.length;
-            }
-        }
-    } catch (e) { console.warn('Falha ao obter total de médicos, assumindo 0 para lógica liberal.', e); }
-
-    const available = slotsToUse.filter(slot => {
-        // Se não conseguimos determinar total de médicos, não bloqueamos nenhum slot
-        if (totalMedicos <= 0) return true;
-        
-        // Para cada slot, verifica quantos médicos estão ocupados (considerando sobreposição)
-        let medicosOcupados = 0;
-        
-        // Verifica cada consulta do dia para ver se há sobreposição com este slot
-        consultasDoDia.forEach(consulta => {
-            const horaConsulta = consulta.datahoraConsulta.split('T')[1].substring(0, 5); // HH:MM
-            
-            // Determina duração da consulta existente
-            let duracaoExistente = 50; // padrão ABA
-            if (consulta.duracaoConsulta) {
-                // duracaoConsulta vem como "HH:MM:SS"
-                const [hh, mm] = consulta.duracaoConsulta.split(':').map(Number);
-                duracaoExistente = hh * 60 + mm;
-            }
-            
-            // Verifica se há sobreposição entre o slot proposto e a consulta existente
-            if (verificarSobreposicao(slot, duracaoNova, horaConsulta, duracaoExistente)) {
-                medicosOcupados++;
-            }
-        });
-        
-        // Slot disponível se ainda há médicos livres
-        return medicosOcupados < totalMedicos;
-    });
-
-    console.log('Slots disponíveis (', isConvencional ? 'Terapia Convencional' : 'ABA', '):', available);
-    return available.length ? available : ['Sem horários disponíveis'];
+    return slotsToUse;
 }
 
 // Função para atualizar as horas disponíveis após a seleção da data e procedimento
@@ -327,7 +270,6 @@ async function updateAvailableDoctors() {
     const hora = document.getElementById('hora').value;
     const procedimentoId = document.getElementById('procedimento').value;
     try {
-        const consultas = await buscarConsultas();
         const respMedicos = await fetch(`${API_BASE}/mc/medicos`);
         if (!respMedicos.ok) throw new Error(`HTTP error! Status: ${respMedicos.status}`);
         const medicos = await respMedicos.json();
@@ -338,20 +280,9 @@ async function updateAvailableDoctors() {
             medicosFiltrados = medicos.filter(m => String(m.especificacaoMedica.id) === String(procedimentoId));
         }
 
-        // Se já tem dia e hora, remove os ocupados nesse horário
-        if (dia && hora) {
-            const bookedDoctors = consultas
-                .filter(c => c.datahoraConsulta.startsWith(`${dia}T${hora}`))
-                .map(c => c.medico.id);
-
-            const availableDoctors = medicosFiltrados.filter(m => !bookedDoctors.includes(m.id));
-            const availableDoctorsLabel = withLabelNomeSobrenome(availableDoctors);
-            populateSelect('medico', [{ label: 'Selecione um Profissional', id: '' }, ...availableDoctorsLabel], 'label', 'id');
-        } else {
-            // Sem dia/hora ainda: só filtra por procedimento (se houver)
-            const medicosFiltradosLabel = withLabelNomeSobrenome(medicosFiltrados);
-            populateSelect('medico', [{ label: 'Selecione um Profissional', id: '' }, ...medicosFiltradosLabel], 'label', 'id');
-        }
+        // Popula sempre com base no procedimento; não filtra por ocupação neste horário
+        const medicosFiltradosLabel = withLabelNomeSobrenome(medicosFiltrados);
+        populateSelect('medico', [{ label: 'Selecione um Profissional', id: '' }, ...medicosFiltradosLabel], 'label', 'id');
     } catch (error) {
         console.error('Erro ao atualizar Profissionais disponíveis:', error);
     }
@@ -364,7 +295,6 @@ async function updateAvailablePatients() {
 
     if (dia && hora) {
         try {
-            const consultas = await buscarConsultas();
             const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes`);
             if (!respostaPacientes.ok) {
                 console.warn(`buscar pacientes responded with status ${respostaPacientes.status}`);
@@ -386,16 +316,8 @@ async function updateAvailablePatients() {
                 pacientes = [];
             }
 
-            // Filtra os pacientes que têm consultas no horário selecionado
-            const bookedPatients = consultas
-                .filter(consulta => consulta.datahoraConsulta.startsWith(`${dia}T${hora}`))
-                .map(consulta => consulta.paciente.id);
-
-            // Pacientes disponíveis são aqueles que não estão na lista de pacientes ocupados
-            const availablePatients = pacientes.filter(paciente => !bookedPatients.includes(paciente.id));
-
-            // Popula o select com os pacientes disponíveis
-            const availablePatientsLabel = withLabelNomeSobrenome(availablePatients);
+            // Popula o select com todos os pacientes (não filtra ocupados nesta tela)
+            const availablePatientsLabel = withLabelNomeSobrenome(pacientes);
             populateSelect('paciente', [{ label: 'Selecione um Paciente', id: '' }, ...availablePatientsLabel], 'label', 'id');
         } catch (error) {
             console.error('Erro ao atualizar pacientes disponíveis:', error);
@@ -456,6 +378,18 @@ async function agendarConsulta() {
         const isConvencional = isTerapiaConvencional(procedimentoId);
         const duracaoConsulta = isConvencional ? SLOT_DURATION_CONVENCIONAL : SLOT_DURATION_ABA;
 
+        // Busca consultas existentes uma única vez para checagem de duplicidade por paciente/dia
+        let consultasExistentes = [];
+        try {
+            const respTodas = await fetch(`${API_BASE}/mc/consultas`);
+            if (respTodas.ok) {
+                const texto = await respTodas.text();
+                if (texto && texto.trim().length > 0) {
+                    try { consultasExistentes = JSON.parse(texto); } catch (_) { consultasExistentes = []; }
+                }
+            }
+        } catch (e) { console.warn('Não foi possível verificar consultas existentes para evitar duplicidade.', e); }
+
         // Função para criar o objeto da consulta
         const criarDadosConsulta = (dataConsulta) => ({
             datahoraConsulta: `${dataConsulta}T${hora}:00`,
@@ -466,6 +400,17 @@ async function agendarConsulta() {
             paciente: { id: pacienteId },
             duracaoConsulta: duracaoConsulta
         });
+
+        // Impede duplicidade: mesma paciente no mesmo dia
+        const existeNoDia = consultasExistentes.some(c => String(c?.paciente?.id) === String(pacienteId) && typeof c?.datahoraConsulta === 'string' && c.datahoraConsulta.startsWith(dia));
+        if (existeNoDia) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Já existe consulta para este paciente no dia',
+                text: 'Cada paciente pode ter somente uma consulta por dia nesta tela. Use recorrência para agendar semanas futuras.'
+            });
+            return;
+        }
 
         // Agendar a consulta original
         const dadosConsulta = criarDadosConsulta(dia);
@@ -493,6 +438,13 @@ async function agendarConsulta() {
 
                 const novaDataISO = novaData.toISOString().split('T')[0]; // Formata para 'yyyy-mm-dd'
                 const novaConsulta = criarDadosConsulta(novaDataISO);
+
+                // Evita duplicidade para o mesmo paciente na mesma novaDataISO
+                const jaExisteNaSemana = consultasExistentes.some(c => String(c?.paciente?.id) === String(pacienteId) && typeof c?.datahoraConsulta === 'string' && c.datahoraConsulta.startsWith(novaDataISO));
+                if (jaExisteNaSemana) {
+                    console.warn(`Consulta já existente para o paciente em ${novaDataISO}; pulando criação.`);
+                    continue;
+                }
 
                 // Faz a requisição para cadastrar a nova consulta
                 const respostaNovaConsulta = await fetch(`${API_BASE}/mc/consultas`, {
@@ -715,12 +667,6 @@ async function alterarConsulta(idConsulta) {
     console.log("Iniciando página de agendamentos...");
     await buscarEspecificacoes();
     await buscarPacientesEMedicos();
-    await buscarConsultas();
-
-    // Atualiza as consultas a cada 30 segundos
-    setInterval(async () => {
-        await buscarConsultas(); // Atualiza a listagem de consultas
-    }, 30000); // Intervalo de 30000 milissegundos (30 segundos)
 })();
 
 document.getElementById('procedimento').addEventListener('change', () => {

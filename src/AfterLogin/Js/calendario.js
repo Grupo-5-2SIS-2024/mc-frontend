@@ -545,6 +545,33 @@ function exportarSemanaPDF() {
             if (btnEditar) {
                 btnEditar.onclick = () => { window.location.href = `editarConsulta.html?id=${consulta.id}`; };
             }
+            const btnDeletar = document.getElementById('btnDeletarConsulta');
+            if (btnDeletar) {
+                btnDeletar.onclick = async () => {
+                    try {
+                        const confirmar = window.confirm('Tem certeza que deseja excluir esta consulta?');
+                        if (!confirmar) return;
+
+                        const resp = await fetch(`${API_BASE_LOCAL}/mc/consultas/${consulta.id}`, {
+                            method: 'DELETE',
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        if (!resp.ok) {
+                            const msg = await resp.text();
+                            alert(`Erro ao excluir a consulta: ${msg || resp.status}`);
+                            return;
+                        }
+                        // Fechar modal, recarregar dados e atualizar exibição
+                        fecharModalDetalhes();
+                        await buscarConsultas();
+                        atualizarDisplayData(dataInicioAtual);
+                        alert('Consulta excluída com sucesso.');
+                    } catch (err) {
+                        console.error('Falha ao excluir consulta', err);
+                        alert('Erro ao excluir a consulta.');
+                    }
+                };
+            }
             const modal = document.getElementById('modalDetalhes');
             if (modal) modal.style.display = 'flex';
         }
