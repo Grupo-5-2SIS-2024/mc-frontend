@@ -239,7 +239,12 @@
                         <div class="tab-contents">
                             <!-- Aba Detalhes -->
                             <div class="content show" id="detalhes">
-                                <h1 class="content-title">Detalhes do Paciente</h1>
+                                <div class="modal-header">
+                                    <h3>Detalhes do Paciente</h3>
+                                    <button class="btn-secundario" id="btnAddResponsavel">
+                                        <i class="fa-solid fa-user-plus"></i> Adicionar Responsável
+                                    </button>
+                                </div>
                                 <div id="detalhesContent" class="content-description">
                                     <!-- Bloco Superior -->
                                     <div class="detalhes-bloco-superior">
@@ -263,11 +268,8 @@
 
                                         <!-- Responsável -->
                                         <div class="detalhes-responsavel">
-                                            <h4>Responsável</h4>
-                                            <p><strong>Nome:</strong> <span id="responsavelNome"></span></p>
-                                            <p><strong>Sobrenome:</strong> <span id="responsavelSobrenome"></span></p>
-                                            <p><strong>Telefone:</strong> <span id="responsavelTelefone"></span></p>
-                                            <p><strong>CPF:</strong> <span id="responsavelCPF"></span></p>
+                                            <h4>Responsáveis</h4>
+                                            <ul id="listaResponsaveis"></ul>
                                         </div>
                                     </div>
                                 </div>
@@ -369,6 +371,7 @@
 
     <!-- Script do SweetAlert para perguntar sobre a idade do paciente -->
     <script>
+
         // Captura o botão de "Adicionar Paciente"
         const addPacienteBtn = document.getElementById('addPacienteBtn');
 
