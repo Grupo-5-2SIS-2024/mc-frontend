@@ -253,6 +253,26 @@ a {
     /* azul médio */
 }
 
+.modal-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 7px;
+}
+
+.btn-secundario {
+background-color: #1976D2;
+color: #fff;
+border: none;
+padding: 0.4rem 0.8rem;
+border-radius: 5px;
+cursor: pointer;
+}
+
+.btn-secundario:hover {
+background-color: #1565C0;
+}
+
 /* MODAIS */
 
 /* Modal de Cadastro de Área */

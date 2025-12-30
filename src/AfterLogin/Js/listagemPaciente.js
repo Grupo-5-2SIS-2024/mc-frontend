@@ -316,6 +316,7 @@ buscarKPIsPaciente();
 function abrirModalPaciente(idPaciente) {
     document.getElementById('modalBackdrop').style.display = 'flex';
 
+
     // Chamada ao endpoint para buscar as informações detalhadas do paciente
     fetch(`${API_BASE}/mc/pacientes/${idPaciente}`)
         .then(response => response.json())
@@ -331,6 +332,10 @@ function abrirModalPaciente(idPaciente) {
 
             // Define a aba "Detalhes" como a aba ativa
             openTab(null, 'detalhes');
+            document.getElementById('btnAddResponsavel').onclick = () => {
+                window.location.href = `cadastroResponsavel.html?pacienteId=${idPaciente}`;
+            };
+
 
             // Atualiza o cabeçalho/semana para garantir domingo–sábado
             atualizarDisplayData(dataInicioAtual);
@@ -386,17 +391,23 @@ function preencherDetalhes(paciente) {
     }
 
     // Responsável
-    if (paciente.responsavel) {
-        document.getElementById('responsavelNome').textContent = paciente.responsavel.nome || 'Nome não informado';
-        document.getElementById('responsavelSobrenome').textContent = paciente.responsavel.sobrenome || 'Sobrenome não informado';
-        document.getElementById('responsavelTelefone').textContent = paciente.responsavel.telefone ? formatarTelefone(paciente.responsavel.telefone) : 'Telefone não informado';
-        document.getElementById('responsavelCPF').textContent = paciente.responsavel.cpf ? formatarCPF(paciente.responsavel.cpf) : 'CPF não informado';
+    const lista = document.getElementById('listaResponsaveis');
+    lista.innerHTML = '';
+
+    if (paciente.responsaveis && paciente.responsaveis.length > 0) {
+        paciente.responsaveis.forEach(r => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+            <strong>${r.nome} ${r.sobrenome}</strong><br>
+            Tel: ${r.telefone ? formatarTelefone(r.telefone) : '—'}<br>
+            CPF: ${r.cpf ? formatarCPF(r.cpf) : '—'}
+        `;
+            lista.appendChild(li);
+        });
     } else {
-        document.getElementById('responsavelNome').textContent = 'Nome não informado';
-        document.getElementById('responsavelSobrenome').textContent = 'Sobrenome não informado';
-        document.getElementById('responsavelTelefone').textContent = 'Telefone não informado';
-        document.getElementById('responsavelCPF').textContent = 'CPF não informado';
+        lista.innerHTML = '<li>Nenhum responsável cadastrado.</li>';
     }
+
 }
 
 // Função auxiliar para calcular a idade
