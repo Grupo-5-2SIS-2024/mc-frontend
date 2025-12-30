@@ -1,10 +1,18 @@
 // Base da API: usa localhost em dev, vazio em produção
 const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
 
+const qs = new URLSearchParams(window.location.search);
+const pacienteId = qs.get('pacienteId');
 const inputFile = document.querySelector("#picture__input");
 const pictureImage = document.querySelector(".picture__image");
 const pictureImageTxt = "Choose an image";
 
+if (!pacienteId) {
+    Swal.fire({
+        icon: 'error',
+        title: 'Paciente não identificado'
+    });
+}
 // Verifique se inputFile e pictureImage existem antes de configurar os eventos
 if (inputFile && pictureImage) {
     pictureImage.innerHTML = pictureImageTxt;
@@ -192,15 +200,15 @@ function validarCadastroResponsavel() {
         document.getElementById('error-telefone').textContent = "";
     }
 
-    if(cpf.trim() !== ""){
-      if (!cpfRegex.test(cpf)) {
-        document.getElementById('error-cpf').textContent = "CPF inválido. Deve conter 11 dígitos.";
-        errors.push("CPF inválido.");
-    } else {
-        document.getElementById('error-cpf').textContent = "";
+    if (cpf.trim() !== "") {
+        if (!cpfRegex.test(cpf)) {
+            document.getElementById('error-cpf').textContent = "CPF inválido. Deve conter 11 dígitos.";
+            errors.push("CPF inválido.");
+        } else {
+            document.getElementById('error-cpf').textContent = "";
+        }
     }
-    }
-    
+
 
     if (!genero.trim()) {
         document.getElementById('error-especialidade').textContent = "Gênero é obrigatório.";
@@ -258,18 +266,24 @@ async function cadastrarResponsavel() {
 
             if (respostaCadastro.status === 201) {
                 const responsavelCadastrado = await respostaCadastro.json();
-                sessionStorage.setItem("idResponsavelCadastrado", responsavelCadastrado.id);
+
+                if (pacienteId) {
+                    await fetch(
+                        `${API_BASE}/mc/pacientes/${pacienteId}/responsavel/${responsavelCadastrado.id}`,
+                        { method: 'PUT' }
+                    );
+                }
 
                 Swal.fire({
                     icon: 'success',
-                    title: 'Responsável cadastrado com sucesso!',
-                    text: 'Redirecionando para o cadastro do paciente...',
+                    title: 'Responsável vinculado com sucesso',
                     showConfirmButton: false,
                     timer: 1500
                 }).then(() => {
-                    window.location.href = "cadastroPacienteComResponsavel.html";
+                    window.location.href = 'listagemPaciente.html';
                 });
-            } else {
+            }
+            else {
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro ao cadastrar responsável',
