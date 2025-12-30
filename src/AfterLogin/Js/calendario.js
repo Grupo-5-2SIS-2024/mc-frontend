@@ -545,6 +545,41 @@ function exportarSemanaPDF() {
             if (btnEditar) {
                 btnEditar.onclick = () => { window.location.href = `editarConsulta.html?id=${consulta.id}`; };
             }
+            const btnDeletar = document.getElementById('btnDeletarConsulta');
+            if (btnDeletar) {
+                btnDeletar.onclick = async () => {
+                    try {
+                        const result = await Swal.fire({
+                            title: 'Tem certeza?',
+                            text: 'Deseja excluir esta consulta?',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sim, excluir',
+                            cancelButtonText: 'Cancelar',
+                            confirmButtonColor: '#d33'
+                        });
+                        if (!result.isConfirmed) return;
+
+                        const resp = await fetch(`${API_BASE_LOCAL}/mc/consultas/${consulta.id}`, {
+                            method: 'DELETE',
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        if (!resp.ok) {
+                            const msg = await resp.text();
+                            await Swal.fire({ icon: 'error', title: 'Erro', text: `Erro ao excluir a consulta: ${msg || resp.status}` });
+                            return;
+                        }
+                        // Fechar modal, recarregar dados e atualizar exibição
+                        fecharModalDetalhes();
+                        await buscarConsultas();
+                        atualizarDisplayData(dataInicioAtual);
+                        await Swal.fire({ icon: 'success', title: 'Excluída', text: 'Consulta excluída com sucesso.' });
+                    } catch (err) {
+                        console.error('Falha ao excluir consulta', err);
+                        await Swal.fire({ icon: 'error', title: 'Erro', text: 'Erro ao excluir a consulta.' });
+                    }
+                };
+            }
             const modal = document.getElementById('modalDetalhes');
             if (modal) modal.style.display = 'flex';
         }
