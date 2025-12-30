@@ -549,8 +549,16 @@ function exportarSemanaPDF() {
             if (btnDeletar) {
                 btnDeletar.onclick = async () => {
                     try {
-                        const confirmar = window.confirm('Tem certeza que deseja excluir esta consulta?');
-                        if (!confirmar) return;
+                        const result = await Swal.fire({
+                            title: 'Tem certeza?',
+                            text: 'Deseja excluir esta consulta?',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sim, excluir',
+                            cancelButtonText: 'Cancelar',
+                            confirmButtonColor: '#d33'
+                        });
+                        if (!result.isConfirmed) return;
 
                         const resp = await fetch(`${API_BASE_LOCAL}/mc/consultas/${consulta.id}`, {
                             method: 'DELETE',
@@ -558,17 +566,17 @@ function exportarSemanaPDF() {
                         });
                         if (!resp.ok) {
                             const msg = await resp.text();
-                            alert(`Erro ao excluir a consulta: ${msg || resp.status}`);
+                            await Swal.fire({ icon: 'error', title: 'Erro', text: `Erro ao excluir a consulta: ${msg || resp.status}` });
                             return;
                         }
                         // Fechar modal, recarregar dados e atualizar exibição
                         fecharModalDetalhes();
                         await buscarConsultas();
                         atualizarDisplayData(dataInicioAtual);
-                        alert('Consulta excluída com sucesso.');
+                        await Swal.fire({ icon: 'success', title: 'Excluída', text: 'Consulta excluída com sucesso.' });
                     } catch (err) {
                         console.error('Falha ao excluir consulta', err);
-                        alert('Erro ao excluir a consulta.');
+                        await Swal.fire({ icon: 'error', title: 'Erro', text: 'Erro ao excluir a consulta.' });
                     }
                 };
             }

@@ -427,8 +427,8 @@ a {
 
 /* Modal de Detalhes (conteúdo central) */
 .modalDetalhes {
-    width: 75%;
-    max-width: 1200px;
+    width: 95%;
+    max-width: 1600px;
     height: 90vh;
     padding: 20px;
     border-radius: 10px;
@@ -440,6 +440,7 @@ a {
     flex-direction: row;
     background-color: #BBDEFB;
     /* azul muito claro */
+    box-sizing: border-box;
 }
 
 /* Conteúdo do modal */
@@ -680,8 +681,9 @@ a {
 
 /* Estilo dos dias da semana */
 .week-days {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
     margin-bottom: 20px;
 }
 
@@ -690,23 +692,21 @@ a {
     border: 1px solid #ddd;
     padding: 15px;
     text-align: center;
-    flex: 1;
     border-radius: 10px;
-    margin: 0 5px;
     font-weight: bold;
     color: #555;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .tasks-columns {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
     margin-top: 10px;
 }
 
 .column {
-    flex: 1;
-    margin: 0 5px;
+    width: 100%;
 }
 
 /* Tarefas de consultas */

@@ -279,6 +279,9 @@ function abrirModalPaciente(idPaciente) {
 
             // Define a aba "Detalhes" como a aba ativa
             openTab(null, 'detalhes');
+
+            // Atualiza o cabeçalho/semana para garantir domingo–sábado
+            atualizarDisplayData(dataInicioAtual);
         })
         .catch(error => {
             console.error("Erro ao buscar dados do paciente:", error);
@@ -295,6 +298,11 @@ function openTab(event, tabId) {
 
     document.querySelectorAll('.tab-btn').forEach(tabBtn => tabBtn.classList.remove('active'));
     if (event) event.currentTarget.classList.add('active');
+
+    // Se a aba Calendário foi ativada, renderiza a semana e tarefas
+    if (tabId === 'calendario') {
+        atualizarDisplayData(dataInicioAtual);
+    }
 }
 
 // Função para preencher os detalhes do paciente
@@ -410,16 +418,13 @@ document.addEventListener('DOMContentLoaded', () => {
     atualizarDisplayData(dataInicioAtual);
 });
 
-// Configurar a aba para inicializar o calendário ao clicar
-document.getElementById('calendario').addEventListener('click', () => {
-    atualizarDisplayData(dataInicioAtual);
-});
 
 function obterInicioDaSemana(date) {
+    // Semana inicia no domingo (0)
     const day = date.getDay();
-    const diff = (day === 0 ? -6 : 1) - day;
     const startDate = new Date(date);
-    startDate.setDate(date.getDate() + diff);
+    startDate.setDate(date.getDate() - day);
+    startDate.setHours(0, 0, 0, 0);
     return startDate;
 }
 

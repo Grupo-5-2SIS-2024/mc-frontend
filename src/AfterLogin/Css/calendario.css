@@ -398,6 +398,18 @@ body {
 }
 
 /* Estilos para Toggle de Modo ABA/Terapia Convencional */
+
+/* Delete button (trash) outlined in red and positioned to the left of Edit */
+#btnDeletarConsulta.edit-button {
+    right: 85px; /* place left of the edit button */
+    border: 2px solid #e53935; /* red outline */
+    border-radius: 6px;
+    color: #e53935;
+}
+
+#btnDeletarConsulta.edit-button:hover {
+    background: #ffebee; /* light red background on hover */
+}
 .procedure-toggle {
     background: linear-gradient(to right, #f8f9fa, #ffffff);
     padding: 15px 20px;
