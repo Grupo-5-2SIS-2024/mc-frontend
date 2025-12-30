@@ -89,8 +89,8 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
             
             const acoes = nivelPermissao === "Supervisor" ? '' : `
                 <div class="actions">
-                    <button class="update"><i class="fas fa-pencil-alt"></i></button>
-                    <button class="delete"><i class="fas fa-trash-alt"></i></button>
+                    <button class="update" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="delete" title="Inativar"><i class="fas fa-trash-alt" style="color:#e53935"></i></button>
                     ${botaoPermissoes}
                 </div>`;
 
@@ -114,14 +114,14 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
                     const id = this.closest('.cardColaborador').dataset.medicoId;
                     if (id) {
                         Swal.fire({
-                            title: 'Tem certeza?',
-                            text: "Você não poderá reverter isso!",
+                            title: 'Inativar colaborador?',
+                            text: "Isso irá inativar o colaborador e ocultar suas consultas.",
                             icon: 'warning',
                             showCancelButton: true,
-                            confirmButtonText: 'Sim, deletar!',
+                            confirmButtonText: 'Sim, inativar',
                             cancelButtonText: 'Cancelar'
                         }).then((result) => {
-                            if (result.isConfirmed) deletarMedico(id);
+                            if (result.isConfirmed) inativarMedico(id);
                         });
                     }
                 });
@@ -150,58 +150,66 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
 
 buscarMedicos();
 
-
-async function deletarMedico(id) {
+// Inativa o colaborador (Médico) em vez de deletar
+async function inativarMedico(id) {
     try {
-        // Tenta deletar o acompanhamento
-        try {
-            const resposta1 = await fetch(`${API_BASE}/mc/acompanhamentos/${id}`, {
-                method: 'DELETE'
-            });
-            if (!resposta1.ok && resposta1.status !== 404) {
-                throw new Error(`Erro ao deletar acompanhamento: ${resposta1.statusText}`);
-            }
-        } catch (erro) {
-            console.warn('Nenhum acompanhamento para deletar ou erro ao deletar acompanhamento:', erro);
-        }
+        const colaboradorId = Number(id);
+        const resp = await fetch(`${API_BASE}/mc/medicos/${colaboradorId}/inativar`, { method: 'PATCH' });
+        if (!resp.ok) throw new Error(`Falha ao inativar: ${resp.status}`);
 
-        // Tenta deletar as consultas
-        try {
-            const resposta2 = await fetch(`${API_BASE}/mc/consultas/${id}`, {
-                method: 'DELETE'
-            });
-            if (!resposta2.ok && resposta2.status !== 404) {
-                throw new Error(`Erro ao deletar consultas: ${resposta2.statusText}`);
-            }
-        } catch (erro) {
-            console.warn('Nenhuma consulta para deletar ou erro ao deletar consultas:', erro);
-        }
+        const [respConsultas, respAcomps, respNotas] = await Promise.all([
+            fetch(`${API_BASE}/mc/consultas`).catch(() => null),
+            fetch(`${API_BASE}/mc/acompanhamentos`).catch(() => null),
+            fetch(`${API_BASE}/mc/notas`).catch(() => null)
+        ]);
 
-        // Tenta deletar as notas
-        try {
-            const resposta3 = await fetch(`${API_BASE}/mc/notas/${id}`, {
-                method: 'DELETE'
-            });
-            if (!resposta3.ok && resposta3.status !== 404) {
-                throw new Error(`Erro ao deletar notas: ${resposta3.statusText}`);
-            }
-        } catch (erro) {
-            console.warn('Nenhuma nota para deletar ou erro ao deletar notas:', erro);
-        }
+        const consultasAll = respConsultas && respConsultas.ok ? await respConsultas.json().catch(() => []) : [];
+        const acompAll = respAcomps && respAcomps.ok ? await respAcomps.json().catch(() => []) : [];
+        const notasAll = respNotas && respNotas.ok ? await respNotas.json().catch(() => []) : [];
 
-        // Deleta o médico
-        const resposta4 = await fetch(`${API_BASE}/mc/medicos/${id}`, {
-            method: 'DELETE'
+        // Apenas consultas pendentes/confirmadas e futuras devem ser removidas
+        const getStatusNome = (c) => c?.statusConsulta?.nomeStatus ?? 'Agendada';
+        const agora = new Date();
+        const consultasDoColaborador = (consultasAll || []).filter(c => {
+            if (!c?.medico?.id || c.medico.id !== colaboradorId) return false;
+            const status = getStatusNome(c);
+            const dataConsulta = c?.datahoraConsulta ? new Date(c.datahoraConsulta) : null;
+            const isFutura = dataConsulta ? dataConsulta >= agora : true; // se faltar data, trata como futura para garantir remoção
+            const isPendente = status === 'Agendada' || status === 'Confirmada';
+            return isPendente && isFutura;
         });
-        if (!resposta4.ok) {
-            throw new Error(`Erro ao deletar Profissional: ${resposta4.statusText}`);
-        }
+        const consultaIds = new Set(consultasDoColaborador.map(c => c.id));
 
-        // Se todas as operações forem bem-sucedidas, exibe a mensagem e recarrega a lista de Profissionais
-        console.log('Profissional deletado com sucesso.');
+        await Promise.all((acompAll || [])
+            .filter(a => a?.consulta?.id && consultaIds.has(a.consulta.id))
+            .map(a => fetch(`${API_BASE}/mc/acompanhamentos/${a.id}`, { method: 'DELETE' }).catch(() => null))
+        );
+
+        await Promise.all((notasAll || [])
+            .filter(n => (n?.consulta?.id && consultaIds.has(n.consulta.id)))
+            .map(n => fetch(`${API_BASE}/mc/notas/${n.id}`, { method: 'DELETE' }).catch(() => null))
+        );
+
+        const delResults = await Promise.all(consultasDoColaborador.map(c =>
+            fetch(`${API_BASE}/mc/consultas/${c.id}`, { method: 'DELETE' }).catch(() => null)
+        ));
+        const deletedCount = delResults.filter(r => r && r.ok).length;
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Colaborador inativado!',
+            text: `Consultas removidas: ${deletedCount}.`,
+            showConfirmButton: false,
+            timer: 1800
+        });
         buscarMedicos();
     } catch (erro) {
-        console.error('Erro ao deletar Profissional:', erro);
+        console.error('Erro ao inativar colaborador:', erro);
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro ao inativar',
+            text: 'Não foi possível inativar o colaborador.',
+        });
     }
 }
 

@@ -192,7 +192,11 @@ async function cadastrarPacienteSemResponsavel() {
                 headers: { "Content-Type": "application/json; charset=UTF-8" }
             });
 
-            if (respostaCadastro.status === 201) {
+            // Lê corpo de resposta de forma defensiva (pode estar vazio)
+            let raw = '';
+            try { raw = await respostaCadastro.text(); } catch (_) { raw = ''; }
+
+            if (respostaCadastro.status === 201 || respostaCadastro.status === 200) {
                 Swal.fire({
                     icon: 'success',
                     title: 'Paciente cadastrado com sucesso!',
@@ -203,10 +207,11 @@ async function cadastrarPacienteSemResponsavel() {
                     window.location.href = "listagemPaciente.html";
                 });
             } else {
+                const msg = raw || 'Por favor, tente novamente.';
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro ao cadastrar paciente',
-                    text: 'Por favor, tente novamente.',
+                    text: msg,
                 });
             }
         } catch (error) {

@@ -181,14 +181,14 @@ function atualizarListagemPacientes(listaPacientes) {
             const id = this.closest('.cardPaciente').dataset.pacienteId;
             if (id) {
                 Swal.fire({
-                    title: 'Tem certeza?',
-                    text: "Você não poderá reverter isso!",
+                    title: 'Inativar paciente?',
+                    text: 'Isso irá inativar o paciente e ocultar suas consultas.',
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonText: 'Sim, deletar!',
+                    confirmButtonText: 'Sim, inativar',
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
-                    if (result.isConfirmed) deletarPaciente(id);
+                    if (result.isConfirmed) inativarPaciente(Number(id));
                 });
             }
         });
@@ -204,17 +204,69 @@ function atualizarListagemPacientes(listaPacientes) {
 
 
 async function deletarPaciente(id) {
+    // Substituído por inativação
+    return inativarPaciente(id);
+}
+
+// Inativa o paciente em vez de deletar
+async function inativarPaciente(id) {
     try {
-        await Promise.all([
-            fetch(`${API_BASE}/mc/acompanhamentos/${id}`, { method: 'DELETE' }),
-            fetch(`${API_BASE}/mc/consultas/${id}`, { method: 'DELETE' }),
-            fetch(`${API_BASE}/mc/notas/${id}`, { method: 'DELETE' }),
-            fetch(`${API_BASE}/mc/pacientes/${id}`, { method: 'DELETE' })
+        const pacienteId = Number(id);
+        const resp = await fetch(`${API_BASE}/mc/pacientes/${pacienteId}/inativar`, { method: 'PATCH' });
+        if (!resp.ok) throw new Error(`Falha ao inativar: ${resp.status}`);
+
+        const [respConsultas, respAcomps, respNotas] = await Promise.all([
+            fetch(`${API_BASE}/mc/consultas`).catch(() => null),
+            fetch(`${API_BASE}/mc/acompanhamentos`).catch(() => null),
+            fetch(`${API_BASE}/mc/notas`).catch(() => null)
         ]);
-        console.log('Paciente deletado com sucesso.');
+
+        const consultasAll = respConsultas && respConsultas.ok ? await respConsultas.json().catch(() => []) : [];
+        const acompAll = respAcomps && respAcomps.ok ? await respAcomps.json().catch(() => []) : [];
+        const notasAll = respNotas && respNotas.ok ? await respNotas.json().catch(() => []) : [];
+
+        const getStatusNome = (c) => c?.statusConsulta?.nomeStatus ?? 'Agendada';
+        const agora = new Date();
+        const consultasDoPaciente = (consultasAll || []).filter(c => {
+            if (!c?.paciente?.id || c.paciente.id !== pacienteId) return false;
+            const status = getStatusNome(c);
+            const dataConsulta = c?.datahoraConsulta ? new Date(c.datahoraConsulta) : null;
+            const isFutura = dataConsulta ? dataConsulta >= agora : true;
+            const isPendente = status === 'Agendada' || status === 'Confirmada';
+            return isPendente && isFutura;
+        });
+        const consultaIds = new Set(consultasDoPaciente.map(c => c.id));
+
+        await Promise.all((acompAll || [])
+            .filter(a => a?.consulta?.id && consultaIds.has(a.consulta.id))
+            .map(a => fetch(`${API_BASE}/mc/acompanhamentos/${a.id}`, { method: 'DELETE' }).catch(() => null))
+        );
+
+        await Promise.all((notasAll || [])
+            .filter(n => (n?.consulta?.id && consultaIds.has(n.consulta.id)))
+            .map(n => fetch(`${API_BASE}/mc/notas/${n.id}`, { method: 'DELETE' }).catch(() => null))
+        );
+
+        const delResults = await Promise.all(consultasDoPaciente.map(c =>
+            fetch(`${API_BASE}/mc/consultas/${c.id}`, { method: 'DELETE' }).catch(() => null)
+        ));
+        const deletedCount = delResults.filter(r => r && r.ok).length;
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Paciente inativado!',
+            text: `Consultas pendentes removidas: ${deletedCount}.`,
+            showConfirmButton: false,
+            timer: 1800
+        });
         buscarPacientes();
     } catch (erro) {
-        console.error('Erro ao deletar paciente:', erro);
+        console.error('Erro ao inativar paciente:', erro);
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro ao inativar',
+            text: 'Não foi possível inativar o paciente.',
+        });
     }
 }
 
@@ -433,7 +485,13 @@ async function buscarConsultasCliente(pacienteId) {
         const resposta = await fetch(`${API_BASE}/mc/consultas`);
         if (!resposta.ok) throw new Error(`HTTP error! Status: ${resposta.status}`);
         const todasConsultas = await resposta.json();
-        consultasOriginais = todasConsultas.filter(consulta => consulta.paciente.id === pacienteId);
+        // Exclui consultas quando paciente ou médico está inativo
+        consultasOriginais = todasConsultas.filter(consulta => {
+            const isThisPaciente = consulta?.paciente?.id === pacienteId;
+            const pacienteAtivo = consulta?.paciente?.ativo !== false;
+            const medicoAtivo = consulta?.medico?.ativo !== false;
+            return isThisPaciente && pacienteAtivo && medicoAtivo;
+        });
         bancoDeDadosFiltrado = filtrarConsultasPorPermissao();
         atualizarDisplayCalendario(bancoDeDadosFiltrado);
     } catch (error) {
