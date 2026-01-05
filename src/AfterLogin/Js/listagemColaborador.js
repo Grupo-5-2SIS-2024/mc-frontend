@@ -83,8 +83,8 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
             
             // Botão de permissões (apenas Admin pode ver)
             const botaoPermissoes = isAdmin ? `
-                <button class="permissions" style="background: #2196F3; color: white; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; margin-top: 5px;" title="Gerenciar Permissões">
-                    <i class="fas fa-key"></i> Permissões
+                <button class="permissions" title="Gerenciar Permissões">
+                    <i class="fas fa-key"></i>
                 </button>` : '';
             
             const acoes = nivelPermissao === "Supervisor" ? '' : `

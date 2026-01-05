@@ -310,8 +310,26 @@ function exportarSemanaPDF() {
         // Função auxiliar para determinar se procedimento é Terapia Convencional
         function isTerapiaConvencional(especificacaoArea) {
             if (!especificacaoArea) return false;
-            const area = (especificacaoArea || '').toLowerCase();
-            return area.includes('terapia convencional') || area.includes('convencional');
+            const area = (especificacaoArea || '').toLowerCase().trim();
+            
+            // Lista de palavras-chave que identificam Terapia Convencional (30 minutos)
+            const keywordsTerapiaConvencional = [
+                'convencional',
+                'terapia convencional',
+                'fonoaudiologia',
+                'fono',
+                'psicologia',
+                'psico',
+                'terapia ocupacional',
+                'ocupacional',
+                't.o',
+                'to ',
+                'psicopedagogia',
+                'psicopedagogo'
+            ];
+            
+            // Verifica se alguma palavra-chave está presente
+            return keywordsTerapiaConvencional.some(keyword => area.includes(keyword));
         }
 
         function obterTarefasParaData(date) {

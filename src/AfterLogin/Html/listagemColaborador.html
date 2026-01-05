@@ -173,63 +173,85 @@
 
             <!-- Modal de Gerenciar Permissões -->
             <div id="modalPermissoes" class="modal">
-                <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-content modal-permissoes">
                     <span class="close" onclick="fecharModalPermissoes()">&times;</span>
-                    <h2>Gerenciar Permissões</h2>
-                    <p id="nomeColaboradorPermissoes" style="margin-bottom: 20px; font-weight: bold; color: #666;"></p>
+                    <h2><i class="fas fa-user-shield"></i> Gerenciar Permissões</h2>
+                    <p id="nomeColaboradorPermissoes" class="nome-colaborador-permissoes"></p>
                     
-                    <div style="max-height: 400px; overflow-y: auto;">
-                        <h3 style="margin-top: 0;">📋 Menus</h3>
-                        <div style="display: grid; gap: 10px; margin-bottom: 20px;">
-                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                                <input type="checkbox" id="perm_menu_Colaborador" style="margin-right: 10px; transform: scale(1.2);">
-                                <span>👥 Colaboradores</span>
-                            </label>
-                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                                <input type="checkbox" id="perm_menu_Paciente" style="margin-right: 10px; transform: scale(1.2);">
-                                <span>🏥 Pacientes</span>
-                            </label>
-                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                                <input type="checkbox" id="perm_menu_Dash" style="margin-right: 10px; transform: scale(1.2);">
-                                <span>📊 Dashboards</span>
-                            </label>
-                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                                <input type="checkbox" id="perm_menu_Lead" style="margin-right: 10px; transform: scale(1.2);">
-                                <span>📞 Leads</span>
-                            </label>
-                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                                <input type="checkbox" id="perm_menu_AgendaDiaria" style="margin-right: 10px; transform: scale(1.2);">
-                                <span>📅 Agenda Diária</span>
-                            </label>
+                    <div class="permissoes-container">
+                        <div class="secao-permissoes">
+                            <h3><i class="fas fa-list"></i> Menus que o Usuário Pode Ver</h3>
+                            <div class="permissoes-grid">
+                                <label class="permissao-item">
+                                    <input type="checkbox" id="perm_menu_Colaborador">
+                                    <span class="checkmark"></span>
+                                    <i class="fas fa-users"></i>
+                                    <span>Colaboradores</span>
+                                </label>
+                                <label class="permissao-item">
+                                    <input type="checkbox" id="perm_menu_Paciente">
+                                    <span class="checkmark"></span>
+                                    <i class="fas fa-hospital-user"></i>
+                                    <span>Pacientes</span>
+                                </label>
+                                <label class="permissao-item">
+                                    <input type="checkbox" id="perm_menu_Dash">
+                                    <span class="checkmark"></span>
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>Dashboards</span>
+                                </label>
+                                <label class="permissao-item">
+                                    <input type="checkbox" id="perm_menu_Lead">
+                                    <span class="checkmark"></span>
+                                    <i class="fas fa-filter"></i>
+                                    <span>Leads</span>
+                                </label>
+                                <label class="permissao-item">
+                                    <input type="checkbox" id="perm_menu_AgendaDiaria">
+                                    <span class="checkmark"></span>
+                                    <i class="fas fa-calendar-day"></i>
+                                    <span>Agenda Diária</span>
+                                </label>
+                            </div>
                         </div>
 
-                        <h3>🔘 Botões/Ações</h3>
-                        <div style="display: grid; gap: 10px;">
-                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                                <input type="checkbox" id="perm_btn_btnAdicionarColaborador" style="margin-right: 10px; transform: scale(1.2);">
-                                <span>➕ Adicionar Colaborador</span>
-                            </label>
-                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                                <input type="checkbox" id="perm_btn_addPacienteBtn" style="margin-right: 10px; transform: scale(1.2);">
-                                <span>➕ Adicionar Paciente</span>
-                            </label>
-                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                                <input type="checkbox" id="perm_btn_btnAdicionarConsulta" style="margin-right: 10px; transform: scale(1.2);">
-                                <span>➕ Adicionar Consulta</span>
-                            </label>
-                            <label style="display: flex; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                                <input type="checkbox" id="perm_btn_btnAdicionarArea" style="margin-right: 10px; transform: scale(1.2);">
-                                <span>➕ Adicionar Área</span>
-                            </label>
+                        <div class="secao-permissoes">
+                            <h3><i class="fas fa-tools"></i> Ações que o Usuário Pode Fazer</h3>
+                            <div class="permissoes-grid">
+                                <label class="permissao-item">
+                                    <input type="checkbox" id="perm_btn_btnAdicionarColaborador">
+                                    <span class="checkmark"></span>
+                                    <i class="fas fa-user-plus"></i>
+                                    <span>Adicionar Colaborador</span>
+                                </label>
+                                <label class="permissao-item">
+                                    <input type="checkbox" id="perm_btn_addPacienteBtn">
+                                    <span class="checkmark"></span>
+                                    <i class="fas fa-hospital-user"></i>
+                                    <span>Adicionar Paciente</span>
+                                </label>
+                                <label class="permissao-item">
+                                    <input type="checkbox" id="perm_btn_btnAdicionarConsulta">
+                                    <span class="checkmark"></span>
+                                    <i class="fas fa-calendar-plus"></i>
+                                    <span>Adicionar Consulta</span>
+                                </label>
+                                <label class="permissao-item">
+                                    <input type="checkbox" id="perm_btn_btnAdicionarArea">
+                                    <span class="checkmark"></span>
+                                    <i class="fas fa-plus-circle"></i>
+                                    <span>Adicionar Área</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
-                    <div style="margin-top: 20px; display: flex; gap: 10px;">
-                        <button onclick="salvarPermissoes()" style="flex: 1; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-                            💾 Salvar Permissões
+                    <div class="modal-actions">
+                        <button onclick="salvarPermissoes()" class="btn-salvar">
+                            <i class="fas fa-save"></i> Salvar Permissões
                         </button>
-                        <button onclick="fecharModalPermissoes()" style="flex: 1; padding: 12px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-                            ❌ Cancelar
+                        <button onclick="fecharModalPermissoes()" class="btn-cancelar">
+                            <i class="fas fa-times"></i> Cancelar
                         </button>
                     </div>
                 </div>

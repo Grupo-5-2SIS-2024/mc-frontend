@@ -177,9 +177,28 @@ function isTerapiaConvencional(procedimentoId) {
     if (!procedimentoId) return false;
     const proc = procedimentosList.find(p => String(p.id) === String(procedimentoId));
     if (!proc) return false;
-    // Verifica se o nome do procedimento contém "Terapia Convencional" (case insensitive)
-    const area = (proc.area || '').toLowerCase();
-    return area.includes('terapia convencional') || area.includes('convencional');
+    
+    // Verifica se o nome do procedimento indica Terapia Convencional (30 minutos)
+    const area = (proc.area || '').toLowerCase().trim();
+    
+    // Lista de palavras-chave que identificam Terapia Convencional (30 minutos)
+    const keywordsTerapiaConvencional = [
+        'convencional',
+        'terapia convencional',
+        'fonoaudiologia',
+        'fono',
+        'psicologia',
+        'psico',
+        'terapia ocupacional',
+        'ocupacional',
+        't.o',
+        'to ',
+        'psicopedagogia',
+        'psicopedagogo'
+    ];
+    
+    // Verifica se alguma palavra-chave está presente
+    return keywordsTerapiaConvencional.some(keyword => area.includes(keyword));
 }
 
 // Função auxiliar para verificar se há sobreposição entre dois horários
