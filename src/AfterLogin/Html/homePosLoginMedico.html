@@ -21,7 +21,6 @@
         <ul>
             <li><a href="homePosLoginAdm.html">Home</a></li>
             <li><a href="calendario.html">Agendamento</a></li>
-            <li><a href="agendaDiaria.html">Agenda Diária</a></li>
             <li><a href="listagemColaborador.html">Colaborador</a></li>
             <li><a href="listagemPaciente.html">Paciente</a></li>
             <li><a href="dashboards.html">Dashboards</a></li>
@@ -50,12 +49,7 @@
                         <span class="item-description">Agendamento</span>
                     </a>
                 </li>
-                <li class="side-item" id="AgendaDiaria">
-                    <a href="agendaDiaria.html">
-                        <i class="fa-solid fa-calendar-day"></i>
-                        <span class="item-description">Agenda Diária</span>
-                    </a>
-                </li>
+                <!-- Agenda Diária removida da sidebar: agora acessível pelo botão Expandir -->
                 <li id="Colaborador" class="side-item">
                     <a href="listagemColaborador.html">
                         <i class="fa-solid fa-user"></i>
@@ -159,6 +153,21 @@
 
             <div class="agenda">
                 <h2>Painel do Dia</h2>
+                <div class="painel-actions" aria-label="Ações do painel do dia">
+                    <div class="procedure-toggle" role="group" aria-label="Modo de visualização de terapia">
+                        <span>Visualização:</span>
+                        <button id="btnModoABA" class="toggle-btn active" aria-pressed="true">
+                            <i class="fas fa-leaf"></i> ABA
+                        </button>
+                        <button id="btnModoConvencional" class="toggle-btn" aria-pressed="false">
+                            <i class="fas fa-clipboard-list"></i> Convencional
+                        </button>
+                        <span id="modoAtualLabel">Modo: ABA</span>
+                    </div>
+                    <button id="btnExpandirAgenda" class="expand-btn small-btn" title="Abrir Agenda Diária" aria-label="Abrir Agenda Diária">
+                        <i class="fa-solid fa-up-right-and-down-left-from-center"></i> Expandir
+                    </button>
+                </div>
                 <table>
                     <thead>
                         <tr>
@@ -173,9 +182,17 @@
                 </table>
             </div>
 
-            <div class="notificacoes">
-                <h2>Anotações das Consultas Concluídas</h2>
-                <ul id="concluidas-list"></ul>
+            <div class="notificacoes mini-cal" aria-label="Mini calendário para escolher o dia do painel">
+                <h2 class="mini-cal-title">Mini Calendário</h2>
+                <div class="mini-cal-top">
+                    <button id="miniCalPrev" class="small-btn" title="Mês anterior" aria-label="Mês anterior"><i class="fa-solid fa-chevron-left"></i></button>
+                    <span id="miniCalMonthLabel" class="mini-cal-month">Janeiro 2026</span>
+                    <button id="miniCalNext" class="small-btn" title="Próximo mês" aria-label="Próximo mês"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+                <div id="miniCalDow" class="mini-cal-dow" aria-hidden="true">
+                    <span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span>
+                </div>
+                <div id="miniCalGrid" class="mini-cal-grid" role="grid" aria-label="Dias do mês"></div>
             </div>
 
             <div class="grafico">

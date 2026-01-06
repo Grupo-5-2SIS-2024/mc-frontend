@@ -2,18 +2,44 @@
 const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
 
 // UI helpers (password toggles, image preview)
-const inputIcon = document.querySelector('.input__icon');
-const inputIcon2 = document.querySelector('.input__icon2');
-const inputPassword = document.getElementById('password');
-const inputConfirmedPassword = document.getElementById('confirmedPassword');
+function setupPasswordToggle(iconSel, inputSel) {
+  const icon = document.querySelector(iconSel);
+  const wrapper = icon ? icon.closest('.input__icon-wrapper') : null;
+  const input = document.querySelector(inputSel);
+  if (!icon || !input) return;
+  const toggle = () => {
+    input.type = input.type === 'password' ? 'text' : 'password';
+    icon.classList.toggle('ri-eye-off-line');
+    icon.classList.toggle('ri-eye-line');
+  };
+  icon.setAttribute('role', 'button');
+  icon.setAttribute('tabindex', '0');
+  icon.setAttribute('aria-label', 'Mostrar/ocultar senha');
+  icon.addEventListener('click', toggle);
+  icon.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+  if (wrapper) {
+    wrapper.addEventListener('click', (e) => { if (e.target !== icon) toggle(); });
+    wrapper.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+  }
+}
+
+// initialize password toggles
+const initPwToggles = () => {
+  setupPasswordToggle('.input__icon', '#password');
+  setupPasswordToggle('.input__icon2', '#confirmedPassword');
+};
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initPwToggles);
+} else {
+  initPwToggles();
+}
 const inputFile = document.querySelector('#picture__input');
 const pictureImage = document.querySelector('.picture__image');
 const pictureImageTxt = 'Choose an image';
 if (pictureImage) pictureImage.innerHTML = pictureImageTxt;
 let selectedImage = null;
 
-if (inputIcon && inputPassword) inputIcon.addEventListener('click', () => { inputPassword.type = inputPassword.type === 'password' ? 'text' : 'password'; inputIcon.classList.toggle('ri-eye-off-line'); inputIcon.classList.toggle('ri-eye-line'); });
-if (inputIcon2 && inputConfirmedPassword) inputIcon2.addEventListener('click', () => { inputConfirmedPassword.type = inputConfirmedPassword.type === 'password' ? 'text' : 'password'; inputIcon2.classList.toggle('ri-eye-off-line'); inputIcon2.classList.toggle('ri-eye-line'); });
+// old direct listeners removed in favor of setupPasswordToggle
 
 if (inputFile && pictureImage) {
   inputFile.addEventListener('change', (e) => {

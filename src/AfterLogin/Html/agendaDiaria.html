@@ -51,12 +51,7 @@
                     </a>
                 </li>
 
-                <li class="side-item active" id="AgendaDiaria">
-                    <a href="agendaDiaria.html">
-                        <i class="fa-solid fa-calendar-day"></i>
-                        <span class="item-description">Agenda Diária</span>
-                    </a>
-                </li>
+                <!-- Agenda Diária removida da sidebar: acessível via botão Expandir no Painel do Dia -->
 
                 <li id="Colaborador" class="side-item">
                     <a href="listagemColaborador.html">
@@ -115,6 +110,12 @@
                         <button class="filter-button" onclick="imprimirAgenda()">
                             <i class="fas fa-print"></i> Imprimir
                         </button>
+                        <div class="procedure-toggle" role="group" aria-label="Modo de visualização de terapia" style="margin-left:8px;">
+                            <span>Visualização:</span>
+                            <button id="btnModoABA" class="toggle-btn" aria-pressed="false"><i class="fas fa-leaf"></i> ABA</button>
+                            <button id="btnModoConvencional" class="toggle-btn" aria-pressed="false"><i class="fas fa-clipboard-list"></i> Convencional</button>
+                            <span id="modoAtualLabel">Modo: ABA</span>
+                        </div>
                     </div>
                 </div>
 

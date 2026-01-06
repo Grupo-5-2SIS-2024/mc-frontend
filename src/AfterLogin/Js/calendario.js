@@ -129,6 +129,40 @@ function exportarSemanaPDF() {
         let consultasOriginais = []; // Para armazenar todas as consultas
         let modoCalendario = 'ABA'; // Modo padrão: ABA ou CONVENCIONAL
         let procedimentosList = []; // Lista de procedimentos/especificações
+        // Dataset e filtros persistentes
+        let bancoDeDadosFiltrado = [];
+        let datasetAposPermissao = [];
+        let filtrosAtivos = false;
+        let currentFilters = {
+            medicoId: null,
+            pacienteId: null,
+            statusId: null,
+            areaConsultaId: null,
+            idadePaciente: null,
+            generoPaciente: '',
+            dataInicio: '',
+            dataFim: ''
+        };
+
+        function filtrarComEstado(base, f) {
+            return base.filter(consulta => {
+                const filtroMedico = f.medicoId == null || (consulta.medico && Number(consulta.medico.id) === f.medicoId);
+                const filtroPaciente = f.pacienteId == null || (consulta.paciente && Number(consulta.paciente.id) === f.pacienteId);
+                const filtroStatus = f.statusId == null || (consulta.statusConsulta && Number(consulta.statusConsulta.id) === f.statusId);
+                const filtroAreaConsulta = f.areaConsultaId == null || (consulta.especificacaoMedica && Number(consulta.especificacaoMedica.id) === f.areaConsultaId);
+                const filtroIdade = f.idadePaciente == null || (consulta.paciente && calcularIdade(consulta.paciente.dtNasc) === f.idadePaciente);
+                const filtroGenero = !f.generoPaciente || (consulta.paciente && (consulta.paciente.genero || '') === f.generoPaciente);
+                const dataConsulta = new Date(consulta.datahoraConsulta);
+                const filtroDataInicio = !f.dataInicio || new Date(f.dataInicio) <= dataConsulta;
+                const filtroDataFim = !f.dataFim || new Date(f.dataFim) >= dataConsulta;
+                return filtroMedico && filtroPaciente && filtroStatus && filtroAreaConsulta && filtroIdade && filtroGenero && filtroDataInicio && filtroDataFim;
+            });
+        }
+
+        function aplicarFiltrosPersistentes() {
+            if (!Array.isArray(datasetAposPermissao)) datasetAposPermissao = consultasOriginais || [];
+            bancoDeDadosFiltrado = filtrosAtivos ? filtrarComEstado(datasetAposPermissao, currentFilters) : datasetAposPermissao;
+        }
 
         async function buscarMedicos() {
             try {
@@ -272,6 +306,9 @@ function exportarSemanaPDF() {
                     console.warn('Erro ao aplicar filtro por permissão, mostrando todas as consultas', err);
                     bancoDeDadosFiltrado = consultasOriginais;
                 }
+                // Definir dataset base pós-permissão e re-aplicar filtros persistentes
+                datasetAposPermissao = Array.isArray(bancoDeDadosFiltrado) ? bancoDeDadosFiltrado : (consultasOriginais || []);
+                aplicarFiltrosPersistentes();
 
                 atualizarDisplayData(dataInicioAtual);
             } catch (error) {
@@ -311,8 +348,6 @@ function exportarSemanaPDF() {
         function isTerapiaConvencional(especificacaoArea) {
             if (!especificacaoArea) return false;
             const area = (especificacaoArea || '').toLowerCase().trim();
-            
-            // Lista de palavras-chave que identificam Terapia Convencional (30 minutos)
             const keywordsTerapiaConvencional = [
                 'convencional',
                 'terapia convencional',
@@ -327,17 +362,13 @@ function exportarSemanaPDF() {
                 'psicopedagogia',
                 'psicopedagogo'
             ];
-            
-            // Verifica se alguma palavra-chave está presente
             return keywordsTerapiaConvencional.some(keyword => area.includes(keyword));
         }
 
+        // Obtém as consultas para uma data considerando o modo de visualização
         function obterTarefasParaData(date) {
             const formattedDate = formatarData(date);
-            // Filtra todas as consultas para a data específica
-            let entries = bancoDeDadosFiltrado.filter(entry => entry.datahoraConsulta.startsWith(formattedDate));
-            
-            // Filtra por modo do calendário (ABA ou Terapia Convencional)
+            let entries = (bancoDeDadosFiltrado || []).filter(entry => (entry?.datahoraConsulta || '').startsWith(formattedDate));
             if (modoCalendario === 'ABA') {
                 entries = entries.filter(entry => {
                     const area = entry?.especificacaoMedica?.area || entry?.medico?.especificacaoMedica?.area || '';
@@ -349,8 +380,7 @@ function exportarSemanaPDF() {
                     return isTerapiaConvencional(area);
                 });
             }
-            
-            return entries; // Retorna todas as consultas como objetos completos
+            return entries;
         }
 
         function atualizarDisplayData(startDate) {
@@ -406,8 +436,43 @@ function exportarSemanaPDF() {
                 tasks.forEach(task => {
                     const taskElement = document.createElement('div');
                     taskElement.className = 'task';
-                    taskElement.innerText = task.descricao; // Exibe a descrição da consulta
-                    taskElement.onclick = () => abrirDetalhesTarefa(task); // Passa o objeto completo da consulta
+
+                    // Dados defensivos
+                    const dt = task && task.datahoraConsulta ? new Date(task.datahoraConsulta) : null;
+                    const horaStr = dt ? dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+                    const pacienteNome = task?.paciente ? `${task.paciente.nome || ''} ${task.paciente.sobrenome || ''}`.trim() : 'Paciente —';
+                    const medicoNome = task?.medico ? `${task.medico.nome || ''} ${task.medico.sobrenome || ''}`.trim() : 'Profissional —';
+                    const statusNome = task?.statusConsulta?.nomeStatus || '—';
+                    const descricao = task?.descricao || '';
+
+                    // Normaliza status para classe css (ex.: "Agendada" -> "status-agendada")
+                    const statusClass = 'status-' + String(statusNome)
+                        .toLowerCase()
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .replace(/\s+/g, '-');
+
+                    // Escape básico para evitar injeção em atributos/HTML
+                    const escapeHTML = (s) => String(s)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
+
+                    taskElement.innerHTML = `
+                        <div class="task-title" title="${escapeHTML(descricao)}">${escapeHTML(descricao)}</div>
+                        <div class="task-info">
+                            <div class="info-line"><i class="fa-regular fa-clock"></i><span>${escapeHTML(horaStr)}</span></div>
+                            <div class="info-line"><i class="fa-solid fa-user"></i><span>${escapeHTML(pacienteNome)}</span></div>
+                            <div class="info-line"><i class="fa-solid fa-user-md"></i><span>${escapeHTML(medicoNome)}</span></div>
+                            <div class="info-line">
+                                <span class="status-badge ${escapeHTML(statusClass)}">${escapeHTML(statusNome)}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    taskElement.onclick = () => abrirDetalhesTarefa(task);
                     columnElement.appendChild(taskElement);
                 });
 
@@ -474,27 +539,18 @@ function exportarSemanaPDF() {
             const dataInicio = document.getElementById('filtroDataInicio').value;
             const dataFim = document.getElementById('filtroDataFim').value;
 
-            const medicoId = medicoRaw ? Number(medicoRaw) : null;
-            const pacienteId = pacienteRaw ? Number(pacienteRaw) : null;
-            const statusId = statusRaw ? Number(statusRaw) : null;
-            const areaConsultaId = areaRaw ? Number(areaRaw) : null;
-            const idadePaciente = idadeRaw ? Number(idadeRaw) : null;
-
-            bancoDeDadosFiltrado = consultasOriginais.filter(consulta => {
-                const filtroMedico = medicoId == null || (consulta.medico && Number(consulta.medico.id) === medicoId);
-                const filtroPaciente = pacienteId == null || (consulta.paciente && Number(consulta.paciente.id) === pacienteId);
-                const filtroStatus = statusId == null || (consulta.statusConsulta && Number(consulta.statusConsulta.id) === statusId);
-                const filtroAreaConsulta = areaConsultaId == null || (consulta.especificacaoMedica && Number(consulta.especificacaoMedica.id) === areaConsultaId);
-                const filtroIdade = idadePaciente == null || (consulta.paciente && calcularIdade(consulta.paciente.dtNasc) === idadePaciente);
-                const filtroGenero = !generoPaciente || (consulta.paciente && (consulta.paciente.genero || '') === generoPaciente);
-
-                // Filtra por data de início e data de fim
-                const dataConsulta = new Date(consulta.datahoraConsulta);
-                const filtroDataInicio = !dataInicio || new Date(dataInicio) <= dataConsulta;
-                const filtroDataFim = !dataFim || new Date(dataFim) >= dataConsulta;
-
-                return filtroMedico && filtroPaciente && filtroStatus && filtroAreaConsulta && filtroIdade && filtroGenero && filtroDataInicio && filtroDataFim;
-            });
+            currentFilters = {
+                medicoId: medicoRaw ? Number(medicoRaw) : null,
+                pacienteId: pacienteRaw ? Number(pacienteRaw) : null,
+                statusId: statusRaw ? Number(statusRaw) : null,
+                areaConsultaId: areaRaw ? Number(areaRaw) : null,
+                idadePaciente: idadeRaw ? Number(idadeRaw) : null,
+                generoPaciente,
+                dataInicio,
+                dataFim
+            };
+            filtrosAtivos = true;
+            aplicarFiltrosPersistentes();
 
             fecharModalFiltro();
             atualizarDisplayData(dataInicioAtual);
@@ -511,8 +567,11 @@ function exportarSemanaPDF() {
             document.getElementById('filtroDataInicio').value = '';
             document.getElementById('filtroDataFim').value = '';
 
-            // Restaurar o banco de dados filtrado ao estado original
-            bancoDeDadosFiltrado = consultasOriginais;
+            // Restaurar dados base e desativar filtros persistentes
+            filtrosAtivos = false;
+            currentFilters = { medicoId: null, pacienteId: null, statusId: null, areaConsultaId: null, idadePaciente: null, generoPaciente: '', dataInicio: '', dataFim: '' };
+            datasetAposPermissao = Array.isArray(datasetAposPermissao) ? datasetAposPermissao : (consultasOriginais || []);
+            bancoDeDadosFiltrado = datasetAposPermissao;
             atualizarDisplayData(dataInicioAtual);
         }
 

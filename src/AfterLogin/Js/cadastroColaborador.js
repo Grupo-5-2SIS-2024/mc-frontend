@@ -1,24 +1,37 @@
 // Base da API: usa localhost em dev, vazio em produção
 const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
 
-// inputs especiais
+// inputs especiais: robust password visibility toggles
+function setupPasswordToggle(iconSel, inputSel) {
+  const icon = document.querySelector(iconSel);
+  const wrapper = icon ? icon.closest('.input__icon-wrapper') : null;
+  const input = document.querySelector(inputSel);
+  if (!icon || !input) return;
+  const toggle = () => {
+    input.type = input.type === 'password' ? 'text' : 'password';
+    icon.classList.toggle('ri-eye-off-line');
+    icon.classList.toggle('ri-eye-line');
+  };
+  icon.setAttribute('role', 'button');
+  icon.setAttribute('tabindex', '0');
+  icon.setAttribute('aria-label', 'Mostrar/ocultar senha');
+  icon.addEventListener('click', toggle);
+  icon.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+  if (wrapper) {
+    wrapper.addEventListener('click', (e) => { if (e.target !== icon) toggle(); });
+    wrapper.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+  }
+}
 
-const inputIcon = document.querySelector(".input__icon");
-const inputIcon2 = document.querySelector(".input__icon2");
-const inputPassword = document.getElementById("password");
-const inputConfirmedPassword = document.getElementById("confirmedPassword");
-
-inputIcon.addEventListener("click", () => {
-  inputIcon.classList.toggle("ri-eye-off-line");
-  inputIcon.classList.toggle("ri-eye-line");
-  inputPassword.type = inputPassword.type === "password" ? "text" : "password";
-});
-
-inputIcon2.addEventListener("click", () => {
-  inputIcon2.classList.toggle("ri-eye-off-line");
-  inputIcon2.classList.toggle("ri-eye-line");
-  inputConfirmedPassword.type = inputConfirmedPassword.type === "password" ? "text" : "password";
-});
+const initPwToggles = () => {
+  setupPasswordToggle('.input__icon', '#password');
+  setupPasswordToggle('.input__icon2', '#confirmedPassword');
+};
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initPwToggles);
+} else {
+  initPwToggles();
+}
 
 const inputFile = document.querySelector("#picture__input");
 const pictureImage = document.querySelector(".picture__image");

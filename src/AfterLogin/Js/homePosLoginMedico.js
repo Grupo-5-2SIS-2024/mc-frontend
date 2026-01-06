@@ -1,4 +1,9 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    // Dia selecionado para o Painel do Dia (default: hoje)
+    let painelDiaSelecionado = new Date();
+    painelDiaSelecionado.setHours(0, 0, 0, 0);
+    // Filtro de visualização de terapia (ABA | Convencional). Default alinhado ao calendário
+    let filtroTerapia = 'ABA';
     const nivelPermissaoGlobal = sessionStorage.getItem('PERMISSIONAMENTO_MEDICO');
     // Define base da API (ajusta para localhost em dev)
     const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
@@ -171,31 +176,57 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-    // Atualizar tabela de agenda (somente agendamentos de hoje, agrupados por horário)
-    async function atualizarAgenda(consultas) {
+    // Atualizar tabela de agenda (agendamentos do dia selecionado, agrupados por horário)
+    async function atualizarAgenda(consultas, diaPainel = painelDiaSelecionado) {
         const agendaBody = document.getElementById('agenda-body');
         if (!agendaBody) return;
         agendaBody.innerHTML = '';
 
         // Normaliza datas para comparar apenas o dia
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
+        const dia = new Date(diaPainel);
+        dia.setHours(0, 0, 0, 0);
 
-        const isHoje = (d) => {
+        const isDiaSelecionado = (d) => {
             const dt = new Date(d);
             dt.setHours(0, 0, 0, 0);
-            return dt.getTime() === hoje.getTime();
+            return dt.getTime() === dia.getTime();
         };
 
-        // Filtra apenas consultas do dia de hoje com status Agendada (trata status null como 'Agendada')
+        // Classificação da terapia pelo tempo de duração: ABA = 50min, Convencional = 30min
+        const duracaoEmMinutos = (c) => {
+            const d = c?.duracaoConsulta;
+            if (typeof d === 'number') return d;
+            if (typeof d === 'string') {
+                // Espera formato HH:MM:SS
+                const partes = d.split(':');
+                if (partes.length >= 2) {
+                    const horas = parseInt(partes[0], 10) || 0;
+                    const minutos = parseInt(partes[1], 10) || 0;
+                    return horas * 60 + minutos;
+                }
+                // Se vier como "50" ou "30" direto
+                const m = parseInt(d, 10);
+                return isNaN(m) ? 0 : m;
+            }
+            return 0;
+        };
+
+        const tipoTerapia = (c) => {
+            const mins = duracaoEmMinutos(c);
+            if (mins === 50) return 'ABA';
+            if (mins === 30) return 'Convencional';
+            return 'Outros';
+        };
+
         const consultasHoje = consultas
-            .filter(c => c && c.datahoraConsulta && isHoje(c.datahoraConsulta))
-            .filter(c => (c?.statusConsulta?.nomeStatus ?? 'Agendada') === 'Agendada')
+            .filter(c => c && c.datahoraConsulta && isDiaSelecionado(c.datahoraConsulta))
+            // mantém todas as consultas do dia, independentemente do status
+            .filter(c => tipoTerapia(c) === filtroTerapia)
             .sort((a, b) => new Date(a.datahoraConsulta) - new Date(b.datahoraConsulta));
 
         if (consultasHoje.length === 0) {
             const vazio = document.createElement('tr');
-            vazio.innerHTML = `<td colspan="4">Sem agendamentos para hoje.</td>`;
+            vazio.innerHTML = `<td colspan="4">Sem agendamentos para o dia selecionado.</td>`;
             agendaBody.appendChild(vazio);
             return;
         }
@@ -340,48 +371,110 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Atualizar anotações de consultas concluídas
-    async function atualizarAnotacoes(consultas) {
-        const concluidasList = document.getElementById('concluidas-list');
-        if (!concluidasList) return;
-        concluidasList.innerHTML = ''; // Limpa a lista
+    // Configura o mini calendário estilo mês para alterar o dia do Painel do Dia
+    function configurarMiniCalendario(consultasBase) {
+        const btnPrev = document.getElementById('miniCalPrev');
+        const btnNext = document.getElementById('miniCalNext');
+        const dow = document.getElementById('miniCalDow');
+        const grid = document.getElementById('miniCalGrid');
+        const label = document.getElementById('miniCalMonthLabel');
 
-        consultas
-            .filter(c => c?.statusConsulta?.nomeStatus === 'Atendida')
-            .forEach(consulta => {
-                const pacienteNome = consulta?.paciente ? `${consulta.paciente.nome || ''} ${consulta.paciente.sobrenome || ''}`.trim() : 'Desconhecido';
-                const hora = consulta?.datahoraConsulta ? new Date(consulta.datahoraConsulta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
-                const li = document.createElement('li');
-                li.innerHTML = `<h3>${pacienteNome} - ${hora}</h3>`;
-                li.addEventListener('click', () => showModal(pacienteNome, consulta?.descricao || 'Sem anotações.'));
-                concluidasList.appendChild(li);
+        if (!grid || !label || !dow) return;
+
+        let viewYear = painelDiaSelecionado.getFullYear();
+        let viewMonth = painelDiaSelecionado.getMonth(); // 0-11
+
+        const formatMonthLabel = (y, m) => new Date(y, m, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+        const updateDowHighlight = (date) => {
+            const idx = date.getDay(); // 0=Sun
+            Array.from(dow.children).forEach((el, i) => {
+                if (i === idx) el.classList.add('selected-dow'); else el.classList.remove('selected-dow');
             });
+        };
+
+        const render = () => {
+            label.textContent = formatMonthLabel(viewYear, viewMonth);
+            grid.innerHTML = '';
+
+            const firstDow = new Date(viewYear, viewMonth, 1).getDay();
+            const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+            // empty cells before the 1st
+            for (let i = 0; i < firstDow; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'mini-cal-empty';
+                grid.appendChild(empty);
+            }
+
+            const today = new Date(); today.setHours(0,0,0,0);
+            const isSameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const cellDate = new Date(viewYear, viewMonth, d);
+                cellDate.setHours(0,0,0,0);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'mini-cal-day';
+                if (isSameDay(cellDate, painelDiaSelecionado)) btn.classList.add('selected');
+                if (isSameDay(cellDate, today)) btn.classList.add('today');
+                btn.textContent = String(d);
+                btn.setAttribute('aria-label', cellDate.toLocaleDateString('pt-BR'));
+                btn.addEventListener('click', () => {
+                    painelDiaSelecionado = new Date(cellDate);
+                    atualizarAgenda(consultasBase, painelDiaSelecionado);
+                    updateDowHighlight(painelDiaSelecionado);
+                    // Re-render to move selection highlight
+                    render();
+                });
+                grid.appendChild(btn);
+            }
+        };
+
+        if (btnPrev) btnPrev.addEventListener('click', () => { viewMonth -= 1; if (viewMonth < 0) { viewMonth = 11; viewYear -= 1; } render(); });
+        if (btnNext) btnNext.addEventListener('click', () => { viewMonth += 1; if (viewMonth > 11) { viewMonth = 0; viewYear += 1; } render(); });
+
+        updateDowHighlight(painelDiaSelecionado);
+        render();
     }
 
-    // Função para exibir modal de anotações
-    function showModal(paciente, anotacao) {
-        const modal = document.getElementById('modal');
-        const modalTitle = document.getElementById('modal-title');
-        const modalMessage = document.getElementById('modal-message');
+    // Configura filtro de visualização (ABA/Convencional) estilo calendário e botão Expandir
+    function configurarAcoesPainel(consultasBase) {
+        const btnAba = document.getElementById('btnModoABA');
+        const btnConv = document.getElementById('btnModoConvencional');
+        const labelModo = document.getElementById('modoAtualLabel');
+        const btnExpandir = document.getElementById('btnExpandirAgenda');
 
-        modalTitle.textContent = `Anotação para ${paciente}`;
-        modalMessage.textContent = anotacao;
+        const atualizarUI = () => {
+            if (btnAba && btnConv) {
+                if (filtroTerapia === 'ABA') {
+                    btnAba.classList.add('active');
+                    btnConv.classList.remove('active');
+                    btnAba.setAttribute('aria-pressed', 'true');
+                    btnConv.setAttribute('aria-pressed', 'false');
+                } else {
+                    btnConv.classList.add('active');
+                    btnAba.classList.remove('active');
+                    btnConv.setAttribute('aria-pressed', 'true');
+                    btnAba.setAttribute('aria-pressed', 'false');
+                }
+            }
+            if (labelModo) {
+                labelModo.textContent = `Modo: ${filtroTerapia}`;
+                labelModo.style.background = filtroTerapia === 'ABA' ? '#E8F5E9' : '#E3F2FD';
+                labelModo.style.color = filtroTerapia === 'ABA' ? '#2E7D32' : '#1565C0';
+            }
+        };
 
-        modal.style.display = 'block';
+        if (btnAba) btnAba.addEventListener('click', () => { filtroTerapia = 'ABA'; atualizarUI(); atualizarAgenda(consultasBase, painelDiaSelecionado); });
+        if (btnConv) btnConv.addEventListener('click', () => { filtroTerapia = 'Convencional'; atualizarUI(); atualizarAgenda(consultasBase, painelDiaSelecionado); });
+
+        atualizarUI();
+
+        if (btnExpandir) btnExpandir.addEventListener('click', () => {
+            window.location.href = 'agendaDiaria.html';
+        });
     }
-
-    // Fechar o modal
-    const closeBtn = document.querySelector('.close-btn');
-    closeBtn.addEventListener('click', () => {
-        document.getElementById('modal').style.display = 'none';
-    });
-
-    window.onclick = function (event) {
-        const modal = document.getElementById('modal');
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    };
 
     // Atualizar gráfico de desempenho
     async function atualizarGrafico(consultas) {
@@ -591,8 +684,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (resp.ok) {
                 const todas = await resp.json();
                 console.log('Consultas (admin) carregadas:', todas.length);
-                // Atualiza painel do dia (todas as consultas de hoje) e gráfico geral
-                atualizarAgenda(todas);
+                // Atualiza painel do dia (consultas do dia selecionado) e gráfico geral
+                atualizarAgenda(todas, painelDiaSelecionado);
+                configurarMiniCalendario(todas);
+                configurarAcoesPainel(todas);
                 atualizarGrafico(todas);
                 // Verificar agendamentos que vencem em 1 semana
                 verificarAgendamentosVencendo(todas);
@@ -607,7 +702,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (resp.ok) {
                 const todas = await resp.json();
                 const apenasFono = filtrarAreaFono(todas);
-                atualizarAgenda(apenasFono);
+                atualizarAgenda(apenasFono, painelDiaSelecionado);
+                configurarMiniCalendario(apenasFono);
+                configurarAcoesPainel(apenasFono);
                 // Opcional: refletir também no gráfico (caso deseje, ative a linha abaixo)
                 // atualizarGrafico(apenasFono);
             } else {
@@ -618,8 +715,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (idMedico) {
             const consultas = await buscarConsultas(idMedico); // Busca os dados das consultas do backend para o médico específico
             atualizarKPIs(consultas); // Atualiza os KPIs
-            atualizarAgenda(consultas); // Preenche a tabela de agenda
-            atualizarAnotacoes(consultas); // Preenche a lista de anotações
+            atualizarAgenda(consultas, painelDiaSelecionado); // Preenche a tabela de agenda conforme dia selecionado
+            configurarMiniCalendario(consultas); // Habilita controle do dia via mini calendário
+            configurarAcoesPainel(consultas);
             atualizarGrafico(consultas); // Atualiza o gráfico de desempenho
         } else {
             console.error('ID do médico não encontrado no sessionStorage.');

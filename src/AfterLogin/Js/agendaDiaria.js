@@ -11,6 +11,7 @@ let usuarioLogado = {
     especificacao: null,
     areaId: null
 };
+let filtroTerapia = 'ABA'; // ABA | Convencional (alinhado ao calendário)
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
@@ -18,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     exibirDataAtual();
     carregarMedicos();
     carregarConsultas();
+    configurarViewToggle();
     
     // Atualizar a cada 5 minutos
     setInterval(carregarConsultas, 300000);
@@ -144,13 +146,72 @@ async function carregarConsultas() {
             return new Date(a.datahoraConsulta) - new Date(b.datahoraConsulta);
         });
         
-        consultasFiltradas = [...todasConsultas];
+        consultasFiltradas = aplicarFiltroTerapia([...todasConsultas]);
         aplicarFiltroMedico();
         
     } catch (erro) {
         console.error('Erro ao carregar consultas:', erro);
         exibirMensagemErro();
     }
+}
+
+function duracaoEmMinutos(consulta) {
+    const d = consulta?.duracaoConsulta;
+    if (typeof d === 'number') return d;
+    if (typeof d === 'string') {
+        const partes = d.split(':');
+        if (partes.length >= 2) {
+            const horas = parseInt(partes[0], 10) || 0;
+            const minutos = parseInt(partes[1], 10) || 0;
+            return horas * 60 + minutos;
+        }
+        const m = parseInt(d, 10);
+        return isNaN(m) ? 0 : m;
+    }
+    return 0;
+}
+
+function tipoTerapia(consulta) {
+    const mins = duracaoEmMinutos(consulta);
+    if (mins === 50) return 'ABA';
+    if (mins === 30) return 'Convencional';
+    return 'Outros';
+}
+
+function aplicarFiltroTerapia(lista) {
+    return lista.filter(c => tipoTerapia(c) === filtroTerapia);
+}
+
+function configurarViewToggle() {
+    const btnAba = document.getElementById('btnModoABA');
+    const btnConv = document.getElementById('btnModoConvencional');
+    const labelModo = document.getElementById('modoAtualLabel');
+
+    const atualizarUI = () => {
+        if (btnAba && btnConv) {
+            if (filtroTerapia === 'ABA') {
+                btnAba.classList.add('active');
+                btnConv.classList.remove('active');
+                btnAba.setAttribute('aria-pressed', 'true');
+                btnConv.setAttribute('aria-pressed', 'false');
+            } else {
+                btnConv.classList.add('active');
+                btnAba.classList.remove('active');
+                btnConv.setAttribute('aria-pressed', 'true');
+                btnAba.setAttribute('aria-pressed', 'false');
+            }
+        }
+        if (labelModo) {
+            labelModo.textContent = `Modo: ${filtroTerapia}`;
+            labelModo.style.background = filtroTerapia === 'ABA' ? '#E8F5E9' : '#E3F2FD';
+            labelModo.style.color = filtroTerapia === 'ABA' ? '#2E7D32' : '#1565C0';
+        }
+    };
+
+    if (btnAba) btnAba.addEventListener('click', () => { filtroTerapia = 'ABA'; consultasFiltradas = aplicarFiltroTerapia([...todasConsultas]); atualizarUI(); exibirConsultas(); atualizarResumo(); });
+    if (btnConv) btnConv.addEventListener('click', () => { filtroTerapia = 'Convencional'; consultasFiltradas = aplicarFiltroTerapia([...todasConsultas]); atualizarUI(); exibirConsultas(); atualizarResumo(); });
+
+    atualizarUI();
 }
 
 // Aplica filtro por médico
@@ -201,11 +262,13 @@ function exibirConsultas() {
     timeline.style.display = 'flex';
     empty.style.display = 'none';
     
-    timeline.innerHTML = consultasFiltradas.map(consulta => {
+    const lista = aplicarFiltroTerapia(consultasFiltradas);
+    timeline.innerHTML = lista.map(consulta => {
         const dataHora = new Date(consulta.datahoraConsulta);
         const hora = dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const status = consulta.statusConsulta?.nomeStatus || 'Agendada';
         const statusClass = status.toLowerCase().replace(/\s+/g, '');
+        const isAgendada = status.toLowerCase() === 'agendada';
         
         const paciente = `${consulta.paciente?.nome || ''} ${consulta.paciente?.sobrenome || ''}`.trim();
         const medico = `${consulta.medico?.nome || ''} ${consulta.medico?.sobrenome || ''}`.trim();
@@ -246,9 +309,46 @@ function exibirConsultas() {
                         <i class="fas fa-comment-dots"></i> ${consulta.descricao}
                     </div>
                 ` : ''}
+                ${isAgendada ? `
+                <div class="task-actions" style="margin-top:8px; display:flex; gap:6px;">
+                    <button class="filter-button" onclick="mudarStatus(${consulta.id}, 'Atendida', event)"><i class="fas fa-check"></i> Atendida</button>
+                    <button class="filter-button" onclick="mudarStatus(${consulta.id}, 'Cancelada', event)"><i class="fas fa-ban"></i> Cancelada</button>
+                    <button class="filter-button" onclick="mudarStatus(${consulta.id}, 'Faltou', event)"><i class="fas fa-user-slash"></i> Faltou</button>
+                </div>
+                ` : ''}
             </div>
         `;
     }).join('');
+}
+
+async function mudarStatus(consultaId, novoStatus, event) {
+    if (event) event.stopPropagation();
+    // Só permite alterar se o status atual for 'Agendada'
+    const consultaAtual = (todasConsultas.find(c => c.id === consultaId) || consultasFiltradas.find(c => c.id === consultaId));
+    const statusAtual = (consultaAtual?.statusConsulta?.nomeStatus || 'Agendada').toLowerCase();
+    if (statusAtual !== 'agendada') {
+        alert('Esta consulta não pode mais ser alterada.');
+        return;
+    }
+    try {
+        const resposta = await fetch(`${API_BASE}/mc/consultas/${consultaId}/status?status=${encodeURIComponent(novoStatus)}`, {
+            method: 'PATCH'
+        });
+        if (!resposta.ok) throw new Error('Erro ao atualizar status');
+        // Atualiza localmente
+        [todasConsultas, consultasFiltradas].forEach(lista => {
+            const idx = lista.findIndex(c => c.id === consultaId);
+            if (idx >= 0) {
+                lista[idx].statusConsulta = lista[idx].statusConsulta || {};
+                lista[idx].statusConsulta.nomeStatus = novoStatus;
+            }
+        });
+        exibirConsultas();
+        atualizarResumo();
+    } catch (erro) {
+        console.error('Falha ao mudar status:', erro);
+        alert('Não foi possível atualizar o status da consulta.');
+    }
 }
 
 // Atualiza resumo do dia

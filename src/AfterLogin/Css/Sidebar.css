@@ -37,7 +37,7 @@ main {
     position: fixed;
     transition: width 0.5s;
     width: 5.125rem;
-    z-index: 9999;
+
 }
 
 #sidebar.open-sidebar {

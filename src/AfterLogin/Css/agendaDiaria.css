@@ -57,6 +57,62 @@ main {
     gap: 1rem;
 }
 
+/* Calendar-like toggle for ABA/Convencional */
+.procedure-toggle {
+    background: linear-gradient(to right, #f8f9fa, #ffffff);
+    padding: 10px 14px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.procedure-toggle > span:first-child {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.98em;
+}
+
+.toggle-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 2px solid #ccc;
+    background: white;
+    color: #666;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95em;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.toggle-btn:hover { transform: translateY(-2px); }
+.toggle-btn.active { box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
+
+#btnModoABA.active {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+    border-color: #4CAF50;
+}
+
+#btnModoConvencional.active {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    color: white;
+    border-color: #2196F3;
+}
+
+#modoAtualLabel {
+    margin-left: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
 .filter-button {
     background-color: #1976D2;
     color: white;

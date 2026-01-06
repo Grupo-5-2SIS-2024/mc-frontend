@@ -834,6 +834,7 @@ background-color: #1565C0;
     padding: 20px;
     border-radius: 10px;
     width: 80%;
+    z-index: 9999999999999;
     max-width: 500px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     position: relative;

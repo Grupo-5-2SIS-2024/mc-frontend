@@ -178,6 +178,7 @@ body {
     right: 0.75rem;
     transform: translateY(-50%);
     cursor: pointer;
+    z-index: 2; /* ensure icon stays clickable above input */
 }
 
 .input__icon {

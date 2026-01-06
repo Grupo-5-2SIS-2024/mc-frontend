@@ -14,20 +14,27 @@ const SCHEDULE_SLOTS_CONVENCIONAL = [
     '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30' // tarde
 ];
 
-// Variáveis para controlar o procedimento atual selecionado
+// Variáveis para controlar o procedimento atual e modo de terapia selecionado
 let procedimentoAtual = null;
 let procedimentosList = [];
+let consultas = []; // Variável global para armazenar as consultas
+let modoTerapia = 'ABA'; // ABA | Convencional
 
 // Base da API: usa localhost em dev, vazio em produção
 const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const diaInput = document.getElementById('dia');
     const diaConsulta = sessionStorage.getItem('DIA_CONSULTA');
     if (diaConsulta) {
         diaInput.value = diaConsulta;
         sessionStorage.removeItem('DIA_CONSULTA');
     }
+    // Carrega consultas para cálculo de disponibilidade
+    await buscarConsultas();
+    // Configura toggle de terapia e estados iniciais dos campos
+    configurarToggleTerapia();
+    setInitialState();
     // Carrega horários se já houver data preenchida
     updateAvailableHours();
 });
@@ -64,7 +71,6 @@ function obterIconeGenero(genero) {
     }
 }
 
-let consultas = []; // Variável global para armazenar as consultas
 async function buscarConsultas() {
     console.log("Buscando consultas...");
     try {
@@ -173,32 +179,72 @@ function populateSelect(selectId, options, textKey = 'nome', valueKey = 'id') {
 }
 
 // Função auxiliar para determinar se procedimento é Terapia Convencional
-function isTerapiaConvencional(procedimentoId) {
-    if (!procedimentoId) return false;
-    const proc = procedimentosList.find(p => String(p.id) === String(procedimentoId));
-    if (!proc) return false;
-    
-    // Verifica se o nome do procedimento indica Terapia Convencional (30 minutos)
-    const area = (proc.area || '').toLowerCase().trim();
-    
-    // Lista de palavras-chave que identificam Terapia Convencional (30 minutos)
-    const keywordsTerapiaConvencional = [
-        'convencional',
-        'terapia convencional',
-        'fonoaudiologia',
-        'fono',
-        'psicologia',
-        'psico',
-        'terapia ocupacional',
-        'ocupacional',
-        't.o',
-        'to ',
-        'psicopedagogia',
-        'psicopedagogo'
-    ];
-    
-    // Verifica se alguma palavra-chave está presente
-    return keywordsTerapiaConvencional.some(keyword => area.includes(keyword));
+function isTerapiaConvencional() {
+    // Usa a seleção explícita do usuário (corrige mudança automática em fono)
+    return modoTerapia === 'Convencional';
+}
+
+function configurarToggleTerapia() {
+    const btnABA = document.getElementById('btnModoABA');
+    const btnConv = document.getElementById('btnModoConvencional');
+    const label = document.getElementById('modoAtualLabel');
+
+    const updateUI = () => {
+        if (modoTerapia === 'ABA') {
+            btnABA?.classList.add('active');
+            btnConv?.classList.remove('active');
+            btnABA?.setAttribute('aria-pressed','true');
+            btnConv?.setAttribute('aria-pressed','false');
+            if (label) { label.textContent = 'Modo: ABA'; label.style.background='#E8F5E9'; label.style.color='#2E7D32'; }
+        } else {
+            btnConv?.classList.add('active');
+            btnABA?.classList.remove('active');
+            btnConv?.setAttribute('aria-pressed','true');
+            btnABA?.setAttribute('aria-pressed','false');
+            if (label) { label.textContent = 'Modo: Convencional'; label.style.background='#E3F2FD'; label.style.color='#1565C0'; }
+        }
+    };
+
+    btnABA?.addEventListener('click', () => { modoTerapia = 'ABA'; updateUI(); updateAvailableHours(); });
+    btnConv?.addEventListener('click', () => { modoTerapia = 'Convencional'; updateUI(); updateAvailableHours(); });
+    updateUI();
+}
+
+function setInitialState() {
+    const selProcedimento = document.getElementById('procedimento');
+    const selMedico = document.getElementById('medico');
+    const selPaciente = document.getElementById('paciente');
+    const inputDia = document.getElementById('dia');
+    const selHora = document.getElementById('hora');
+
+    // disable downstream controls until prior selections are made
+    selMedico.disabled = true; selPaciente.disabled = true; inputDia.disabled = true; selHora.disabled = true;
+
+    selProcedimento.addEventListener('change', () => {
+        procedimentoAtual = selProcedimento.value || null;
+        selMedico.disabled = false;
+        updateAvailableDoctors();
+        // reset downstream
+        selPaciente.disabled = true; inputDia.disabled = true; selHora.disabled = true;
+        selPaciente.innerHTML = ''; selHora.innerHTML = '';
+    });
+
+    selMedico.addEventListener('change', () => {
+        selPaciente.disabled = false;
+        updateAvailablePatients();
+        // permitir selecionar data após escolher profissional
+        inputDia.disabled = false;
+    });
+
+    selPaciente.addEventListener('change', () => {
+        inputDia.disabled = false;
+        updateAvailableHours();
+    });
+
+    inputDia.addEventListener('change', () => {
+        selHora.disabled = false;
+        updateAvailableHours();
+    });
 }
 
 // Função auxiliar para verificar se há sobreposição entre dois horários
@@ -216,27 +262,51 @@ function verificarSobreposicao(inicio1, duracao1Min, inicio2, duracao2Min) {
     return (minutos1Inicio < minutos2Fim && minutos1Fim > minutos2Inicio);
 }
 
-// Função para obter horários disponíveis baseado apenas no procedimento (sem buscar consultas)
-async function getAvailableHours(dia, procedimentoId = null) {
-    console.log('Obtendo slots (sem consulta ao backend) para o dia:', dia, 'procedimento:', procedimentoId);
-    const isConvencional = isTerapiaConvencional(procedimentoId);
-    const slotsToUse = isConvencional ? SCHEDULE_SLOTS_CONVENCIONAL : SCHEDULE_SLOTS_ABA;
-    return slotsToUse;
+// Função para obter horários disponíveis considerando médico/paciente e sobreposição
+async function getAvailableHours(dia) {
+    const slotsBase = isTerapiaConvencional() ? SCHEDULE_SLOTS_CONVENCIONAL : SCHEDULE_SLOTS_ABA;
+    const medicoId = document.getElementById('medico').value;
+    const pacienteId = document.getElementById('paciente').value;
+    if (!dia) return slotsBase;
+    if (!medicoId && !pacienteId) return slotsBase;
+
+    const consultasDoDia = (consultas || []).filter(c => typeof c?.datahoraConsulta === 'string' && c.datahoraConsulta.startsWith(dia));
+    const bloqueios = consultasDoDia.filter(c => {
+        const bloqueiaMedico = medicoId ? String(c?.medico?.id) === String(medicoId) : false;
+        const bloqueiaPaciente = pacienteId ? String(c?.paciente?.id) === String(pacienteId) : false;
+        return bloqueiaMedico || bloqueiaPaciente;
+    });
+
+    const durMin = isTerapiaConvencional() ? 30 : 50;
+    const slotsDisponiveis = slotsBase.filter(slot => {
+        return !bloqueios.some(c => {
+            const dataHora = c.datahoraConsulta.split('T')[1]?.substring(0,5) || '00:00';
+            // Parse duração da consulta existente
+            let durExistMin = 0;
+            const d = c?.duracaoConsulta;
+            if (typeof d === 'number') durExistMin = d;
+            else if (typeof d === 'string') {
+                const parts = d.split(':');
+                if (parts.length >= 2) durExistMin = (parseInt(parts[0],10)||0)*60 + (parseInt(parts[1],10)||0);
+                else { const n = parseInt(d,10); durExistMin = isNaN(n)?0:n; }
+            }
+            return verificarSobreposicao(slot, durMin, dataHora, durExistMin);
+        });
+    });
+
+    return slotsDisponiveis.length ? slotsDisponiveis : ['Sem horários disponíveis'];
 }
 
 // Função para atualizar as horas disponíveis após a seleção da data e procedimento
 async function updateAvailableHours() {
     const dia = document.getElementById('dia').value;
-    const procedimentoId = document.getElementById('procedimento').value;
     const select = document.getElementById('hora');
     if (!select) return;
+    const prevValue = select.value; // tentar preservar seleção atual
     
     if (dia) {
-        const availableHours = await getAvailableHours(dia, procedimentoId);
-        
-        // Determina a duração baseada no procedimento
-        const isConvencional = isTerapiaConvencional(procedimentoId);
-        const duracao = isConvencional ? 30 : 50; // minutos
+        const availableHours = await getAvailableHours(dia);
+        const duracao = isTerapiaConvencional() ? 30 : 50; // minutos
         
         // Monta opções com intervalo completo (inicio - fim)
         const options = availableHours.map(start => {
@@ -258,7 +328,7 @@ async function updateAvailableHours() {
             placeholder.textContent = 'Selecione um horário';
             placeholder.value = '';
             placeholder.disabled = true;
-            placeholder.selected = true;
+            // Definir seleção do placeholder depois, conforme preservação
             select.appendChild(placeholder);
             options.forEach(o => {
                 const opt = document.createElement('option');
@@ -271,6 +341,15 @@ async function updateAvailableHours() {
                 }
                 select.appendChild(opt);
             });
+
+            // Tentar preservar o horário previamente selecionado, se ainda disponível
+            const aindaDisponivel = typeof prevValue === 'string' && prevValue && availableHours.includes(prevValue);
+            if (aindaDisponivel) {
+                select.value = prevValue;
+                placeholder.selected = false;
+            } else {
+                placeholder.selected = true;
+            }
         }
     } else {
         // Sem data: limpa select e adiciona placeholder
@@ -286,7 +365,6 @@ async function updateAvailableHours() {
 
 async function updateAvailableDoctors() {
     const dia = document.getElementById('dia').value;
-    const hora = document.getElementById('hora').value;
     const procedimentoId = document.getElementById('procedimento').value;
     try {
         const respMedicos = await fetch(`${API_BASE}/mc/medicos`);
@@ -309,11 +387,7 @@ async function updateAvailableDoctors() {
 
 
 async function updateAvailablePatients() {
-    const dia = document.getElementById('dia').value;
-    const hora = document.getElementById('hora').value;
-
-    if (dia && hora) {
-        try {
+    try {
             const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes`);
             if (!respostaPacientes.ok) {
                 console.warn(`buscar pacientes responded with status ${respostaPacientes.status}`);
@@ -335,12 +409,11 @@ async function updateAvailablePatients() {
                 pacientes = [];
             }
 
-            // Popula o select com todos os pacientes (não filtra ocupados nesta tela)
+            // Popula o select com todos os pacientes
             const availablePatientsLabel = withLabelNomeSobrenome(pacientes);
             populateSelect('paciente', [{ label: 'Selecione um Paciente', id: '' }, ...availablePatientsLabel], 'label', 'id');
-        } catch (error) {
-            console.error('Erro ao atualizar pacientes disponíveis:', error);
-        }
+    } catch (error) {
+        console.error('Erro ao atualizar pacientes disponíveis:', error);
     }
 }
 async function agendarConsulta() {
@@ -393,9 +466,8 @@ async function agendarConsulta() {
 
         const especificacaoMedicaId = procedimentoId;
         
-        // Determina duração baseada no procedimento
-        const isConvencional = isTerapiaConvencional(procedimentoId);
-        const duracaoConsulta = isConvencional ? SLOT_DURATION_CONVENCIONAL : SLOT_DURATION_ABA;
+        // Determina duração baseada na seleção explícita de terapia
+        const duracaoConsulta = isTerapiaConvencional() ? SLOT_DURATION_CONVENCIONAL : SLOT_DURATION_ABA;
 
         // Busca consultas existentes uma única vez para checagem de duplicidade por paciente/dia
         let consultasExistentes = [];
@@ -694,10 +766,7 @@ document.getElementById('procedimento').addEventListener('change', () => {
 });
 // Eventos de mudança nos selects
 document.getElementById('dia').addEventListener('change', updateAvailableHours);
-document.getElementById('hora').addEventListener('change', () => {
-    updateAvailableDoctors();
-    updateAvailablePatients();
-});
+// Ao escolher horário, não repopular profissionais/pacientes para evitar reset de seleção
 document.getElementById('medico').addEventListener('change', updateAvailablePatients);
 
 document.getElementById('agendar').addEventListener('click', agendarConsulta);
