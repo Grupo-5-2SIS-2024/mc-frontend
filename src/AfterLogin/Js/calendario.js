@@ -365,21 +365,63 @@ function exportarSemanaPDF() {
             return keywordsTerapiaConvencional.some(keyword => area.includes(keyword));
         }
 
+        // Obtém a duração em minutos a partir de diferentes formatos ("HH:MM:SS", "HH:MM", número em minutos)
+        function getDuracaoMinutos(entry) {
+            const raw = entry?.duracaoConsulta ?? entry?.duracao;
+            if (raw == null) return null;
+            if (typeof raw === 'number' && isFinite(raw)) return raw; // já em minutos
+            if (typeof raw === 'string') {
+                const s = raw.trim();
+                // HH:MM:SS
+                let m = s.match(/^([0-9]{1,2}):([0-9]{2}):([0-9]{2})$/);
+                if (m) {
+                    const hh = Number(m[1]);
+                    const mm = Number(m[2]);
+                    return (hh * 60) + mm;
+                }
+                // HH:MM
+                m = s.match(/^([0-9]{1,2}):([0-9]{2})$/);
+                if (m) {
+                    const hh = Number(m[1]);
+                    const mm = Number(m[2]);
+                    return (hh * 60) + mm;
+                }
+                // número como string
+                const n = Number(s);
+                if (!Number.isNaN(n) && isFinite(n)) return n;
+            }
+            return null; // formato desconhecido
+        }
+
+        // Verifica se a consulta corresponde ao modo selecionado considerando duração (50/30) e área
+        function matchesModo(entry, modo) {
+            const area = entry?.especificacaoMedica?.area || entry?.medico?.especificacaoMedica?.area || '';
+            const ehConvencional = isTerapiaConvencional(area);
+            const minutos = getDuracaoMinutos(entry);
+
+            if (modo === 'ABA') {
+                if (minutos != null) {
+                    // Enforce BOTH: duração 50min E não ser convencional
+                    return minutos === 50 && !ehConvencional;
+                }
+                // Fallback: sem duração, usar apenas a área
+                return !ehConvencional;
+            } else if (modo === 'CONVENCIONAL') {
+                if (minutos != null) {
+                    // Enforce BOTH: duração 30min E ser convencional
+                    return minutos === 30 && ehConvencional;
+                }
+                // Fallback: sem duração, usar apenas a área
+                return ehConvencional;
+            }
+            return true; // caso algum outro modo no futuro
+        }
+
         // Obtém as consultas para uma data considerando o modo de visualização
         function obterTarefasParaData(date) {
             const formattedDate = formatarData(date);
             let entries = (bancoDeDadosFiltrado || []).filter(entry => (entry?.datahoraConsulta || '').startsWith(formattedDate));
-            if (modoCalendario === 'ABA') {
-                entries = entries.filter(entry => {
-                    const area = entry?.especificacaoMedica?.area || entry?.medico?.especificacaoMedica?.area || '';
-                    return !isTerapiaConvencional(area);
-                });
-            } else if (modoCalendario === 'CONVENCIONAL') {
-                entries = entries.filter(entry => {
-                    const area = entry?.especificacaoMedica?.area || entry?.medico?.especificacaoMedica?.area || '';
-                    return isTerapiaConvencional(area);
-                });
-            }
+            entries = entries.filter(entry => matchesModo(entry, modoCalendario));
             return entries;
         }
 
