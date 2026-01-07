@@ -22,6 +22,9 @@ let modoTerapia = 'ABA'; // ABA | Convencional
 
 // Base da API: usa localhost em dev, vazio em produção
 const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+document.getElementById('responsavel').addEventListener('input', () => {
+    updateAvailablePatients();
+});
 
 document.addEventListener('DOMContentLoaded', async () => {
     const diaInput = document.getElementById('dia');
@@ -101,7 +104,7 @@ async function buscarEspecificacoes() {
         const resp = await fetch(`${API_BASE}/mc/especificacoes`);
         if (!resp.ok) throw new Error(`HTTP error! Status: ${resp.status}`);
         const especificacoes = await resp.json();
-        
+
         // Armazena lista global para referência
         procedimentosList = especificacoes;
 
@@ -193,15 +196,15 @@ function configurarToggleTerapia() {
         if (modoTerapia === 'ABA') {
             btnABA?.classList.add('active');
             btnConv?.classList.remove('active');
-            btnABA?.setAttribute('aria-pressed','true');
-            btnConv?.setAttribute('aria-pressed','false');
-            if (label) { label.textContent = 'Modo: ABA'; label.style.background='#E8F5E9'; label.style.color='#2E7D32'; }
+            btnABA?.setAttribute('aria-pressed', 'true');
+            btnConv?.setAttribute('aria-pressed', 'false');
+            if (label) { label.textContent = 'Modo: ABA'; label.style.background = '#E8F5E9'; label.style.color = '#2E7D32'; }
         } else {
             btnConv?.classList.add('active');
             btnABA?.classList.remove('active');
-            btnConv?.setAttribute('aria-pressed','true');
-            btnABA?.setAttribute('aria-pressed','false');
-            if (label) { label.textContent = 'Modo: Convencional'; label.style.background='#E3F2FD'; label.style.color='#1565C0'; }
+            btnConv?.setAttribute('aria-pressed', 'true');
+            btnABA?.setAttribute('aria-pressed', 'false');
+            if (label) { label.textContent = 'Modo: Convencional'; label.style.background = '#E3F2FD'; label.style.color = '#1565C0'; }
         }
     };
 
@@ -253,11 +256,11 @@ function verificarSobreposicao(inicio1, duracao1Min, inicio2, duracao2Min) {
     const [h1, m1] = inicio1.split(':').map(Number);
     const minutos1Inicio = h1 * 60 + m1;
     const minutos1Fim = minutos1Inicio + duracao1Min;
-    
+
     const [h2, m2] = inicio2.split(':').map(Number);
     const minutos2Inicio = h2 * 60 + m2;
     const minutos2Fim = minutos2Inicio + duracao2Min;
-    
+
     // Verifica sobreposição: início de uma está dentro do período da outra
     return (minutos1Inicio < minutos2Fim && minutos1Fim > minutos2Inicio);
 }
@@ -280,15 +283,15 @@ async function getAvailableHours(dia) {
     const durMin = isTerapiaConvencional() ? 30 : 50;
     const slotsDisponiveis = slotsBase.filter(slot => {
         return !bloqueios.some(c => {
-            const dataHora = c.datahoraConsulta.split('T')[1]?.substring(0,5) || '00:00';
+            const dataHora = c.datahoraConsulta.split('T')[1]?.substring(0, 5) || '00:00';
             // Parse duração da consulta existente
             let durExistMin = 0;
             const d = c?.duracaoConsulta;
             if (typeof d === 'number') durExistMin = d;
             else if (typeof d === 'string') {
                 const parts = d.split(':');
-                if (parts.length >= 2) durExistMin = (parseInt(parts[0],10)||0)*60 + (parseInt(parts[1],10)||0);
-                else { const n = parseInt(d,10); durExistMin = isNaN(n)?0:n; }
+                if (parts.length >= 2) durExistMin = (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+                else { const n = parseInt(d, 10); durExistMin = isNaN(n) ? 0 : n; }
             }
             return verificarSobreposicao(slot, durMin, dataHora, durExistMin);
         });
@@ -303,11 +306,11 @@ async function updateAvailableHours() {
     const select = document.getElementById('hora');
     if (!select) return;
     const prevValue = select.value; // tentar preservar seleção atual
-    
+
     if (dia) {
         const availableHours = await getAvailableHours(dia);
         const duracao = isTerapiaConvencional() ? 30 : 50; // minutos
-        
+
         // Monta opções com intervalo completo (inicio - fim)
         const options = availableHours.map(start => {
             if (start === 'Sem horários disponíveis') return start;
@@ -384,38 +387,62 @@ async function updateAvailableDoctors() {
         console.error('Erro ao atualizar Profissionais disponíveis:', error);
     }
 }
+function normalizarTexto(texto) {
+    return texto
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+}
 
 
 async function updateAvailablePatients() {
     try {
-            const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes`);
-            if (!respostaPacientes.ok) {
-                console.warn(`buscar pacientes responded with status ${respostaPacientes.status}`);
-                populateSelect('paciente', [{ label: 'Nenhum paciente encontrado', id: '' }], 'label', 'id');
-                return;
-            }
+        const input = document.getElementById('responsavel');
+        const filtroDigitado = input?.value?.trim();
+        const resposta = await fetch(`${API_BASE}/mc/pacientes`);
+        if (!resposta.ok) {
+            populateSelect('paciente', [{ label: 'Nenhum paciente encontrado', id: '' }], 'label', 'id');
+            return;
+        }
 
-            // Ler como texto e somente parsear se houver conteúdo (evita "Unexpected end of JSON input")
-            const texto = await respostaPacientes.text();
-            let pacientes = [];
-            if (texto && texto.trim().length > 0) {
-                try {
-                    pacientes = JSON.parse(texto);
-                } catch (err) {
-                    console.warn('Falha ao parsear JSON de pacientes, retornando lista vazia', err);
-                    pacientes = [];
-                }
-            } else {
-                pacientes = [];
-            }
+        const pacientes = await resposta.json();
 
-            // Popula o select com todos os pacientes
-            const availablePatientsLabel = withLabelNomeSobrenome(pacientes);
-            populateSelect('paciente', [{ label: 'Selecione um Paciente', id: '' }, ...availablePatientsLabel], 'label', 'id');
+        let pacientesFiltrados = pacientes;
+
+        if (filtroDigitado) {
+            const filtro = normalizarTexto(filtroDigitado);
+
+            pacientesFiltrados = pacientes.filter(p => {
+                if (!p.responsaveis || p.responsaveis.length === 0) return false;
+
+                return p.responsaveis.some(r => {
+                    const nome = normalizarTexto(r.nome);
+                    const sobrenome = normalizarTexto(r.sobrenome);
+                    const nomeCompleto = normalizarTexto(`${r.nome} ${r.sobrenome}`);
+
+                    return (
+                        nome.includes(filtro) ||
+                        sobrenome.includes(filtro) ||
+                        nomeCompleto.includes(filtro)
+                    );
+                });
+            });
+        }
+
+        const pacientesLabel = withLabelNomeSobrenome(pacientesFiltrados);
+
+        populateSelect(
+            'paciente',
+            [{ label: 'Selecione um Paciente', id: '' }, ...pacientesLabel],
+            'label',
+            'id'
+        );
     } catch (error) {
-        console.error('Erro ao atualizar pacientes disponíveis:', error);
+        console.error('Erro ao filtrar pacientes por responsável:', error);
     }
 }
+
 async function agendarConsulta() {
     const dia = document.getElementById('dia').value;
     const hora = document.getElementById('hora').value;
@@ -465,7 +492,7 @@ async function agendarConsulta() {
         }
 
         const especificacaoMedicaId = procedimentoId;
-        
+
         // Determina duração baseada na seleção explícita de terapia
         const duracaoConsulta = isTerapiaConvencional() ? SLOT_DURATION_CONVENCIONAL : SLOT_DURATION_ABA;
 
