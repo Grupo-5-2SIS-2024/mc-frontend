@@ -1,6 +1,11 @@
 const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : ''
 const qs = new URLSearchParams(window.location.search)
 const consultaId = qs.get('id')
+let medicosCache = []
+let pacientesCache = []
+let statusCache = []
+let especsCache = []
+
 if (!consultaId) {
     Swal.fire({
         icon: 'error',
@@ -27,22 +32,50 @@ function setFloatLabels() {
     })
 }
 async function carregarCombos() {
-    const [medicos, pacientes, status, especs] = await Promise.all([fetch(`${API_BASE}/mc/medicos`).then(r => r.json()), fetch(`${API_BASE}/mc/pacientes`).then(r => r.json()), fetch(`${API_BASE}/mc/statusConsultas`).then(r => r.json()), fetch(`${API_BASE}/mc/especificacoes`).then(r => r.json())])
-    const fill = (id, itens, valueField, textMap) => {
-        const sel = document.getElementById(id)
-        sel.innerHTML = '<option value=""></option>'
-        itens.forEach(it => {
-            const opt = document.createElement('option')
-            opt.value = it[valueField]
-            opt.textContent = textMap(it)
-            sel.appendChild(opt)
-        })
-    }
-    fill('medico', medicos, 'id', m => `${m.nome} ${m.sobrenome}`)
-    fill('paciente', pacientes, 'id', p => `${p.nome} ${p.sobrenome}`)
-    fill('status', status, 'id', s => s.nomeStatus)
-    fill('especificacao', especs, 'id', e => e.area)
+   const [medicos, pacientes, status, especs] = await Promise.all([
+        fetch(`${API_BASE}/mc/medicos`).then(r => r.json()),
+        fetch(`${API_BASE}/mc/pacientes`).then(r => r.json()),
+        fetch(`${API_BASE}/mc/statusConsultas`).then(r => r.json()),
+        fetch(`${API_BASE}/mc/especificacoes`).then(r => r.json())
+    ])
+
+    medicosCache = medicos || []
+    pacientesCache = pacientes || []
+    statusCache = status || []
+    especsCache = especs || []
+
+    fillSelect('paciente', pacientesCache, 'id', p => `${p.nome} ${p.sobrenome}`)
+    fillSelect('status', statusCache, 'id', s => s.nomeStatus)
+    fillSelect('especificacao', especsCache, 'id', e => e.area)
+
+    fillMedicosFiltrados()
 }
+
+function fillSelect(id, itens, valueField, textMap, selectedValue = '') {
+    const sel = document.getElementById(id)
+    sel.innerHTML = '<option value=""></option>'
+
+    ;(itens || []).forEach(it => {
+        const opt = document.createElement('option')
+        opt.value = it[valueField]
+        opt.textContent = textMap(it)
+        if (selectedValue && String(opt.value) === String(selectedValue)) opt.selected = true
+        sel.appendChild(opt)
+    })
+}
+
+function fillMedicosFiltrados(selectedMedicoId = '') {
+    const especId = document.getElementById('especificacao')?.value
+
+    let filtrados = medicosCache
+
+    if (especId) {
+        filtrados = (medicosCache || []).filter(m => String(m?.especificacaoMedica?.id) === String(especId))
+    }
+
+    fillSelect('medico', filtrados, 'id', m => `${m.nome} ${m.sobrenome}`, selectedMedicoId)
+}
+
 function fDate(dtStr) {
     const d = new Date(dtStr)
     const yyyy = d.getFullYear()
@@ -75,6 +108,9 @@ async function carregarConsulta() {
     $('#paciente').value = c.paciente?.id || ''
     $('#status').value = c.statusConsulta?.id || ''
     $('#especificacao').value = c.especificacaoMedica?.id || ''
+     fillMedicosFiltrados(c.medico?.id || '')
+
+    $('#paciente').value = c.paciente?.id || ''
     setFloatLabels()
 }
 function validar() {
@@ -118,3 +154,8 @@ function validar() {
     await carregarCombos()
     await carregarConsulta()
 })()
+document.getElementById('especificacao').addEventListener('change', () => {
+    fillMedicosFiltrados('')
+    setFloatLabels()
+})
+
