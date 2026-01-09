@@ -173,16 +173,12 @@ async function cadastrarPacienteSemResponsavel() {
             "genero": generoEscolhido,
             "dataNascimento": dataNascimentoDigitada,
             "cns": cnsDigitado,
-            "ativo": true,
             "foto": fotoEscolhida ? await toBase64(fotoEscolhida) : null,
-            "endereco": {
-                "id": null,
-                "cep": cepDigitado,
-                "logradouro": ruaDigitada,
-                "numero": numeroDigitado,
-                "complemento": complementoDigitado,
-                "bairro": bairroDigitado
-            }
+            "cep": cepDigitado,
+            "logradouro": ruaDigitada,
+            "numero": numeroDigitado,
+            "complemento": complementoDigitado,
+            "bairro": bairroDigitado
         };
 
         try {
