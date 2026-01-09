@@ -1,6 +1,7 @@
 // Definição dos slots para ABA (50 minutos) e Terapia Convencional (30 minutos)
 const SLOT_DURATION_ABA = '00:50:00';
 const SLOT_DURATION_CONVENCIONAL = '00:30:00';
+const SLOT_DURATION_NEURO = '01:00:00';
 
 // Slots para ABA (50min) - conforme regra existente (manhã e tarde)
 const SCHEDULE_SLOTS_ABA = [
@@ -12,6 +13,12 @@ const SCHEDULE_SLOTS_ABA = [
 const SCHEDULE_SLOTS_CONVENCIONAL = [
     '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', // manhã
     '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30' // tarde
+];
+
+// Slots para Neuropsicologia (60min)
+const SCHEDULE_SLOTS_NEURO = [
+    '08:00', '09:00', '10:00', '11:00',
+    '13:00', '14:00', '15:00', '16:00', '17:00'
 ];
 
 // Variáveis para controlar o procedimento atual e modo de terapia selecionado
@@ -267,7 +274,7 @@ function verificarSobreposicao(inicio1, duracao1Min, inicio2, duracao2Min) {
 
 // Função para obter horários disponíveis considerando médico/paciente e sobreposição
 async function getAvailableHours(dia) {
-    const slotsBase = isTerapiaConvencional() ? SCHEDULE_SLOTS_CONVENCIONAL : SCHEDULE_SLOTS_ABA;
+    const slotsBase = isNeuroSelecionado() ? SCHEDULE_SLOTS_NEURO : (isTerapiaConvencional() ? SCHEDULE_SLOTS_CONVENCIONAL : SCHEDULE_SLOTS_ABA);
     const medicoId = document.getElementById('medico').value;
     const pacienteId = document.getElementById('paciente').value;
     if (!dia) return slotsBase;
@@ -280,7 +287,7 @@ async function getAvailableHours(dia) {
         return bloqueiaMedico || bloqueiaPaciente;
     });
 
-    const durMin = isTerapiaConvencional() ? 30 : 50;
+    const durMin = isNeuroSelecionado() ? 60 : (isTerapiaConvencional() ? 30 : 50);
     const slotsDisponiveis = slotsBase.filter(slot => {
         return !bloqueios.some(c => {
             const dataHora = c.datahoraConsulta.split('T')[1]?.substring(0, 5) || '00:00';
@@ -309,7 +316,7 @@ async function updateAvailableHours() {
 
     if (dia) {
         const availableHours = await getAvailableHours(dia);
-        const duracao = isTerapiaConvencional() ? 30 : 50; // minutos
+        const duracao = isNeuroSelecionado() ? 60 : (isTerapiaConvencional() ? 30 : 50); // minutos
 
         // Monta opções com intervalo completo (inicio - fim)
         const options = availableHours.map(start => {
@@ -393,6 +400,19 @@ function normalizarTexto(texto) {
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .trim();
+}
+
+function isNeuroSelecionado() {
+    try {
+        const procedimentoId = document.getElementById('procedimento')?.value;
+        if (!procedimentoId) return false;
+        const espec = (procedimentosList || []).find(e => String(e.id) === String(procedimentoId));
+        const area = espec?.area || '';
+        const n = normalizarTexto(area);
+        return n.includes('neuropsico');
+    } catch {
+        return false;
+    }
 }
 
 
@@ -493,8 +513,8 @@ async function agendarConsulta() {
 
         const especificacaoMedicaId = procedimentoId;
 
-        // Determina duração baseada na seleção explícita de terapia
-        const duracaoConsulta = isTerapiaConvencional() ? SLOT_DURATION_CONVENCIONAL : SLOT_DURATION_ABA;
+        // Determina duração: Neuropsicologia override para 60min
+        const duracaoConsulta = isNeuroSelecionado() ? SLOT_DURATION_NEURO : (isTerapiaConvencional() ? SLOT_DURATION_CONVENCIONAL : SLOT_DURATION_ABA);
 
         // Busca consultas existentes uma única vez para checagem de duplicidade por paciente/dia
         let consultasExistentes = [];

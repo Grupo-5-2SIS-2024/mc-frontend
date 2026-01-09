@@ -401,20 +401,39 @@ function exportarSemanaPDF() {
 
             if (modo === 'ABA') {
                 if (minutos != null) {
-                    // Enforce BOTH: duração 50min E não ser convencional
-                    return minutos === 50 && !ehConvencional;
+                    // ABA aceita 50min e 60min, independente da área
+                    return minutos === 50 || minutos === 60;
                 }
-                // Fallback: sem duração, usar apenas a área
+                // Fallback: sem duração, usar apenas a área não convencional
                 return !ehConvencional;
             } else if (modo === 'CONVENCIONAL') {
                 if (minutos != null) {
-                    // Enforce BOTH: duração 30min E ser convencional
-                    return minutos === 30 && ehConvencional;
+                    // Convencional é 30min
+                    return minutos === 30;
                 }
-                // Fallback: sem duração, usar apenas a área
+                // Fallback: sem duração, usar apenas a área convencional
                 return ehConvencional;
             }
             return true; // caso algum outro modo no futuro
+        }
+
+        // Helpers de recorrência
+        function timeHHMMFromISO(iso) {
+            try {
+                const d = new Date(iso);
+                const hh = String(d.getHours()).padStart(2, '0');
+                const mm = String(d.getMinutes()).padStart(2, '0');
+                return `${hh}:${mm}`;
+            } catch { return ''; }
+        }
+
+        function computeSeriesKeyFromConsulta(c) {
+            const medicoId = c?.medico?.id ?? '';
+            const pacienteId = c?.paciente?.id ?? '';
+            const especId = c?.especificacaoMedica?.id ?? '';
+            const durMin = getDuracaoMinutos(c);
+            const hhmm = timeHHMMFromISO(c?.datahoraConsulta);
+            return `${medicoId}|${pacienteId}|${especId}|${durMin ?? ''}|${hhmm}`;
         }
 
         // Obtém as consultas para uma data considerando o modo de visualização
@@ -668,34 +687,84 @@ function exportarSemanaPDF() {
             if (btnDeletar) {
                 btnDeletar.onclick = async () => {
                     try {
-                        const result = await Swal.fire({
+                        // Escolha: excluir somente esta ou recorrentes a partir desta
+                        const mode = await Swal.fire({
+                            title: 'Excluir recorrência?',
+                            text: 'Deseja excluir somente esta consulta ou todas as recorrentes deste dia em diante?',
+                            icon: 'question',
+                            showCancelButton: true,
+                            showDenyButton: true,
+                            confirmButtonText: 'Somente esta',
+                            denyButtonText: 'Recorrentes a partir desta',
+                            cancelButtonText: 'Cancelar'
+                        });
+                        if (mode.isDismissed) return;
+
+                        if (mode.isConfirmed) {
+                            const result = await Swal.fire({
+                                title: 'Tem certeza?',
+                                text: 'Deseja excluir esta consulta?',
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: 'Sim, excluir',
+                                cancelButtonText: 'Cancelar',
+                                confirmButtonColor: '#d33'
+                            });
+                            if (!result.isConfirmed) return;
+
+                            const resp = await fetch(`${API_BASE_LOCAL}/mc/consultas/${consulta.id}`, { method: 'DELETE', headers: { 'Accept': 'application/json' } });
+                            if (!resp.ok) {
+                                const msg = await resp.text();
+                                await Swal.fire({ icon: 'error', title: 'Erro', text: `Erro ao excluir a consulta: ${msg || resp.status}` });
+                                return;
+                            }
+                            fecharModalDetalhes();
+                            await buscarConsultas();
+                            atualizarDisplayData(dataInicioAtual);
+                            await Swal.fire({ icon: 'success', title: 'Excluída', text: 'Consulta excluída com sucesso.' });
+                            return;
+                        }
+
+                        // Excluir recorrentes a partir desta
+                        const confirmSeries = await Swal.fire({
                             title: 'Tem certeza?',
-                            text: 'Deseja excluir esta consulta?',
+                            text: 'Isto irá excluir todas as consultas recorrentes deste dia em diante.',
                             icon: 'warning',
                             showCancelButton: true,
-                            confirmButtonText: 'Sim, excluir',
+                            confirmButtonText: 'Sim, excluir todas',
                             cancelButtonText: 'Cancelar',
                             confirmButtonColor: '#d33'
                         });
-                        if (!result.isConfirmed) return;
+                        if (!confirmSeries.isConfirmed) return;
 
-                        const resp = await fetch(`${API_BASE_LOCAL}/mc/consultas/${consulta.id}`, {
-                            method: 'DELETE',
-                            headers: { 'Accept': 'application/json' }
+                        // Show loading without awaiting; proceed with deletions
+                        Swal.fire({ title: 'Excluindo recorrências...', text: 'Removendo consultas futuras.', allowOutsideClick: false, showConfirmButton: false, didOpen: () => { Swal.showLoading(); } });
+                        const allRes = await fetch(`${API_BASE_LOCAL}/mc/consultas`);
+                        const todas = allRes.ok ? await allRes.json() : [];
+                        const startDate = new Date(consulta.datahoraConsulta);
+                        const key = computeSeriesKeyFromConsulta(consulta);
+                        const alvo = (todas || []).filter(c => {
+                            const d = new Date(c.datahoraConsulta);
+                            return computeSeriesKeyFromConsulta(c) === key && d >= startDate;
                         });
-                        if (!resp.ok) {
-                            const msg = await resp.text();
-                            await Swal.fire({ icon: 'error', title: 'Erro', text: `Erro ao excluir a consulta: ${msg || resp.status}` });
-                            return;
-                        }
-                        // Fechar modal, recarregar dados e atualizar exibição
+
+                        const dels = alvo.map(c2 => fetch(`${API_BASE_LOCAL}/mc/consultas/${c2.id}`, { method: 'DELETE', headers: { 'Accept': 'application/json' } }));
+                        const results = await Promise.allSettled(dels);
+                        const failed = results.filter(r => r.status === 'rejected' || (r.value && !r.value.ok));
                         fecharModalDetalhes();
                         await buscarConsultas();
                         atualizarDisplayData(dataInicioAtual);
-                        await Swal.fire({ icon: 'success', title: 'Excluída', text: 'Consulta excluída com sucesso.' });
+                        if (failed.length === 0) {
+                            Swal.close();
+                            await Swal.fire({ icon: 'success', title: 'Excluídas', text: `Consultas recorrentes excluídas (${alvo.length}).` });
+                        } else {
+                            Swal.close();
+                            await Swal.fire({ icon: 'warning', title: 'Exclusão parcial', text: `Algumas não puderam ser excluídas (${failed.length}).` });
+                        }
                     } catch (err) {
-                        console.error('Falha ao excluir consulta', err);
-                        await Swal.fire({ icon: 'error', title: 'Erro', text: 'Erro ao excluir a consulta.' });
+                        console.error('Falha ao excluir consulta(s)', err);
+                        Swal.close();
+                        await Swal.fire({ icon: 'error', title: 'Erro', text: 'Erro ao excluir consulta(s).' });
                     }
                 };
             }

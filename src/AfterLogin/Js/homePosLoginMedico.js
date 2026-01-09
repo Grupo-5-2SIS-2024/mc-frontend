@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const tipoTerapia = (c) => {
             const mins = duracaoEmMinutos(c);
-            if (mins === 50) return 'ABA';
+                if (mins === 50 || mins === 60) return 'ABA';
             if (mins === 30) return 'Convencional';
             return 'Outros';
         };

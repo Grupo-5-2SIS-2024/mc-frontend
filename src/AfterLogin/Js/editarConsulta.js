@@ -5,6 +5,7 @@ let medicosCache = []
 let pacientesCache = []
 let statusCache = []
 let especsCache = []
+let consultaCarregada = null
 
 if (!consultaId) {
     Swal.fire({
@@ -99,6 +100,7 @@ async function carregarConsulta() {
         return
     }
     const c = await res.json()
+    consultaCarregada = c
     $('#descricao').value = c.descricao || ''
     const dt = fDate(c.datahoraConsulta)
     $('#data').value = dt.date
@@ -112,6 +114,37 @@ async function carregarConsulta() {
 
     $('#paciente').value = c.paciente?.id || ''
     setFloatLabels()
+}
+
+// Helpers para recorrência
+function getDuracaoMinutosFromValue(val) {
+    if (val == null) return null;
+    if (typeof val === 'number' && isFinite(val)) return val;
+    const s = String(val).trim();
+    let m = s.match(/^([0-9]{1,2}):([0-9]{2}):([0-9]{2})$/);
+    if (m) { const hh = Number(m[1]); const mm = Number(m[2]); return (hh * 60) + mm; }
+    m = s.match(/^([0-9]{1,2}):([0-9]{2})$/);
+    if (m) { const hh = Number(m[1]); const mm = Number(m[2]); return (hh * 60) + mm; }
+    const n = Number(s); if (!Number.isNaN(n) && isFinite(n)) return n;
+    return null;
+}
+
+function timeHHMMFromISO(iso) {
+    try {
+        const d = new Date(iso);
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+    } catch { return ''; }
+}
+
+function computeSeriesKeyFromConsulta(c) {
+    const medicoId = c?.medico?.id ?? '';
+    const pacienteId = c?.paciente?.id ?? '';
+    const especId = c?.especificacaoMedica?.id ?? '';
+    const durMin = getDuracaoMinutosFromValue(c?.duracaoConsulta ?? c?.duracao);
+    const hhmm = timeHHMMFromISO(c?.datahoraConsulta);
+    return `${medicoId}|${pacienteId}|${especId}|${durMin ?? ''}|${hhmm}`;
 }
 function validar() {
     const obrig = ['descricao', 'data', 'hora', 'duracao', 'medico', 'paciente', 'status', 'especificacao']
@@ -130,24 +163,84 @@ function validar() {
     const data = $('#data').value
     const hora = $('#hora').value
     const payload = { id: Number(consultaId), descricao: $('#descricao').value, datahoraConsulta: `${data}T${hora}:00`, duracaoConsulta: $('#duracao').value, medico: { id: Number($('#medico').value) }, paciente: { id: Number($('#paciente').value) }, statusConsulta: { id: Number($('#status').value) }, especificacaoMedica: { id: Number($('#especificacao').value) } }
-    const resp = await fetch(`${API_BASE}/mc/consultas/${consultaId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-    if (resp.ok) {
-        Swal.fire({
-            icon: 'success',
-            title: 'Sucesso',
-            text: 'Consulta atualizada com sucesso!',
-            confirmButtonColor: '#1976D2'
-        }).then(() => {
-            window.location.href = 'calendario.html'
-        })
-    } else {
-        const txt = await resp.text()
-        Swal.fire({
-            icon: 'error',
-            title: 'Erro ao atualizar',
-            text: txt || 'Não foi possível salvar as alterações.',
-            confirmButtonColor: '#1976D2'
-        })
+    // Perguntar se quer atualizar somente esta consulta ou toda a recorrência a partir desta data
+    const choice = await Swal.fire({
+        title: 'Atualizar recorrência?',
+        text: 'Deseja aplicar esta atualização somente a esta consulta ou a todas as recorrentes deste dia em diante?',
+        icon: 'question',
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: 'Somente esta',
+        denyButtonText: 'Recorrentes a partir desta',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (choice.isDismissed) return;
+
+    if (choice.isConfirmed) {
+        // Atualiza apenas esta
+        const resp = await fetch(`${API_BASE}/mc/consultas/${consultaId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (resp.ok) {
+            await Swal.fire({ icon: 'success', title: 'Sucesso', text: 'Consulta atualizada com sucesso!', confirmButtonColor: '#1976D2' });
+            window.location.href = 'calendario.html';
+        } else {
+            const txt = await resp.text();
+            await Swal.fire({ icon: 'error', title: 'Erro ao atualizar', text: txt || 'Não foi possível salvar as alterações.', confirmButtonColor: '#1976D2' });
+        }
+        return;
+    }
+
+    // Atualiza recorrentes a partir desta
+    try {
+        const startDate = new Date(`${data}T00:00:00`);
+        const key = computeSeriesKeyFromConsulta(consultaCarregada || {});
+        // Show loading without awaiting, then run batch ops
+        Swal.fire({ title: 'Atualizando recorrências...', text: 'Aplicando alterações nas consultas futuras.', allowOutsideClick: false, showConfirmButton: false, didOpen: () => { Swal.showLoading(); } });
+        const allRes = await fetch(`${API_BASE}/mc/consultas`);
+        const todas = allRes.ok ? await allRes.json() : [];
+        const afuturas = (todas || []).filter(c => {
+            const d = new Date(c.datahoraConsulta);
+            const sameSeries = computeSeriesKeyFromConsulta(c) === key;
+            return sameSeries && d >= startDate;
+        });
+
+        // Para cada consulta futura, aplicar os novos campos, mantendo a data original e trocando a hora
+        const hhmm = hora;
+        const makeISO = (dateObj) => {
+            const yyyy = dateObj.getFullYear();
+            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const dd = String(dateObj.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}T${hhmm}:00`;
+        };
+
+        const updates = afuturas.map(c2 => {
+            const d = new Date(c2.datahoraConsulta);
+            const p2 = {
+                id: Number(c2.id),
+                descricao: $('#descricao').value,
+                datahoraConsulta: makeISO(d),
+                duracaoConsulta: $('#duracao').value,
+                medico: { id: Number($('#medico').value) },
+                paciente: { id: Number($('#paciente').value) },
+                statusConsulta: { id: Number($('#status').value) },
+                especificacaoMedica: { id: Number($('#especificacao').value) }
+            };
+            return fetch(`${API_BASE}/mc/consultas/${c2.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p2) });
+        });
+
+        const results = await Promise.allSettled(updates);
+        Swal.close();
+        const failed = results.filter(r => r.status === 'rejected' || (r.value && !r.value.ok));
+        if (failed.length === 0) {
+            await Swal.fire({ icon: 'success', title: 'Sucesso', text: `Atualizações aplicadas em ${updates.length} consultas.`, confirmButtonColor: '#1976D2' });
+            window.location.href = 'calendario.html';
+        } else {
+            await Swal.fire({ icon: 'warning', title: 'Parcialmente atualizado', text: `Algumas consultas não puderam ser atualizadas (${failed.length}).`, confirmButtonColor: '#1976D2' });
+        }
+    } catch (e) {
+        console.error('Erro ao atualizar recorrências', e);
+        Swal.close();
+        await Swal.fire({ icon: 'error', title: 'Erro', text: 'Falha ao atualizar recorrências.' });
     }
 
 } document.getElementById('btnAtualizar').addEventListener('click', atualizar); (async function init() {
