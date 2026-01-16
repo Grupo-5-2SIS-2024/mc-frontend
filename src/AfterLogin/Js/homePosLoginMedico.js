@@ -163,8 +163,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('consultasConcluidas').textContent = consultasConcluidas;
         document.getElementById('consultasCanceladas').textContent = consultasCanceladas;
 
-        // Atualiza o número de consultas restantes na semana
-        document.getElementById('consultasRestantesSemana').textContent = consultasSemana;
+        // Atualiza o número de consultas restantes na semana (se o elemento existir)
+        const elRestantes = document.getElementById('consultasRestantesSemana');
+        if (elRestantes) elRestantes.textContent = consultasSemana;
     }
     // Utilitário: filtra consultas por área de fono (case-insensitive)
     function filtrarAreaFono(consultas) {
@@ -509,6 +510,101 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // Relatório de Faltas: botão baixa CSV com Paciente, Horário, Profissional e Status
+    function configurarRelatorioFaltas() {
+        const inputInicio = document.getElementById('faltaDataInicio');
+        const inputFim = document.getElementById('faltaDataFim');
+        const btn = document.getElementById('btnBaixarRelatorioFaltas');
+
+        const hojeISO = new Date().toISOString().slice(0, 10);
+        if (inputInicio && !inputInicio.value) inputInicio.value = hojeISO;
+        if (inputFim && !inputFim.value) inputFim.value = hojeISO;
+
+        async function getConsultasParaRelatorio() {
+            const idMedico = sessionStorage.getItem('ID_MEDICO');
+            const nivel = sessionStorage.getItem('PERMISSIONAMENTO_MEDICO') || '';
+            try {
+                if (nivel === 'Admin') {
+                    const resp = await fetch(`${API_BASE}/mc/consultas`);
+                    if (!resp.ok) throw new Error('Falha ao buscar consultas');
+                    return await resp.json();
+                } else if (idMedico) {
+                    return await buscarConsultas(idMedico);
+                } else {
+                    const resp = await fetch(`${API_BASE}/mc/consultas`);
+                    if (!resp.ok) throw new Error('Falha ao buscar consultas');
+                    return await resp.json();
+                }
+            } catch (e) {
+                console.error(e);
+                return [];
+            }
+        }
+
+        function dentroDoIntervalo(dt, ini, fim) {
+            const d = new Date(dt); d.setHours(0, 0, 0, 0);
+            const a = new Date(ini); a.setHours(0, 0, 0, 0);
+            const b = new Date(fim); b.setHours(0, 0, 0, 0);
+            return d >= a && d <= b;
+        }
+
+        function toCSV(rows, sep = ';') {
+            const esc = (v) => {
+                const s = (v ?? '').toString().replace(/"/g, '""');
+                return `"${s}"`;
+            };
+            const header = ['Data', 'Hora', 'Paciente', 'Profissional', 'Status'].map(esc).join(sep);
+            const lines = rows.map(r => [r.data, r.hora, r.paciente, r.profissional, r.status].map(esc).join(sep));
+            return [header, ...lines].join('\r\n');
+        }
+
+        if (btn) {
+            btn.addEventListener('click', async () => {
+                if (!inputInicio || !inputFim || !inputInicio.value || !inputFim.value) {
+                    if (window.Swal) { Swal.fire({ icon: 'warning', title: 'Informe o período', text: 'Selecione data inicial e final.' }); }
+                    return;
+                }
+                const inicio = inputInicio.value;
+                const fim = inputFim.value;
+                if (inicio > fim) {
+                    if (window.Swal) { Swal.fire({ icon: 'warning', title: 'Período inválido', text: 'Data inicial não pode ser maior que a final.' }); }
+                    return;
+                }
+
+                if (window.Swal && Swal.showLoading) Swal.showLoading();
+
+                const consultas = await getConsultasParaRelatorio();
+                const faltas = consultas.filter(c => {
+                    const status = c?.statusConsulta?.nomeStatus ?? '';
+                    return status === 'Faltou' && c?.datahoraConsulta && dentroDoIntervalo(c.datahoraConsulta, inicio, fim);
+                });
+
+                const rows = faltas.map(c => {
+                    const dt = new Date(c.datahoraConsulta);
+                    const data = dt.toLocaleDateString('pt-BR');
+                    const hora = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    const paciente = `${c?.paciente?.nome || ''} ${c?.paciente?.sobrenome || ''}`.trim();
+                    const profissional = `${c?.medico?.nome || ''} ${c?.medico?.sobrenome || ''}`.trim();
+                    const status = c?.statusConsulta?.nomeStatus || '';
+                    return { data, hora, paciente, profissional, status };
+                });
+
+                const csv = toCSV(rows);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `relatorio_faltas_${inicio}_a_${fim}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+
+                if (window.Swal && Swal.close) Swal.close();
+            });
+        }
+    }
+
     // Função para verificar pacientes cuja última consulta agendada está na próxima semana (apenas para admin)
     async function verificarAgendamentosVencendo(consultas) {
         const hoje = new Date();
@@ -723,4 +819,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('ID do médico não encontrado no sessionStorage.');
         }
     }
+    // Inicializa o relatório de faltas (usa permissões no momento do download)
+    configurarRelatorioFaltas();
 });

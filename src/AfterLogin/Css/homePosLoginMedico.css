@@ -560,6 +560,52 @@ td {
     margin-top: 10px;
 }
 
+/* Relatório de Faltas: controles dentro do card de atalhos */
+.shortcuts .falta-report-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: linear-gradient(to right, #f9fbff, #ffffff);
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(25, 118, 210, 0.15);
+}
+
+.shortcuts .falta-report-controls label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-weight: 600;
+    color: #333;
+}
+
+.shortcuts .falta-report-controls input[type="date"] {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #cfd8dc;
+    background: #ffffff;
+    color: #333333;
+    min-width: 180px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.shortcuts .falta-report-controls input[type="date"]:focus {
+    outline: none;
+    border-color: #1976D2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.15);
+}
+
+.shortcuts #btnBaixarRelatorioFaltas {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 12px;
+}
+
 /* Responsivo para telas menores */
 @media (max-width: 768px) {
     .shortcuts {
@@ -572,6 +618,22 @@ td {
 
     .shortcuts .shortcut-number {
         font-size: 36px;
+    }
+    /* Stack controls vertically on smaller screens */
+    .shortcuts .falta-report-controls {
+        align-items: stretch;
+        gap: 10px;
+    }
+    .shortcuts .falta-report-controls label {
+        width: 100%;
+    }
+    .shortcuts .falta-report-controls input[type="date"] {
+        width: 100%;
+        min-width: 0;
+    }
+    .shortcuts #btnBaixarRelatorioFaltas {
+        width: 100%;
+        justify-content: center;
     }
     .painel-actions {
         flex-direction: column;

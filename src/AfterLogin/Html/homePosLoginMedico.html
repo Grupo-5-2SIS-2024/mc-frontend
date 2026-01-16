@@ -147,8 +147,14 @@
             </div>
 
             <div class="shortcuts">
-                <h2>Consultas Restantes na Semana</h2>
-                <p id="consultasRestantesSemana" class="shortcut-number">0</p>
+                <h2>Relatório de Faltas</h2>
+                <div class="falta-report-controls">
+                    <label>De: <input type="date" id="faltaDataInicio"></label>
+                    <label>Até: <input type="date" id="faltaDataFim"></label>
+                    <button id="btnBaixarRelatorioFaltas" class="small-btn" title="Baixar relatório de faltas" aria-label="Baixar relatório de faltas">
+                        <i class="fa-solid fa-download"></i> Baixar
+                    </button>
+                </div>
             </div>
 
             <div class="agenda">
