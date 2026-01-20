@@ -1,5 +1,8 @@
 // Base da API: usa localhost em dev, vazio em produção
-const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+// Ajuste necessario: incluir o context-path /mc no API_BASE para nao duplicar /mc nas rotas
+const API_BASE = window.location.origin.includes('localhost')
+  ? 'http://localhost:8080/mc'
+  : '/mc'
 
 // inputs especiais: robust password visibility toggles
 function setupPasswordToggle(iconSel, inputSel) {
@@ -64,7 +67,6 @@ inputFile.addEventListener("change", function (e) {
 
 
 // Função para validar o cadastro do colaborador
-
 function validarCadastro() {
   var nome = document.getElementById('nome').value;
   var sobrenome = document.getElementById('sobrenome').value;
@@ -162,7 +164,8 @@ function validarCadastro() {
   // Exibir os erros se houverem
   if (errors.length > 0) {
     const errorMessage = errors.join("<br>");
-    document.querySelector('.error-message').innerHTML = errorMessage;
+    const errBox = document.querySelector('.error-message');
+    if (errBox) errBox.innerHTML = errorMessage;
     return false;
   } else {
     return true;
@@ -171,7 +174,6 @@ function validarCadastro() {
 
 
 // Função assíncrona para cadastrar o colaborador
-
 const toBase64 = file => new Promise((resolve, reject) => {
   const reader = new FileReader();
   reader.readAsDataURL(file);
@@ -179,8 +181,77 @@ const toBase64 = file => new Promise((resolve, reject) => {
   reader.onerror = reject;
 });
 
+// =========================
+// CARGA HORÁRIA
+// =========================
+const lista = document.getElementById('listaHorarios')
+const btnAdd = document.getElementById('btnAddHorario')
+
+function adicionarLinha() {
+  if (!lista) return
+
+  const row = document.createElement('div')
+  row.className = 'horario-row'
+
+  row.innerHTML = `
+    <select class="dia">
+      <option value="SEGUNDA">Segunda</option>
+      <option value="TERCA">Terça</option>
+      <option value="QUARTA">Quarta</option>
+      <option value="QUINTA">Quinta</option>
+      <option value="SEXTA">Sexta</option>
+      <option value="SABADO">Sábado</option>
+      <option value="DOMINGO">Domingo</option>
+    </select>
+
+    <input type="time" class="inicio">
+    <input type="time" class="fim">
+
+    <button type="button" class="btn-remover">X</button>
+  `
+
+  row.querySelector('.btn-remover').onclick = () => {
+    if (document.querySelectorAll('.horario-row').length <= 1) return
+    row.remove()
+  }
+
+  lista.appendChild(row)
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (btnAdd) btnAdd.onclick = adicionarLinha
+  if (lista && lista.children.length === 0) adicionarLinha()
+})
+
+
+function coletarCargaHoraria() {
+  const rows = document.querySelectorAll('.horario-row')
+  if (rows.length === 0) return null
+
+  const horarios = []
+
+  for (const r of rows) {
+    const inicio = r.querySelector('.inicio').value
+    const fim = r.querySelector('.fim').value
+
+    if (!inicio || !fim || inicio >= fim) return null
+
+    horarios.push({
+      diaSemana: r.querySelector('.dia').value,
+      horaInicio: inicio,
+      horaFim: fim
+    })
+  }
+
+  return horarios
+}
+
+// =========================
+// ESPECIFICAÇÕES
+// =========================
 function carregarEspecificacoes() {
-  fetch(`${API_BASE}/mc/especificacoes`)
+  // Ajuste necessario: remover /mc duplicado, agora API_BASE ja tem /mc
+  fetch(`${API_BASE}/especificacoes`)
     .then(response => response.json())
     .then(especificacoes => {
       const especificacaoSelect = document.getElementById("especificacao");
@@ -203,84 +274,121 @@ window.onload = function () {
   carregarEspecificacoes();
 };
 
-async function cadastrarColaborador() {
-
-  if (validarCadastro()) {
-
-    const nomeDigitado = document.getElementById("nome").value;
-    const sobrenomeDigitado = document.getElementById("sobrenome").value;
-    const emailDigitado = document.getElementById("email").value;
-    const telefoneDigitado = document.getElementById("telefone").value;
-    const cpfDigitado = document.getElementById("cpf").value;
-    const dataNascimentoDigitada = document.getElementById("dataNascimento").value;
-    const especificacaoDigitada = document.getElementById("especificacao").value;
-    const carteirinhaDigitada = document.getElementById("carteirinha").value;
-    const senhaDigitada = document.getElementById("password").value;
-    const nivelAcessoEscolhido = document.getElementById("nivelAcesso").value;
-    const fotoEscolhida = document.getElementById("picture__input").files[0];
-
-    const nivelAcessoMap = {
-      "Admin": 1,
-      "Supervisor": 2,
-      "Profissional": 3
-    };
-
-    const nivelAcessoId = nivelAcessoMap[nivelAcessoEscolhido];
-
-    if (!nivelAcessoId) {
-      alert("Opções inválidas selecionadas.");
-      return;
-    }
-
-    let fotoBase64 = null;
-    if (fotoEscolhida) {
-      fotoBase64 = await toBase64(fotoEscolhida);
-    }
-
-    const dadosColaborador = {
-      "nome": nomeDigitado,
-      "sobrenome": sobrenomeDigitado,
-      "email": emailDigitado,
-      "telefone": telefoneDigitado,
-      "cpf": cpfDigitado,
-      "dataNascimento": dataNascimentoDigitada,
-      "especificacaoMedica": {
-        "id": especificacaoDigitada
-      },
-      "carterinha": carteirinhaDigitada,
-      "senha": senhaDigitada,
-      "ativo": true,
-      "permissao": {
-        "id": nivelAcessoId
-      },
-      "foto": fotoBase64
-    };
-
-    console.log(dadosColaborador);
-
-    try {
-      const respostaCadastro = await fetch(`${API_BASE}/mc/medicos`, {
-        method: "POST",
-        body: JSON.stringify(dadosColaborador),
-        headers: { "Content-type": "application/json; charset=UTF-8" }
-      });
-
-      if (respostaCadastro.status == 201) {
-        Swal.fire({
-          icon: 'success',
-          title: 'Colaborador cadastrado com sucesso!',
-          text: 'Redirecionando para a área do colaborador...',
-          showConfirmButton: false,
-          timer: 1500
-        }).then(() => {
-          window.location.href = "listagemColaborador.html";
-        });
-      } else {
-        alert("Ocorreu um erro ao cadastrar");
-      }
-    } catch (error) {
-      alert("Ocorreu um erro ao tentar cadastrar: " + error.message);
-    }
-  }
+function readErrorBody(text) {
+  if (!text) return ''
+  return text.length > 400 ? text.slice(0, 400) + '...' : text
 }
 
+async function cadastrarColaborador() {
+  if (!validarCadastro()) return
+
+  const cargaHoraria = coletarCargaHoraria()
+
+if (!cargaHoraria) {
+  Swal.fire({
+    icon: 'error',
+    title: 'Carga horária obrigatória',
+    html: 'Adicione pelo menos 1 horário e preencha início e fim corretamente.',
+    confirmButtonText: 'Ok'
+  })
+  return
+}
+
+
+  const nomeDigitado = document.getElementById("nome").value;
+  const sobrenomeDigitado = document.getElementById("sobrenome").value;
+  const emailDigitado = document.getElementById("email").value;
+  const telefoneDigitado = document.getElementById("telefone").value;
+  const cpfDigitado = document.getElementById("cpf").value;
+  const dataNascimentoDigitada = document.getElementById("dataNascimento").value;
+  const especificacaoDigitada = document.getElementById("especificacao").value;
+  const carteirinhaDigitada = document.getElementById("carteirinha").value;
+  const senhaDigitada = document.getElementById("password").value;
+  const nivelAcessoEscolhido = document.getElementById("nivelAcesso").value;
+  const fotoEscolhida = document.getElementById("picture__input").files[0];
+
+  const nivelAcessoMap = {
+    "Admin": 1,
+    "Supervisor": 2,
+    "Profissional": 3
+  };
+
+  const nivelAcessoId = nivelAcessoMap[nivelAcessoEscolhido];
+
+  if (!nivelAcessoId) {
+    alert("Opções inválidas selecionadas.");
+    return;
+  }
+
+  let fotoBase64 = null;
+  if (fotoEscolhida) {
+    fotoBase64 = await toBase64(fotoEscolhida);
+  }
+
+  const dadosColaborador = {
+    "nome": nomeDigitado,
+    "sobrenome": sobrenomeDigitado,
+    "email": emailDigitado,
+    "telefone": telefoneDigitado,
+    "cpf": cpfDigitado,
+    "dataNascimento": dataNascimentoDigitada,
+    "especificacaoMedica": {
+      // Ajuste seguro: garantir numero
+      "id": Number(especificacaoDigitada)
+    },
+    "carterinha": carteirinhaDigitada,
+    "senha": senhaDigitada,
+    "ativo": true,
+    "permissao": {
+      // Ajuste seguro: garantir numero
+      "id": Number(nivelAcessoId)
+    },
+    "foto": fotoBase64
+  };
+
+  console.log(dadosColaborador);
+
+  try {
+    // Ajuste necessario: remover /mc duplicado, agora API_BASE ja tem /mc
+    const respostaCadastro = await fetch(`${API_BASE}/medicos`, {
+      method: "POST",
+      body: JSON.stringify(dadosColaborador),
+      headers: { "Content-type": "application/json; charset=UTF-8" }
+    })
+
+    if (!respostaCadastro.ok) {
+      const errText = await respostaCadastro.text()
+      throw new Error(`Erro médico. Status ${respostaCadastro.status}. ${readErrorBody(errText)}`)
+    }
+
+    const medico = await respostaCadastro.json()
+    if (!medico || !medico.id) {
+      throw new Error('Erro médico. Resposta sem id')
+    }
+
+    // Ajuste necessario: remover /mc duplicado, agora API_BASE ja tem /mc
+    const resCarga = await fetch(`${API_BASE}/carga-horaria/medico/${medico.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=UTF-8" },
+      body: JSON.stringify(cargaHoraria)
+    })
+
+    if (!resCarga.ok) {
+      const errText = await resCarga.text()
+      throw new Error(`Erro carga horária. Status ${resCarga.status}. ${readErrorBody(errText)}`)
+    }
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Colaborador cadastrado com sucesso!',
+      text: 'Redirecionando para a área do colaborador...',
+      showConfirmButton: false,
+      timer: 1500
+    }).then(() => {
+      window.location.href = "listagemColaborador.html";
+    });
+
+  } catch (error) {
+    alert("Ocorreu um erro ao tentar cadastrar: " + error.message);
+  }
+}
