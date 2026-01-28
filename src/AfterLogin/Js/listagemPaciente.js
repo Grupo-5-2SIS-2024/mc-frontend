@@ -31,6 +31,9 @@ function fecharModalFiltro() {
     document.getElementById("modalFiltro").style.display = "none";
 }
 
+// Estado: alterna entre ativos e inativos
+let mostrarInativosPacientes = false;
+
 // Funções para limpar e aplicar filtros
 function limparFiltros() {
     document.getElementById('filtroNome').value = '';
@@ -86,41 +89,103 @@ function removerFiltroEspecifico(filtro) {
 
 // Função para buscar pacientes com filtros específicos
 async function buscarPacientes(nomeFiltro = '', emailFiltro = '', cpfFiltro = '', telefoneFiltro = '', dataNascimentoFiltro = '') {
-    const permissionamentoMedico = sessionStorage.getItem("PERMISSIONAMENTO_MEDICO");
-    const especificacaoMedicaArea = sessionStorage.getItem("ESPECIFICACAO_MEDICA");
+    const permRaw = sessionStorage.getItem("PERMISSIONAMENTO_MEDICO") || '';
+    const idMedico = Number(sessionStorage.getItem("ID_MEDICO")) || null;
+    const especificacaoMedicaArea = sessionStorage.getItem("ESPECIFICACAO_MEDICA") || '';
+
+    // Normalizador seguro (remove acentos e lowercase)
+    const normalize = (s) => {
+        if (!s) return '';
+        try { return s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim(); }
+        catch { return String(s).replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
+    };
+    const perm = normalize(permRaw);
+    const areaNorm = normalize(especificacaoMedicaArea);
 
     try {
         let listaPacientes = [];
+        const isAtivo = (v) => v === true || v === 1 || String(v).toLowerCase() === 'true';
 
-        if (permissionamentoMedico === "Admin") {
-            const resposta = await fetch(`${API_BASE}/mc/pacientes`);
+        if (perm.includes('admin')) {
+            // Admin: lista todos os pacientes
+            const endpoint = mostrarInativosPacientes ? `${API_BASE}/mc/pacientes/todos` : `${API_BASE}/mc/pacientes`;
+            const resposta = await fetch(endpoint);
+            if (!resposta.ok) throw new Error(`Falha ao carregar pacientes: ${resposta.status}`);
             listaPacientes = await resposta.json();
-        } else if (permissionamentoMedico === "Supervisor" && especificacaoMedicaArea) {
-            const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes`);
-            const todosPacientes = await respostaPacientes.json();
-
-            const respostaConsultas = await fetch(`${API_BASE}/mc/consultas`);
-            const todasConsultas = await respostaConsultas.json();
-
-            listaPacientes = todosPacientes.filter(paciente =>
-                todasConsultas.some(consulta =>
-                    consulta.paciente.id === paciente.id &&
-                    consulta.especificacaoMedica.area === especificacaoMedicaArea
-                )
-            );
+            // Quando usando /todos, filtra por status conforme toggle
+            if (endpoint.endsWith('/todos')) {
+                listaPacientes = listaPacientes.filter(p => mostrarInativosPacientes ? !isAtivo(p.ativo) : isAtivo(p.ativo));
+            }
+        } else if (perm.includes('supervi')) {
+            // Supervisor: pacientes com consultas na sua área (comparação case-insensitive)
+            const [respPac, respCons] = await Promise.all([
+                fetch(mostrarInativosPacientes ? `${API_BASE}/mc/pacientes/todos` : `${API_BASE}/mc/pacientes`),
+                fetch(`${API_BASE}/mc/consultas`)
+            ]);
+            const [todosPacientes, todasConsultas] = await Promise.all([
+                respPac.ok ? respPac.json() : [],
+                respCons.ok ? respCons.json() : []
+            ]);
+            if (!areaNorm) {
+                // Se a área não estiver definida na sessão, exibe todos para não retornar vazio
+                listaPacientes = todosPacientes;
+            } else {
+                listaPacientes = todosPacientes.filter(paciente =>
+                    (todasConsultas || []).some(consulta => {
+                        if (!consulta?.paciente?.id || consulta.paciente.id !== paciente.id) return false;
+                        const areaConsulta = normalize(consulta?.especificacaoMedica?.area || consulta?.medico?.especificacaoMedica?.area || '');
+                        return areaConsulta.includes(areaNorm);
+                    })
+                );
+            }
+            if (mostrarInativosPacientes && respPac.url.endsWith('/todos')) {
+                listaPacientes = listaPacientes.filter(p => !isAtivo(p.ativo));
+            }
+        } else if (perm.includes('medic') || perm.includes('profiss')) {
+            // Médico/Profissional: pacientes que possuem consultas com este médico
+            const [respCons, respPac] = await Promise.all([
+                fetch(`${API_BASE}/mc/consultas`),
+                fetch(mostrarInativosPacientes ? `${API_BASE}/mc/pacientes/todos` : `${API_BASE}/mc/pacientes`)
+            ]);
+            const [todasConsultas, todosPacientes] = await Promise.all([
+                respCons.ok ? respCons.json() : [],
+                respPac.ok ? respPac.json() : []
+            ]);
+            if (!idMedico) {
+                listaPacientes = [];
+            } else {
+                const idsPacientes = new Set(
+                    (todasConsultas || [])
+                        .filter(c => c?.medico?.id === idMedico && c?.paciente?.id)
+                        .map(c => c.paciente.id)
+                );
+                listaPacientes = (todosPacientes || []).filter(p => idsPacientes.has(p.id));
+            }
+            if (mostrarInativosPacientes && respPac.url.endsWith('/todos')) {
+                listaPacientes = listaPacientes.filter(p => !isAtivo(p.ativo));
+            }
         } else {
-            console.warn("Permissão ou especificação médica não definida.");
-            return;
+            // Permissão desconhecida: fallback para exibir todos (evita lista vazia)
+            console.warn("Permissão não reconhecida ('" + permRaw + "'). Exibindo todos os pacientes por fallback.");
+            const resposta = await fetch(mostrarInativosPacientes ? `${API_BASE}/mc/pacientes/todos` : `${API_BASE}/mc/pacientes`);
+            if (!resposta.ok) throw new Error(`Falha ao carregar pacientes: ${resposta.status}`);
+            listaPacientes = await resposta.json();
+            if (mostrarInativosPacientes && resposta.url.endsWith('/todos')) {
+                listaPacientes = listaPacientes.filter(p => !isAtivo(p.ativo));
+            }
         }
 
-        const pacientesFiltrados = listaPacientes.filter(paciente => {
-            const nomeCompleto = `${paciente.nome} ${paciente.sobrenome}`.toLowerCase();
-            const dataNascimento = new Date(paciente.dataNascimento).toISOString().split('T')[0];
+        const pacientesFiltrados = (listaPacientes || []).filter(paciente => {
+            const nomeCompleto = `${paciente.nome || ''} ${paciente.sobrenome || ''}`.toLowerCase();
+            const email = (paciente.email || '').toLowerCase();
+            const cpf = String(paciente.cpf || '');
+            const telefone = String(paciente.telefone || '');
+            const dataNascimento = paciente.dataNascimento ? new Date(paciente.dataNascimento).toISOString().split('T')[0] : '';
             return (
                 (nomeCompleto.includes(nomeFiltro) || nomeFiltro === '') &&
-                (paciente.email.toLowerCase().includes(emailFiltro) || emailFiltro === '') &&
-                (paciente.cpf.includes(cpfFiltro) || cpfFiltro === '') &&
-                (paciente.telefone.includes(telefoneFiltro) || telefoneFiltro === '') &&
+                (email.includes(emailFiltro) || emailFiltro === '') &&
+                (cpf.includes(cpfFiltro) || cpfFiltro === '') &&
+                (telefone.includes(telefoneFiltro) || telefoneFiltro === '') &&
                 (dataNascimento === dataNascimentoFiltro || dataNascimentoFiltro === '')
             );
         });
@@ -128,6 +193,14 @@ async function buscarPacientes(nomeFiltro = '', emailFiltro = '', cpfFiltro = ''
         atualizarListagemPacientes(pacientesFiltrados);
     } catch (e) {
         console.log(e);
+        // Em caso de erro, evitar tela vazia total: tenta exibir todos como fallback
+        try {
+            const resposta = await fetch(`${API_BASE}/mc/pacientes`);
+            if (resposta.ok) {
+                const lista = await resposta.json();
+                atualizarListagemPacientes(lista);
+            }
+        } catch {}
     }
 }
 
@@ -138,16 +211,29 @@ function atualizarListagemPacientes(listaPacientes) {
         const responsavel = paciente.responsavel ? `${paciente.responsavel.nome} ${paciente.responsavel.sobrenome}` : 'Não informado';
         const dataNascimentoFormatada = new Date(paciente.dataNascimento).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const foto = paciente.foto || "../Assets/perfil.jpeg";
+        const statusAtivo = (paciente.ativo === true || paciente.ativo === 1 || String(paciente.ativo).toLowerCase() === 'true');
 
-        const acoes = permissionamentoMedico === "Supervisor" ? '' : `
-            <div class="actions">
-                <button class="view" onclick="abrirModalPaciente(${paciente.id})"><i class="fas fa-eye"></i></button>
-                <button class="update"><i class="fas fa-pencil-alt"></i></button>
-                <button class="delete"><i class="fas fa-trash-alt"></i></button>
-            </div>`;
+        let acoes = '';
+        if (permissionamentoMedico !== "Supervisor") {
+            if (mostrarInativosPacientes) {
+                acoes = `
+                <div class="actions">
+                    <button class="view" onclick="abrirModalPaciente(${paciente.id})" title="Ver"><i class="fas fa-eye"></i></button>
+                    <button class="activate" title="Ativar"><i class="fas fa-check" style="color:#2e7d32"></i></button>
+                </div>`;
+            } else {
+                acoes = `
+                <div class="actions">
+                    <button class="view" onclick="abrirModalPaciente(${paciente.id})" title="Ver"><i class="fas fa-eye"></i></button>
+                    <button class="update" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="delete" title="Inativar"><i class="fas fa-trash-alt" style="color:#e53935"></i></button>
+                </div>`;
+            }
+        }
 
         return `
             <div class="cardPaciente" data-paciente-id="${paciente.id}">
+                <span class="status-pill ${statusAtivo ? 'ativo' : 'inativo'}">${statusAtivo ? 'Ativo' : 'Inativo'}</span>
                 <img onclick="abrirModalPaciente(${paciente.id})" src="${foto}" alt="Foto do Paciente">
                 <div class="info">
                     <div class="field">
@@ -189,6 +275,24 @@ function atualizarListagemPacientes(listaPacientes) {
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
                     if (result.isConfirmed) inativarPaciente(Number(id));
+                });
+            }
+        });
+    });
+
+    cardsPacientes.querySelectorAll('.activate').forEach((botao) => {
+        botao.addEventListener('click', function () {
+            const id = this.closest('.cardPaciente').dataset.pacienteId;
+            if (id) {
+                Swal.fire({
+                    title: 'Ativar paciente?',
+                    text: 'O paciente voltará a aparecer nas listagens ativas.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sim, ativar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) ativarPaciente(Number(id));
                 });
             }
         });
@@ -270,6 +374,20 @@ async function inativarPaciente(id) {
     }
 }
 
+// Ativa o paciente
+async function ativarPaciente(id) {
+    try {
+        const pacienteId = Number(id);
+        const resp = await fetch(`${API_BASE}/mc/pacientes/${pacienteId}/ativar`, { method: 'PATCH' });
+        if (!resp.ok) throw new Error(`Falha ao ativar: ${resp.status}`);
+        Swal.fire({ icon: 'success', title: 'Paciente ativado!', showConfirmButton: false, timer: 1200 });
+        buscarPacientes();
+    } catch (erro) {
+        console.error('Erro ao ativar paciente:', erro);
+        Swal.fire({ icon: 'error', title: 'Erro ao ativar', text: 'Não foi possível ativar o paciente.' });
+    }
+}
+
 async function buscarKPIsPaciente() {
     try {
         const [porcentagemABA, pacientesAtivos, pacientesUltimoTrimestre, agendamentosVencidos] = await Promise.all([
@@ -302,8 +420,8 @@ async function buscarKPIsPaciente() {
 
         document.querySelector(".cardKpi:nth-child(1) .kpiNumber").textContent = `${Number.isFinite(pctAba) ? pctAba.toFixed(1) : '0.0'}%`;
         document.querySelector(".cardKpi:nth-child(2) .kpiNumber").textContent = format2(ativosCount);
-        document.querySelector(".cardKpi:nth-child(3) .kpiNumber").textContent = format2(ultTrimestreCount);
-        document.querySelector(".cardKpi:nth-child(4) .kpiNumber").textContent = format2(vencidosCount);
+        document.querySelector(".cardKpi:nth-child(4) .kpiNumber").textContent = format2(ultTrimestreCount);
+        document.querySelector(".cardKpi:nth-child(3) .kpiNumber").textContent = format2(vencidosCount);
     } catch (error) {
         console.error('Erro ao buscar KPIs:', error);
     }
@@ -311,6 +429,24 @@ async function buscarKPIsPaciente() {
 
 buscarPacientes();
 buscarKPIsPaciente();
+
+// Toggle inativos: listener
+document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('toggleInativosPacientes');
+    if (toggle) {
+        // Restaura estado salvo do toggle
+        const saved = sessionStorage.getItem('mostrarInativosPacientes') === 'true';
+        toggle.checked = saved;
+        mostrarInativosPacientes = saved;
+        buscarPacientes();
+
+        toggle.addEventListener('change', (e) => {
+            mostrarInativosPacientes = e.target.checked;
+            sessionStorage.setItem('mostrarInativosPacientes', String(mostrarInativosPacientes));
+            buscarPacientes();
+        });
+    }
+});
 
 // Função para abrir o modal com os dados do paciente
 function abrirModalPaciente(idPaciente) {
@@ -337,7 +473,7 @@ function abrirModalPaciente(idPaciente) {
             };
 
 
-            // Atualiza o cabeçalho/semana para garantir domingo–sábado
+            // Atualiza o cabeçalho/semana para exibir segunda–sexta
             atualizarDisplayData(dataInicioAtual);
         })
         .catch(error => {
@@ -483,10 +619,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 function obterInicioDaSemana(date) {
-    // Semana inicia no domingo (0)
-    const day = date.getDay();
+    // Semana começa na segunda-feira (1)
+    const day = date.getDay(); // 0..6
+    const diff = (day + 6) % 7; // recua até segunda
     const startDate = new Date(date);
-    startDate.setDate(date.getDate() - day);
+    startDate.setDate(date.getDate() - diff);
     startDate.setHours(0, 0, 0, 0);
     return startDate;
 }
@@ -530,7 +667,7 @@ function atualizarDisplayCalendario(consultasCliente) {
     const colunasTarefasElement = document.getElementById('colunasTarefas');
     colunasTarefasElement.innerHTML = ''; // Limpa o conteúdo existente
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 5; i++) {
         const diaAtual = new Date(dataInicioAtual);
         diaAtual.setDate(dataInicioAtual.getDate() + i);
 
@@ -608,7 +745,7 @@ function exportarSemanaPacienteCSV(pacienteId) {
         const rows = [];
         rows.push(['Data', 'Hora', 'Paciente', 'CPF', 'Profissional', 'Área', 'Status', 'Descrição', 'Duração']);
 
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0; i < 5; i++) {
             const d = new Date(start);
             d.setDate(start.getDate() + i);
             const tarefas = bancoDeDadosFiltrado.filter(t => t.datahoraConsulta.startsWith(formatarData(d)));
@@ -654,7 +791,7 @@ function exportarSemanaPacientePDF(pacienteId) {
         html += `<h2>Agenda Semanal: ${document.getElementById('dias')?.innerText || ''}</h2>`;
         html += `<table><thead><tr><th>Data</th><th>Hora</th><th>Paciente</th><th>Profissional</th><th>Área</th><th>Status</th><th>Descrição</th><th>Duração</th></tr></thead><tbody>`;
 
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0; i < 5; i++) {
             const d = new Date(start);
             d.setDate(start.getDate() + i);
             const tarefas = bancoDeDadosFiltrado.filter(t => t.datahoraConsulta.startsWith(formatarData(d)));
@@ -720,7 +857,7 @@ function fecharModalDetalhes() {
 function atualizarDisplayData(startDate) {
     dataInicioAtual = obterInicioDaSemana(startDate);
     const endDate = new Date(dataInicioAtual);
-    endDate.setDate(dataInicioAtual.getDate() + 6);
+    endDate.setDate(dataInicioAtual.getDate() + 4);
 
     const options = { day: '2-digit', month: 'long' };
     const startStr = `${dataInicioAtual.toLocaleDateString('pt-BR', options)} ${dataInicioAtual.getFullYear()}`;
@@ -734,7 +871,7 @@ function atualizarDiasDaSemana(startDate) {
     const diasSemanaElement = document.getElementById('diasSemana');
     diasSemanaElement.innerHTML = '';
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 5; i++) {
         const currentDate = new Date(startDate);
         currentDate.setDate(startDate.getDate() + i);
 
@@ -755,7 +892,7 @@ function atualizarColunasDeTarefas(startDate) {
     const colunasTarefasElement = document.getElementById('colunasTarefas');
     colunasTarefasElement.innerHTML = ''; // Limpa o conteúdo existente
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 5; i++) {
         const currentDate = new Date(startDate);
         currentDate.setDate(currentDate.getDate() + i);
 

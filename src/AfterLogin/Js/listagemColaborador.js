@@ -42,14 +42,24 @@ function aplicarFiltros() {
     buscarMedicos(nome, email, especialidade, '');
 }
 
+// Estado: alterna entre ativos e inativos
+let mostrarInativosColab = false;
+
 async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFiltro = '', statusFiltro = '') {
     try {
         const nivelPermissao = sessionStorage.getItem("PERMISSIONAMENTO_MEDICO");
         const areaEspecializacaoSupervisor = sessionStorage.getItem("ESPECIFICACAO_MEDICA");
         const idMedicoLogado = Number(sessionStorage.getItem("ID_MEDICO"));
 
-        const resposta = await fetch(`${API_BASE}/mc/medicos`);
-        const listaMedicos = await resposta.json();
+        const endpoint = mostrarInativosColab ? `${API_BASE}/mc/medicos/todos` : `${API_BASE}/mc/medicos`;
+        const resposta = await fetch(endpoint);
+        const listaMedicosAll = await resposta.json();
+
+        // Filtra por status conforme toggle quando usando /todos
+        const isAtivo = (v) => v === true || v === 1 || String(v).toLowerCase() === 'true';
+        const listaMedicos = endpoint.endsWith('/todos')
+            ? (listaMedicosAll || []).filter(m => mostrarInativosColab ? !isAtivo(m.ativo) : isAtivo(m.ativo))
+            : (listaMedicosAll || []);
 
         let medicosFiltrados = listaMedicos.filter(medico => medico.id !== idMedicoLogado);
 
@@ -77,6 +87,7 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
         cardsMedicos.innerHTML = medicosFiltradosFinal.map((medico) => {
             const status = medico.ativo ? 'Ativo' : 'Inativo';
             const foto = medico.foto || "../Assets/perfil.jpeg";
+            const statusAtivo = (medico.ativo === true || medico.ativo === 1 || String(medico.ativo).toLowerCase() === 'true');
             
             // Verifica se é Admin logado
             const isAdmin = nivelPermissao && nivelPermissao.toLowerCase().includes('admin');
@@ -87,15 +98,27 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
                     <i class="fas fa-key"></i>
                 </button>` : '';
             
-            const acoes = nivelPermissao === "Supervisor" ? '' : `
-                <div class="actions">
-                    <button class="update" title="Editar"><i class="fas fa-pencil-alt"></i></button>
-                    <button class="delete" title="Inativar"><i class="fas fa-trash-alt" style="color:#e53935"></i></button>
-                    ${botaoPermissoes}
-                </div>`;
+            let acoes = '';
+            if (nivelPermissao !== "Supervisor") {
+                if (mostrarInativosColab) {
+                    acoes = `
+                    <div class="actions">
+                        <button class="activate" title="Ativar"><i class="fas fa-check" style="color:#2e7d32"></i></button>
+                        ${botaoPermissoes}
+                    </div>`;
+                } else {
+                    acoes = `
+                    <div class="actions">
+                        <button class="update" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="delete" title="Inativar"><i class="fas fa-trash-alt" style="color:#e53935"></i></button>
+                        ${botaoPermissoes}
+                    </div>`;
+                }
+            }
 
             return `
                 <div class="cardColaborador" data-medico-id="${medico.id}">
+                    <span class="status-pill ${statusAtivo ? 'ativo' : 'inativo'}">${statusAtivo ? 'Ativo' : 'Inativo'}</span>
                     <img src="${foto}" alt="Foto do Colaborador">
                     <div class="info">
                         <div class="field"><label>Nome</label><p>${medico.nome} ${medico.sobrenome}</p></div>
@@ -131,6 +154,24 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
                 botao.addEventListener('click', function () {
                     const id = this.closest('.cardColaborador').dataset.medicoId;
                     if (id) window.location.href = `atualizarColaborador.html?id=${id}`;
+                });
+            });
+            
+            cardsMedicos.querySelectorAll('.activate').forEach((botao) => {
+                botao.addEventListener('click', function () {
+                    const id = this.closest('.cardColaborador').dataset.medicoId;
+                    if (id) {
+                        Swal.fire({
+                            title: 'Ativar colaborador?',
+                            text: 'O colaborador voltará à listagem ativa.',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sim, ativar',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) ativarMedico(id);
+                        });
+                    }
                 });
             });
             
@@ -213,6 +254,20 @@ async function inativarMedico(id) {
     }
 }
 
+// Ativa o colaborador
+async function ativarMedico(id) {
+    try {
+        const colaboradorId = Number(id);
+        const resp = await fetch(`${API_BASE}/mc/medicos/${colaboradorId}/ativar`, { method: 'PATCH' });
+        if (!resp.ok) throw new Error(`Falha ao ativar: ${resp.status}`);
+        Swal.fire({ icon: 'success', title: 'Colaborador ativado!', showConfirmButton: false, timer: 1200 });
+        buscarMedicos();
+    } catch (erro) {
+        console.error('Erro ao ativar colaborador:', erro);
+        Swal.fire({ icon: 'error', title: 'Erro ao ativar', text: 'Não foi possível ativar o colaborador.' });
+    }
+}
+
 async function buscarKPIsMedico() {
     try {
         // Buscar o número total de médicos
@@ -248,6 +303,24 @@ async function buscarKPIsMedico() {
 }
 
 buscarKPIsMedico();
+
+// Listener do toggle de inativos
+document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('toggleInativosColab');
+    if (toggle) {
+        // Restaura estado salvo do toggle
+        const saved = sessionStorage.getItem('mostrarInativosColab') === 'true';
+        toggle.checked = saved;
+        mostrarInativosColab = saved;
+        buscarMedicos();
+
+        toggle.addEventListener('change', (e) => {
+            mostrarInativosColab = e.target.checked;
+            sessionStorage.setItem('mostrarInativosColab', String(mostrarInativosColab));
+            buscarMedicos();
+        });
+    }
+});
 
 async function buscarAreasClinica() {
     try {

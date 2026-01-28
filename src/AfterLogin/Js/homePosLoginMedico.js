@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Filtro de visualização de terapia (ABA | Convencional). Default alinhado ao calendário
     let filtroTerapia = 'ABA';
     const nivelPermissaoGlobal = sessionStorage.getItem('PERMISSIONAMENTO_MEDICO');
+    let selectedMedicoId = '';
+    let medicosCache = [];
     // Define base da API (ajusta para localhost em dev)
     const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
 
@@ -167,11 +169,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         const elRestantes = document.getElementById('consultasRestantesSemana');
         if (elRestantes) elRestantes.textContent = consultasSemana;
     }
-    // Utilitário: filtra consultas por área de fono (case-insensitive)
-    function filtrarAreaFono(consultas) {
+    // Utilitário: recupera a área do usuário (Supervisor/Médico) a partir da sessão
+    function getAreaUsuario() {
+        const areaSessao = sessionStorage.getItem('ESPECIFICACAO_MEDICA');
+        if (areaSessao && areaSessao !== 'null') return String(areaSessao).toLowerCase();
+        return '';
+    }
+
+    // Utilitário: filtra consultas pela área informada do usuário (case-insensitive)
+    function filtrarAreaUsuario(consultas) {
+        const areaUsuario = getAreaUsuario();
+        // fallback: se não houver área definida, não filtra
+        if (!areaUsuario) return consultas;
         return consultas.filter(c => {
             const area = c.medico?.especificacaoMedica?.area || c.especificacaoMedica?.area || '';
-            return typeof area === 'string' && area.toLowerCase().includes('fono');
+            return typeof area === 'string' && area.toLowerCase().includes(areaUsuario);
         });
     }
 
@@ -192,6 +204,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             dt.setHours(0, 0, 0, 0);
             return dt.getTime() === dia.getTime();
         };
+
+        // Admin: sem seleção exibe "Todos" por padrão; filtro por médico só quando selectedMedicoId estiver definido
 
         // Classificação da terapia pelo tempo de duração: ABA = 50min, Convencional = 30min
         const duracaoEmMinutos = (c) => {
@@ -221,6 +235,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const consultasHoje = consultas
             .filter(c => c && c.datahoraConsulta && isDiaSelecionado(c.datahoraConsulta))
+            .filter(c => !selectedMedicoId || String(c?.medico?.id) === String(selectedMedicoId))
             // mantém todas as consultas do dia, independentemente do status
             .filter(c => tipoTerapia(c) === filtroTerapia)
             .sort((a, b) => new Date(a.datahoraConsulta) - new Date(b.datahoraConsulta));
@@ -445,6 +460,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const btnConv = document.getElementById('btnModoConvencional');
         const labelModo = document.getElementById('modoAtualLabel');
         const btnExpandir = document.getElementById('btnExpandirAgenda');
+        const selMed = document.getElementById('filtroMedicoSelect');
+        const btnPrint = document.getElementById('btnImprimirPainel');
 
         const atualizarUI = () => {
             if (btnAba && btnConv) {
@@ -470,11 +487,70 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btnAba) btnAba.addEventListener('click', () => { filtroTerapia = 'ABA'; atualizarUI(); atualizarAgenda(consultasBase, painelDiaSelecionado); });
         if (btnConv) btnConv.addEventListener('click', () => { filtroTerapia = 'Convencional'; atualizarUI(); atualizarAgenda(consultasBase, painelDiaSelecionado); });
 
+        if (selMed) {
+            // Popular opções se tiver cache
+            if (Array.isArray(medicosCache) && medicosCache.length > 0) {
+                popularSelectMedicos(selMed, medicosCache);
+            }
+            selMed.addEventListener('change', () => {
+                selectedMedicoId = selMed.value || '';
+                atualizarAgenda(consultasBase, painelDiaSelecionado);
+            });
+            // Mostrar seletor apenas para Admin; ocultar para Supervisor/Médico
+            const filtroContainer = selMed.closest('.medico-filter');
+            if (filtroContainer) {
+                if (nivelPermissaoGlobal !== 'Admin') {
+                    filtroContainer.style.display = 'none';
+                } else {
+                    filtroContainer.style.display = '';
+                }
+            }
+        }
+
+        if (btnPrint) {
+            btnPrint.addEventListener('click', () => imprimirPainelDoDia());
+        }
+
         atualizarUI();
 
         if (btnExpandir) btnExpandir.addEventListener('click', () => {
             window.location.href = 'agendaDiaria.html';
         });
+    }
+
+    function popularSelectMedicos(selectEl, medicos) {
+        // limpa mantendo primeira opção
+        selectEl.innerHTML = '<option value="">Todos</option>' + medicos.map(m => `<option value="${m.id}">${m.nome} ${m.sobrenome || ''} - ${m.especificacaoMedica?.area || ''}</option>`).join('');
+    }
+
+    function formatarDataCabecalho(date) {
+        return new Date(date).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+    }
+
+    function imprimirPainelDoDia() {
+        const table = document.querySelector('.agenda table');
+        if (!table) return;
+        const modo = document.getElementById('modoAtualLabel')?.textContent || '';
+        const sel = document.getElementById('filtroMedicoSelect');
+        const medicoTexto = sel && sel.value ? sel.options[sel.selectedIndex].text : 'Todos';
+        const cabec = `${formatarDataCabecalho(painelDiaSelecionado)} • ${modo} • ${medicoTexto}`;
+        const css = `
+            body { font-family: Arial, sans-serif; padding: 16px; }
+            h1 { font-size: 18px; margin: 0 0 12px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ccc; padding: 8px; font-size: 12px; }
+            thead { background: #1976D2; color: #fff; }
+        `;
+        const w = window.open('', '_blank');
+        if (!w) return;
+        w.document.write(`<html><head><title>Painel do Dia</title><style>${css}</style></head><body>`);
+        w.document.write(`<h1>${cabec}</h1>`);
+        w.document.write(table.outerHTML);
+        w.document.write('</body></html>');
+        w.document.close();
+        w.focus();
+        w.print();
+        w.close();
     }
 
     // Atualizar gráfico de desempenho
@@ -528,6 +604,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const resp = await fetch(`${API_BASE}/mc/consultas`);
                     if (!resp.ok) throw new Error('Falha ao buscar consultas');
                     return await resp.json();
+                } else if (nivel.toLowerCase().includes('supervi')) {
+                    const resp = await fetch(`${API_BASE}/mc/consultas`);
+                    if (!resp.ok) throw new Error('Falha ao buscar consultas');
+                    const todas = await resp.json();
+                    return filtrarAreaUsuario(todas);
                 } else if (idMedico) {
                     return await buscarConsultas(idMedico);
                 } else {
@@ -781,28 +862,38 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const todas = await resp.json();
                 console.log('Consultas (admin) carregadas:', todas.length);
                 // Atualiza painel do dia (consultas do dia selecionado) e gráfico geral
+                // Admin vê todos por padrão (selectedMedicoId vazio)
+                selectedMedicoId = '';
                 atualizarAgenda(todas, painelDiaSelecionado);
                 configurarMiniCalendario(todas);
                 configurarAcoesPainel(todas);
                 atualizarGrafico(todas);
                 // Verificar agendamentos que vencem em 1 semana
                 verificarAgendamentosVencendo(todas);
+                // Carregar e popular lista de médicos para filtro do admin
+                try {
+                    const rMed = await fetch(`${API_BASE}/mc/medicos/todos`);
+                    medicosCache = rMed.ok ? await rMed.json() : [];
+                    const sel = document.getElementById('filtroMedicoSelect');
+                    if (sel && medicosCache.length) popularSelectMedicos(sel, medicosCache);
+                } catch (e) { console.warn('Falha ao carregar médicos para filtro', e); }
             } else {
                 console.error('Falha ao buscar consultas para gráfico admin. Status:', resp.status);
             }
         } catch (e) { console.warn('Falha ao carregar gráfico geral admin', e); }
     } else if (nivelPermissaoGlobal && nivelPermissaoGlobal.toLowerCase().includes('supervi')) {
-        // Supervisor: mostrar no Painel do Dia apenas consultas da área de Fono para hoje
+        // Supervisor: mostrar apenas consultas da área do usuário para o Painel do Dia
         try {
             const resp = await fetch(`${API_BASE}/mc/consultas`);
             if (resp.ok) {
                 const todas = await resp.json();
-                const apenasFono = filtrarAreaFono(todas);
-                atualizarAgenda(apenasFono, painelDiaSelecionado);
-                configurarMiniCalendario(apenasFono);
-                configurarAcoesPainel(apenasFono);
-                // Opcional: refletir também no gráfico (caso deseje, ative a linha abaixo)
-                // atualizarGrafico(apenasFono);
+                const apenasArea = filtrarAreaUsuario(todas);
+                atualizarKPIs(apenasArea);
+                atualizarAgenda(apenasArea, painelDiaSelecionado);
+                configurarMiniCalendario(apenasArea);
+                configurarAcoesPainel(apenasArea);
+                // Opcional: refletir também no gráfico; se preferir, comente
+                atualizarGrafico(apenasArea);
             } else {
                 console.error('Falha ao buscar consultas para supervisor. Status:', resp.status);
             }
