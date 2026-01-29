@@ -191,20 +191,6 @@ body {
     font-size: 1.5rem;
 }
 
-.registrar {
-    width: 100%;
-    height: 7vh;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    font-size: 1rem;
-    background-color: #1976D2;
-    /* azul médio */
-    font-weight: bold;
-    outline: none;
-    border: none;
-    cursor: pointer;
-    color: whitesmoke;
-}
 
 .registrar:hover {
     transform: translateY(-0.4rem);
@@ -213,6 +199,156 @@ body {
     background-color: #1565C0;
     /* hover azul escuro */
 }
+
+.inputs_login_direita {
+justify-content: flex-start;
+height: 100%;
+}
+
+
+
+.section-carga-horaria h2 {
+text-align: center;
+margin-bottom: 0.75rem;
+}
+
+#listaHorarios {
+display: flex;
+flex-direction: column;
+gap: 0.75rem;
+width: 100%;
+}
+
+
+
+.horario-row select,
+.horario-row input {
+height: 45px;
+flex: 1;
+}
+
+.horario-row .btn-remover {
+flex: 0 0 auto;
+height: 45px;
+padding: 0 12px;
+border-radius: 0.25rem;
+}
+
+#btnAddHorario {
+margin-top: 0.75rem;
+width: 100%;
+height: 45px;
+border: none;
+border-radius: 0.25rem;
+cursor: pointer;
+}
+
+.btn-area {
+width: 100%;
+margin-top: auto;
+display: flex;
+justify-content: center;
+padding-top: 1.5rem;
+}
+
+
+.ContainerCadastro {
+  display: flex;
+  flex-direction: column;
+  height: 90vh;
+}
+
+.inputs_Container {
+  flex: 1;
+  align-items: flex-start;
+}
+
+/* Carga horária centralizada e um pouco mais para cima */
+.section-carga-horaria {
+  width: 100%;
+  margin-top: -0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.section-carga-horaria h2 {
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+/* Lista ocupa uma largura agradável no centro */
+#listaHorarios {
+  width: 65%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Linha horizontal */
+.horario-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  width: 100%;
+}
+
+.horario-row select,
+.horario-row input {
+  height: 45px;
+  flex: 1;
+}
+
+.btn-remover {
+  height: 45px;
+  padding: 0 12px;
+  border: none;
+  cursor: pointer;
+  background: red;
+  color: white;
+  border-radius: 0.25rem;
+}
+
+#btnAddHorario {
+  margin-top: 0.75rem;
+  width: 65%;
+  height: 45px;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+/* Botão centralizado no card inteiro e mais para baixo */
+.btn-area {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 1.25rem;
+  padding-bottom: 1rem;
+}
+
+.registrar {
+  width: 40%;
+  height: 50px;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  background-color: #1976D2;
+  font-weight: bold;
+  outline: none;
+  border: none;
+  cursor: pointer;
+  color: whitesmoke;
+}
+
+
+
+.horario-row select,
+.horario-row input {
+height: 45px;
+}
+
+
+
 
 /* Fim do box cadastro */
 
@@ -286,4 +422,60 @@ body {
         cursor: pointer;
     }
 
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+}
+
+/* garante que o scroll vai acontecer no card, não na página */
+main {
+  flex: 1;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* o card vira um "container rolável" */
+.ContainerCadastro {
+  height: 90vh;
+  max-height: 90vh;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  justify-content: flex-start;
+  align-items: center;
+
+  padding-right: 10px;
+  scrollbar-gutter: stable;
+}
+
+/* evita o flex achatar o conteúdo */
+.inputs_Container,
+.section-carga-horaria,
+.btn-area {
+  flex-shrink: 0;
+}
+
+/* impede o avatar de achatar quando o conteúdo cresce */
+.picture {
+  width: 12.5rem;
+  height: 12.5rem;
+  flex: 0 0 auto;
+  min-height: 12.5rem;
+  aspect-ratio: auto;
+}
+
+/* também impede o título e o avatar de serem comprimidos */
+.ContainerCadastro > h1,
+.ContainerCadastro > .picture,
+.ContainerCadastro > #picture__input {
+  flex-shrink: 0;
 }

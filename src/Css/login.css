@@ -141,9 +141,10 @@ a {
 .input__icon-wrapper {
     position: absolute;
     top: 50%;
-    right: 0.75rem;
+    right: 0.25rem;
     transform: translateY(-50%);
     cursor: pointer;
+    z-index: 2;
 }
 
 .input__icon {

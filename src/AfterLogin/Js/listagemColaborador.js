@@ -42,14 +42,24 @@ function aplicarFiltros() {
     buscarMedicos(nome, email, especialidade, '');
 }
 
+// Estado: alterna entre ativos e inativos
+let mostrarInativosColab = false;
+
 async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFiltro = '', statusFiltro = '') {
     try {
         const nivelPermissao = sessionStorage.getItem("PERMISSIONAMENTO_MEDICO");
         const areaEspecializacaoSupervisor = sessionStorage.getItem("ESPECIFICACAO_MEDICA");
         const idMedicoLogado = Number(sessionStorage.getItem("ID_MEDICO"));
 
-        const resposta = await fetch(`${API_BASE}/mc/medicos`);
-        const listaMedicos = await resposta.json();
+        const endpoint = mostrarInativosColab ? `${API_BASE}/mc/medicos/todos` : `${API_BASE}/mc/medicos`;
+        const resposta = await fetch(endpoint);
+        const listaMedicosAll = await resposta.json();
+
+        // Filtra por status conforme toggle quando usando /todos
+        const isAtivo = (v) => v === true || v === 1 || String(v).toLowerCase() === 'true';
+        const listaMedicos = endpoint.endsWith('/todos')
+            ? (listaMedicosAll || []).filter(m => mostrarInativosColab ? !isAtivo(m.ativo) : isAtivo(m.ativo))
+            : (listaMedicosAll || []);
 
         let medicosFiltrados = listaMedicos.filter(medico => medico.id !== idMedicoLogado);
 
@@ -77,6 +87,7 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
         cardsMedicos.innerHTML = medicosFiltradosFinal.map((medico) => {
             const status = medico.ativo ? 'Ativo' : 'Inativo';
             const foto = medico.foto || "../Assets/perfil.jpeg";
+            const statusAtivo = (medico.ativo === true || medico.ativo === 1 || String(medico.ativo).toLowerCase() === 'true');
             
             // Verifica se é Admin logado
             const isAdmin = nivelPermissao && nivelPermissao.toLowerCase().includes('admin');
@@ -87,15 +98,27 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
                     <i class="fas fa-key"></i>
                 </button>` : '';
             
-            const acoes = nivelPermissao === "Supervisor" ? '' : `
-                <div class="actions">
-                    <button class="update" title="Editar"><i class="fas fa-pencil-alt"></i></button>
-                    <button class="delete" title="Inativar"><i class="fas fa-trash-alt" style="color:#e53935"></i></button>
-                    ${botaoPermissoes}
-                </div>`;
+            let acoes = '';
+            if (nivelPermissao !== "Supervisor") {
+                if (mostrarInativosColab) {
+                    acoes = `
+                    <div class="actions">
+                        <button class="activate" title="Ativar"><i class="fas fa-check" style="color:#2e7d32"></i></button>
+                        ${botaoPermissoes}
+                    </div>`;
+                } else {
+                    acoes = `
+                    <div class="actions">
+                        <button class="update" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="delete" title="Inativar"><i class="fas fa-trash-alt" style="color:#e53935"></i></button>
+                        ${botaoPermissoes}
+                    </div>`;
+                }
+            }
 
             return `
                 <div class="cardColaborador" data-medico-id="${medico.id}">
+                    <span class="status-pill ${statusAtivo ? 'ativo' : 'inativo'}">${statusAtivo ? 'Ativo' : 'Inativo'}</span>
                     <img src="${foto}" alt="Foto do Colaborador">
                     <div class="info">
                         <div class="field"><label>Nome</label><p>${medico.nome} ${medico.sobrenome}</p></div>
@@ -131,6 +154,24 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
                 botao.addEventListener('click', function () {
                     const id = this.closest('.cardColaborador').dataset.medicoId;
                     if (id) window.location.href = `atualizarColaborador.html?id=${id}`;
+                });
+            });
+            
+            cardsMedicos.querySelectorAll('.activate').forEach((botao) => {
+                botao.addEventListener('click', function () {
+                    const id = this.closest('.cardColaborador').dataset.medicoId;
+                    if (id) {
+                        Swal.fire({
+                            title: 'Ativar colaborador?',
+                            text: 'O colaborador voltará à listagem ativa.',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sim, ativar',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) ativarMedico(id);
+                        });
+                    }
                 });
             });
             
@@ -213,6 +254,20 @@ async function inativarMedico(id) {
     }
 }
 
+// Ativa o colaborador
+async function ativarMedico(id) {
+    try {
+        const colaboradorId = Number(id);
+        const resp = await fetch(`${API_BASE}/mc/medicos/${colaboradorId}/ativar`, { method: 'PATCH' });
+        if (!resp.ok) throw new Error(`Falha ao ativar: ${resp.status}`);
+        Swal.fire({ icon: 'success', title: 'Colaborador ativado!', showConfirmButton: false, timer: 1200 });
+        buscarMedicos();
+    } catch (erro) {
+        console.error('Erro ao ativar colaborador:', erro);
+        Swal.fire({ icon: 'error', title: 'Erro ao ativar', text: 'Não foi possível ativar o colaborador.' });
+    }
+}
+
 async function buscarKPIsMedico() {
     try {
         // Buscar o número total de médicos
@@ -249,14 +304,54 @@ async function buscarKPIsMedico() {
 
 buscarKPIsMedico();
 
+// Listener do toggle de inativos
+document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('toggleInativosColab');
+    if (toggle) {
+        // Restaura estado salvo do toggle
+        const saved = sessionStorage.getItem('mostrarInativosColab') === 'true';
+        toggle.checked = saved;
+        mostrarInativosColab = saved;
+        buscarMedicos();
+
+        toggle.addEventListener('change', (e) => {
+            mostrarInativosColab = e.target.checked;
+            sessionStorage.setItem('mostrarInativosColab', String(mostrarInativosColab));
+            buscarMedicos();
+        });
+    }
+});
+
 async function buscarAreasClinica() {
     try {
         const resposta = await fetch(`${API_BASE}/mc/especificacoes`);
         const listaAreas = await resposta.json();
         console.log('Áreas recebidas:', listaAreas);
 
+        // Buscar profissionais para identificar áreas em uso
+        let listaMedicosAll = [];
+        try {
+            const respTodos = await fetch(`${API_BASE}/mc/medicos/todos`);
+            if (respTodos.ok) {
+                listaMedicosAll = await respTodos.json();
+            } else {
+                const respAtivos = await fetch(`${API_BASE}/mc/medicos`);
+                listaMedicosAll = respAtivos.ok ? await respAtivos.json() : [];
+            }
+        } catch (_) {
+            listaMedicosAll = [];
+        }
+        const usoPorArea = new Map();
+        (listaMedicosAll || []).forEach(m => {
+            const areaId = m?.especificacaoMedica?.id;
+            if (!areaId) return;
+            usoPorArea.set(areaId, (usoPorArea.get(areaId) || 0) + 1);
+        });
+
         const listaAreasContainer = document.getElementById("listagemAreas");
         listaAreasContainer.innerHTML = listaAreas.map((especificacao) => {
+            const usados = usoPorArea.get(especificacao.id) || 0;
+            const titleDel = usados > 0 ? `title="Área em uso por ${usados} profissional(is). Clique para reatribuir e excluir."` : 'title="Excluir área"';
             return `
                 <div class="cardArea" data-area-id="${especificacao.id}">
                     <div class="info">
@@ -266,6 +361,7 @@ async function buscarAreasClinica() {
                     <div class="actions">
                         <button class="update" onclick="toggleEditarArea(${especificacao.id})">Editar</button>
                         <button class="confirm" onclick="atualizarArea(${especificacao.id})" style="display: none;" id="botaoConfirmar_${especificacao.id}">✔</button>
+                        <button class="delete" onclick="deletarArea(${especificacao.id})" ${titleDel}>Excluir</button>
                     </div>
                 </div>`;
         }).join('');
@@ -324,6 +420,147 @@ async function atualizarArea(areaId) {
             title: 'Erro ao atualizar a área.',
             text: error.message
         });
+    }
+}
+
+// Deleta uma área (especificação) por ID
+async function deletarArea(areaId) {
+    try {
+        // Pré-checagem: impedir exclusão se houver profissionais vinculados
+        try {
+            const respMed = await fetch(`${API_BASE}/mc/medicos/todos`);
+            const lista = respMed && respMed.ok ? await respMed.json() : [];
+            const emUso = (lista || []).filter(m => m?.especificacaoMedica?.id === Number(areaId));
+            if (emUso.length > 0) {
+                // Oferecer reatribuição em massa para outra área antes de excluir
+                // Carrega áreas disponíveis (exceto a atual)
+                const respAreas = await fetch(`${API_BASE}/mc/especificacoes`);
+                const areas = respAreas.ok ? await respAreas.json() : [];
+                const outras = (areas || []).filter(a => Number(a.id) !== Number(areaId));
+                if (!outras.length) {
+                    if (window.Swal) {
+                        await Swal.fire({ icon: 'info', title: 'Nenhuma outra área disponível', text: 'Cadastre outra área para poder reatribuir os profissionais.' });
+                    } else {
+                        alert('Nenhuma outra área disponível para reatribuição. Cadastre outra área.');
+                    }
+                    return;
+                }
+
+                const options = outras.map(a => `<option value="${a.id}">${a.area}</option>`).join('');
+                const nomes = emUso.slice(0, 8).map(m => `${m.nome} ${m.sobrenome || ''}`.trim()).join('<br>');
+                const { isConfirmed, value: areaDestinoId } = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Área em uso',
+                    html: `Esta área está associada a <b>${emUso.length}</b> profissional(is).<br><small>${nomes}${emUso.length > 8 ? '<br>…' : ''}</small><br><br>` +
+                          `<div style="text-align:left">Selecione a nova área para reatribuir todos:<br>` +
+                          `<select id="novaAreaSel" class="swal2-select" style="width:100%">${options}</select></div>`,
+                    showCancelButton: true,
+                    confirmButtonText: 'Reatribuir e excluir área',
+                    cancelButtonText: 'Cancelar',
+                    focusConfirm: false,
+                    preConfirm: () => {
+                        const sel = document.getElementById('novaAreaSel');
+                        return sel ? sel.value : '';
+                    }
+                });
+                if (!isConfirmed || !areaDestinoId) return;
+
+                // Loader
+                if (window.Swal) {
+                    Swal.fire({ title: 'Reatribuindo…', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                }
+
+                // Reatribui cada profissional sequencialmente
+                for (const med of emUso) {
+                    try { await reatribuirMedicoParaArea(med.id, Number(areaDestinoId)); } catch (e) { console.warn('Falha ao reatribuir médico', med.id, e); }
+                }
+
+                // Tenta excluir a área original após reatribuição
+                try {
+                    const rdel = await fetch(`${API_BASE}/mc/especificacoes/${areaId}`, { method: 'DELETE' });
+                    if (!rdel.ok) {
+                        let msg = await rdel.text().catch(() => '');
+                        if (window.Swal) { Swal.close(); }
+                        throw new Error(msg || `Falha ao excluir área após reatribuição (status ${rdel.status}).`);
+                    }
+                    if (window.Swal) { Swal.close(); }
+                    Swal.fire({ icon: 'success', title: 'Área reatribuída e excluída!', timer: 1600, showConfirmButton: false });
+                    buscarAreasClinica();
+                } catch (e) {
+                    if (window.Swal) { Swal.fire({ icon: 'warning', title: 'Reatribuiu, mas não excluiu', text: e.message || 'Exclusão falhou. A área pode ainda estar em uso.' }); }
+                }
+                return;
+            }
+        } catch (_) { /* se falhar pré-checagem, segue para confirmação e tratará erro do backend */ }
+
+        // Confirmação antes de excluir
+        const confirmar = await (window.Swal ? Swal.fire({
+            title: 'Excluir área?',
+            text: 'Esta ação não poderá ser desfeita.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, excluir',
+            cancelButtonText: 'Cancelar'
+        }) : Promise.resolve({ isConfirmed: confirm('Deseja excluir esta área?') }));
+
+        if (!confirmar.isConfirmed) return;
+
+        const resposta = await fetch(`${API_BASE}/mc/especificacoes/${areaId}`, { method: 'DELETE' });
+        if (!resposta.ok) {
+            let mensagem = await resposta.text().catch(() => '');
+            const amigavel = (mensagem && /foreign key|Cannot delete or update a parent row/i.test(mensagem))
+                ? 'Não é possível excluir: a área está vinculada a profissionais. Altere-os antes de excluir.'
+                : (mensagem || `Falha ao excluir a área. Status ${resposta.status}`);
+            throw new Error(amigavel);
+        }
+
+        if (window.Swal) {
+            Swal.fire({ icon: 'success', title: 'Área excluída!', showConfirmButton: false, timer: 1400 });
+        }
+        // Recarrega a listagem no modal
+        buscarAreasClinica();
+    } catch (erro) {
+        console.error('Erro ao excluir a área:', erro);
+        if (window.Swal) {
+            Swal.fire({ icon: 'error', title: 'Erro ao excluir', text: erro.message || 'Não foi possível excluir a área.' });
+        } else {
+            alert('Erro ao excluir a área.');
+        }
+    }
+}
+
+// Atualiza um médico para nova área preservando os demais campos
+async function reatribuirMedicoParaArea(medicoId, novaAreaId) {
+    // Busca dados completos do médico para montar payload compatível
+    const r = await fetch(`${API_BASE}/mc/medicos/${medicoId}`);
+    if (!r.ok) throw new Error(`Não foi possível ler médico ${medicoId}`);
+    const j = await r.json();
+
+    // Normaliza permissao para objeto {id}
+    let permissaoObj = null;
+    if (j.permissao) {
+        if (typeof j.permissao === 'object' && j.permissao.id != null) permissaoObj = { id: Number(j.permissao.id) };
+        else if (!isNaN(Number(j.permissao))) permissaoObj = { id: Number(j.permissao) };
+    }
+
+    const payload = {
+        nome: j.nome || '',
+        sobrenome: j.sobrenome || '',
+        email: j.email || '',
+        telefone: j.telefone || '',
+        cpf: j.cpf || null,
+        dataNascimento: j.dataNascimento || null,
+        especificacaoMedica: { id: Number(novaAreaId) },
+        carteirinha: j.carteirinha || null,
+        senha: j.senha || null,
+        permissao: permissaoObj,
+        foto: j.foto || null
+    };
+
+    const rput = await fetch(`${API_BASE}/mc/medicos/${medicoId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!rput.ok) {
+        const txt = await rput.text().catch(() => '');
+        throw new Error(txt || `Falha ao atualizar médico ${medicoId}`);
     }
 }
 

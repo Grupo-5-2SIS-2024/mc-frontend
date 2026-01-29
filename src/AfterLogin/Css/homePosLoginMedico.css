@@ -151,7 +151,8 @@ body {
     padding: 1.25rem;
     border-radius: 10px;
     box-shadow: 0rem 0.25rem 0.625rem rgba(0, 0, 0, 0.1);
-    overflow-y: auto;
+    /* Permite rolagem horizontal para a tabela e vertical quando necessário */
+    overflow: auto;
 }
 
 .painel-actions {
@@ -159,6 +160,8 @@ body {
     align-items: center;
     justify-content: space-between;
     margin: 10px 0 12px;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 /* Calendar-like toggle for ABA/Convencional */
@@ -221,6 +224,24 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+}
+
+/* Medico filter group */
+.medico-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    padding: 6px 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.medico-filter label { font-weight: 600; color: #333; }
+.medico-filter select {
+    min-width: 200px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #cfd8dc;
 }
 
 /* Status action buttons in the daily panel */
@@ -457,13 +478,7 @@ td {
     color: #000;
 }
 
-.foto-medico-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-right: 20px;
-}
+/* Removido duplicado: .foto-medico-container já definido acima com dimensões e alinhamento */
 
 .foto-medico {
     width: 200px;
@@ -536,8 +551,8 @@ td {
 
 /* Bloco de atalhos geral */
 .shortcuts {
-    background-color: #f4f4f4;
-    /* Fundo leve para destaque */
+    background-color: #fff;
+    /* Fundo branco para consistência com os cards */
     padding: 20px;
     border-radius: 10px;
     text-align: center;
@@ -560,6 +575,52 @@ td {
     margin-top: 10px;
 }
 
+/* Relatório de Faltas: controles dentro do card de atalhos */
+.shortcuts .falta-report-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: linear-gradient(to right, #f9fbff, #ffffff);
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(25, 118, 210, 0.15);
+}
+
+.shortcuts .falta-report-controls label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-weight: 600;
+    color: #333;
+}
+
+.shortcuts .falta-report-controls input[type="date"] {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #cfd8dc;
+    background: #ffffff;
+    color: #333333;
+    min-width: 180px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.shortcuts .falta-report-controls input[type="date"]:focus {
+    outline: none;
+    border-color: #1976D2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.15);
+}
+
+.shortcuts #btnBaixarRelatorioFaltas {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 12px;
+}
+
 /* Responsivo para telas menores */
 @media (max-width: 768px) {
     .shortcuts {
@@ -573,12 +634,30 @@ td {
     .shortcuts .shortcut-number {
         font-size: 36px;
     }
+    /* Stack controls vertically on smaller screens */
+    .shortcuts .falta-report-controls {
+        align-items: stretch;
+        gap: 10px;
+    }
+    .shortcuts .falta-report-controls label {
+        width: 100%;
+    }
+    .shortcuts .falta-report-controls input[type="date"] {
+        width: 100%;
+        min-width: 0;
+    }
+    .shortcuts #btnBaixarRelatorioFaltas {
+        width: 100%;
+        justify-content: center;
+    }
     .painel-actions {
         flex-direction: column;
         align-items: stretch;
         gap: 8px;
     }
     .procedure-toggle { gap: 8px; }
+    .medico-filter { width: 100%; justify-content: space-between; }
+    .medico-filter select { flex: 1; min-width: 0; }
 }
 
 /* Estilos para o popup de agendamentos vencendo */
@@ -788,4 +867,63 @@ td {
     .mini-cal-empty {
         min-height: 22px;
     }
+}
+
+/* Empilhamento do grid e ajustes responsivos gerais */
+@media (max-width: 1200px) {
+    .grid-container {
+        grid-template-areas:
+            'header'
+            'kpis'
+            'grafico'
+            'shortcuts'
+            'agenda'
+            'notificacoes';
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        height: auto;
+        min-height: 100vh;
+    }
+    .agenda,
+    .notificacoes {
+        overflow: visible;
+    }
+
+    /* KPIs em coluna com gaps menores */
+    .kpis {
+        flex-direction: column;
+        gap: 16px;
+    }
+    .foto-medico-container,
+    .kpi-items {
+        width: 100%;
+        margin-right: 0;
+    }
+    .kpi-items {
+        gap: 1rem;
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 1024px) {
+    /* Coluna de status/ações mais flexível */
+    .agenda th:nth-child(4),
+    .agenda td:nth-child(4) {
+        width: auto;
+    }
+    .agenda td:nth-child(4) {
+        flex-wrap: wrap;
+        row-gap: 6px;
+    }
+}
+
+@media (max-width: 600px) {
+    .kpi-items {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Garantir legibilidade da tabela em telas menores */
+.agenda table {
+    min-width: 720px;
 }

@@ -478,7 +478,62 @@ function atualizarAgenda() {
 
 // Imprime agenda
 function imprimirAgenda() {
-    window.print();
+    const timeline = document.getElementById('agendaTimeline');
+    const vazio = document.getElementById('agendaEmpty');
+    if (!timeline) return;
+
+    const temConsultas = timeline.innerHTML.trim().length > 0 && (!vazio || vazio.style.display !== 'block');
+
+    // Cabeçalho: data + modo + contexto do profissional/área
+    const dataCabecalho = (document.getElementById('dataAtual')?.textContent || '').trim();
+    const modo = (typeof filtroTerapia === 'string' ? filtroTerapia : 'ABA');
+    let contexto = '';
+    const sel = document.getElementById('filtroMedico');
+    if (usuarioLogado?.perfil === 'admin') {
+        const textoSel = sel && sel.options && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : 'Todos os Profissionais';
+        contexto = textoSel || 'Todos os Profissionais';
+    } else if (usuarioLogado?.perfil === 'supervisor') {
+        contexto = usuarioLogado?.especificacao ? `Área: ${usuarioLogado.especificacao}` : 'Minha área';
+    } else {
+        contexto = 'Meu painel';
+    }
+
+    const css = `
+        body { font-family: Arial, sans-serif; padding: 16px; color: #111; }
+        h1 { font-size: 18px; margin: 0 0 4px; }
+        h2 { font-size: 14px; margin: 0 0 16px; color: #444; font-weight: 600; }
+        .timeline { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .task { border: 1px solid #ccc; border-radius: 8px; padding: 10px; break-inside: avoid; }
+        .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .task-time { font-weight: 700; }
+        .task-status { font-weight: 700; }
+        .task-info { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+        .task-detail { display: flex; gap: 6px; align-items: center; }
+        .task-description { margin-top: 6px; color: #333; }
+        .task-actions { display: none !important; }
+        i { display: none; }
+        @page { margin: 12mm; }
+        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    `;
+
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write('<html><head><title>Agenda Diária</title>');
+    w.document.write(`<style>${css}</style>`);
+    w.document.write('</head><body>');
+    const titulo = dataCabecalho || new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+    w.document.write(`<h1>Agenda Diária</h1>`);
+    w.document.write(`<h2>${titulo} • Modo: ${modo} • ${contexto}</h2>`);
+    if (temConsultas) {
+        w.document.write(`<div class="timeline">${timeline.innerHTML}</div>`);
+    } else {
+        w.document.write('<p>Sem consultas para imprimir.</p>');
+    }
+    w.document.write('</body></html>');
+    w.document.close();
+    w.focus();
+    w.print();
+    w.close();
 }
 
 // Exibe mensagem de erro

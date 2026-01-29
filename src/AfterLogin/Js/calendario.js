@@ -35,7 +35,7 @@ function exportarSemanaCSV() {
         const rows = [];
         rows.push(['Data','Hora','Paciente','CPF','Profissional','Área','Status','Descrição','Duração']);
 
-        for (let i=0;i<7;i++){
+        for (let i=0;i<5;i++){
             const d = new Date(start);
             d.setDate(start.getDate()+i);
             const tarefas = obterTarefasParaData(d);
@@ -83,7 +83,7 @@ function exportarSemanaPDF() {
         html += `<h2>Agenda Semanal: ${document.getElementById('dias').innerText}</h2>`;
         html += `<table><thead><tr><th>Data</th><th>Hora</th><th>Paciente</th><th>Profissional</th><th>Área</th><th>Status</th><th>Descrição</th><th>Duração</th></tr></thead><tbody>`;
 
-        for (let i=0;i<7;i++){
+        for (let i=0;i<5;i++){
             const d = new Date(start);
             d.setDate(start.getDate()+i);
             const tarefas = obterTarefasParaData(d);
@@ -317,11 +317,11 @@ function exportarSemanaPDF() {
         }
 
         function obterInicioDaSemana(date) {
-            // Ajuste para que a semana comece no domingo (domingo = 0)
-            const day = date.getDay();
-            const diff = -day; // deslocamento para domingo
+            // Semana começa na segunda-feira (1). Retorna a segunda da semana da data.
+            const day = date.getDay(); // 0=Dom,1=Seg,...6=Sab
+            const diff = (day + 6) % 7; // dias a voltar até segunda
             const startDate = new Date(date);
-            startDate.setDate(date.getDate() + diff);
+            startDate.setDate(date.getDate() - diff);
             startDate.setHours(0, 0, 0, 0);
             return startDate;
         }
@@ -446,7 +446,7 @@ function exportarSemanaPDF() {
 
         function atualizarDisplayData(startDate) {
             const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 6);
+            endDate.setDate(startDate.getDate() + 4); // segunda a sexta
 
             const options = { day: '2-digit', month: 'long' };
             const startStr = `${startDate.toLocaleDateString('pt-BR', options).replace(/^\d{2}/, match => match.padStart(2, '0'))} ${startDate.getFullYear()}`;
@@ -460,7 +460,7 @@ function exportarSemanaPDF() {
             const diasSemanaElement = document.getElementById('diasSemana');
             diasSemanaElement.innerHTML = '';
 
-            for (let i = 0; i < 7; i++) {
+            for (let i = 0; i < 5; i++) {
                 const currentDate = new Date(startDate);
                 currentDate.setDate(startDate.getDate() + i);
 
@@ -481,7 +481,7 @@ function exportarSemanaPDF() {
             const colunasTarefasElement = document.getElementById('colunasTarefas');
             colunasTarefasElement.innerHTML = '';
 
-            for (let i = 0; i < 7; i++) {
+            for (let i = 0; i < 5; i++) {
                 const currentDate = new Date(startDate);
                 currentDate.setDate(currentDate.getDate() + i);
 

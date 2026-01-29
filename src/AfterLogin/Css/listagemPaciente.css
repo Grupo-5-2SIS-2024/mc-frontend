@@ -25,7 +25,8 @@ body {
     width: 85%;
     padding: 1rem;
     position: relative;
-    bottom: 3rem;
+    bottom: 0;
+    margin-top: 0.1rem;
 }
 
 .header h1 {
@@ -42,6 +43,49 @@ body {
 .containerBotao {
     display: flex;
     gap: 1rem;
+}
+
+/* Toggle Switch (Pacientes) */
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 12px;
+    user-select: none;
+}
+.toggle-switch input {
+    display: none;
+}
+.toggle-switch .slider {
+    position: relative;
+    width: 42px;
+    height: 22px;
+    background: #cfd8dc;
+    border-radius: 999px;
+    transition: background 0.2s ease;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+}
+.toggle-switch .slider::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease;
+}
+.toggle-switch input:checked + .slider {
+    background: #2E7D32; /* verde ativo */
+}
+.toggle-switch input:checked + .slider::after {
+    transform: translateX(20px);
+}
+.toggle-switch .toggle-label {
+    font-weight: 600;
+    color: #1976D2; /* azul médio */
 }
 
 .registrar {
@@ -116,7 +160,8 @@ a {
     gap: 2rem;
     flex-direction: row;
     position: relative;
-    bottom: 3rem;
+    bottom: 0;
+    margin-bottom: 0.5rem;
 }
 
 .cardKpi {
@@ -170,6 +215,15 @@ a {
     margin: 0;
 }
 
+/* Barra de controles acima da listagem */
+.list-controls {
+    width: 78vw;
+    margin: 0.75rem auto 0.5rem;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
 /* Listagem de Pacientes */
 
 .listagemBox {
@@ -197,6 +251,7 @@ a {
     padding: 1rem;
     justify-content: space-between;
     margin-bottom: 1rem;
+    position: relative;
 }
 
 .cardPaciente .info {
@@ -251,6 +306,28 @@ a {
 .cardPaciente .actions button:hover {
     color: #1976D2;
     /* azul médio */
+}
+
+/* Status pill */
+.status-pill {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+.status-pill.ativo {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-color: #2e7d32;
+}
+.status-pill.inativo {
+    background: #ffebee;
+    color: #c62828;
+    border-color: #c62828;
 }
 
 .modal-header {
@@ -702,7 +779,7 @@ background-color: #1565C0;
 /* Estilo dos dias da semana */
 .week-days {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 10px;
     margin-bottom: 20px;
 }
@@ -720,7 +797,7 @@ background-color: #1565C0;
 
 .tasks-columns {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 10px;
     margin-top: 10px;
 }
@@ -731,7 +808,7 @@ background-color: #1565C0;
 
 /* Tarefas de consultas */
 .task {
-    background-color: #007744;
+    background-color: #000c77;
     color: white;
     padding: 10px;
     margin-bottom: 10px;
@@ -745,7 +822,7 @@ background-color: #1565C0;
 
 .task:hover {
     transform: translateY(-3px);
-    background-color: #005533;
+    background-color: #080055;
 }
 
 .task.inactive {
@@ -1090,6 +1167,8 @@ background-color: #1565C0;
         top: 1rem;
         right: 6rem;
     }
+    .toggle-switch { margin-left: 0; }
+    .list-controls { width: 90%; }
 
     .registrar,
     .filtro {
@@ -1189,4 +1268,10 @@ background-color: #1565C0;
         left: 10px;
         font-size: 2rem;
     }
+}
+
+/* Responsiveness fix: avoid relative bottom offsets on medium widths */
+@media (max-width: 1280px) {
+    .header { bottom: 0; }
+    .KPIS { bottom: 0; }
 }
