@@ -539,16 +539,8 @@ async function agendarConsulta() {
             duracaoConsulta: duracaoConsulta
         });
 
-        // Impede duplicidade: mesma paciente no mesmo dia
-        const existeNoDia = consultasExistentes.some(c => String(c?.paciente?.id) === String(pacienteId) && typeof c?.datahoraConsulta === 'string' && c.datahoraConsulta.startsWith(dia));
-        if (existeNoDia) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Já existe consulta para este paciente no dia',
-                text: 'Cada paciente pode ter somente uma consulta por dia nesta tela. Use recorrência para agendar semanas futuras.'
-            });
-            return;
-        }
+        // Removida validação que impedia múltiplas especialidades no mesmo dia
+        // O sistema já valida sobreposição de horários nas linhas 283-304
 
         // Agendar a consulta original
         const dadosConsulta = criarDadosConsulta(dia);
@@ -577,12 +569,7 @@ async function agendarConsulta() {
                 const novaDataISO = novaData.toISOString().split('T')[0]; // Formata para 'yyyy-mm-dd'
                 const novaConsulta = criarDadosConsulta(novaDataISO);
 
-                // Evita duplicidade para o mesmo paciente na mesma novaDataISO
-                const jaExisteNaSemana = consultasExistentes.some(c => String(c?.paciente?.id) === String(pacienteId) && typeof c?.datahoraConsulta === 'string' && c.datahoraConsulta.startsWith(novaDataISO));
-                if (jaExisteNaSemana) {
-                    console.warn(`Consulta já existente para o paciente em ${novaDataISO}; pulando criação.`);
-                    continue;
-                }
+                // Sistema valida sobreposição de horários automaticamente
 
                 // Faz a requisição para cadastrar a nova consulta
                 const respostaNovaConsulta = await fetch(`${API_BASE}/mc/consultas`, {
