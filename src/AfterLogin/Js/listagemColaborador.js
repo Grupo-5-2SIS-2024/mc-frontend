@@ -88,28 +88,31 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
             const status = medico.ativo ? 'Ativo' : 'Inativo';
             const foto = medico.foto || "../Assets/perfil.jpeg";
             const statusAtivo = (medico.ativo === true || medico.ativo === 1 || String(medico.ativo).toLowerCase() === 'true');
-            
+
             // Verifica se é Admin logado
             const isAdmin = nivelPermissao && nivelPermissao.toLowerCase().includes('admin');
-            
+
             // Botão de permissões (apenas Admin pode ver)
             const botaoPermissoes = isAdmin ? `
                 <button class="permissions" title="Gerenciar Permissões">
                     <i class="fas fa-key"></i>
                 </button>` : '';
-            
+
             let acoes = '';
             if (nivelPermissao !== "Supervisor") {
                 if (mostrarInativosColab) {
                     acoes = `
                     <div class="actions">
+                        <button class="view" onclick="abrirModalColaborador(${medico.id})" title="Ver">
+                          <i class="fas fa-eye"></i>
+                        </button>
                         <button class="activate" title="Ativar"><i class="fas fa-check" style="color:#2e7d32"></i></button>
                         ${botaoPermissoes}
                     </div>`;
                 } else {
                     acoes = `
                     <div class="actions">
-                        <button class="update" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="view" onclick="abrirModalColaborador(${medico.id})" title="Ver"><i class="fas fa-eye"></i></button>
                         <button class="delete" title="Inativar"><i class="fas fa-trash-alt" style="color:#e53935"></i></button>
                         ${botaoPermissoes}
                     </div>`;
@@ -156,7 +159,7 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
                     if (id) window.location.href = `atualizarColaborador.html?id=${id}`;
                 });
             });
-            
+
             cardsMedicos.querySelectorAll('.activate').forEach((botao) => {
                 botao.addEventListener('click', function () {
                     const id = this.closest('.cardColaborador').dataset.medicoId;
@@ -174,7 +177,7 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
                     }
                 });
             });
-            
+
             // Adicionar evento aos botões de permissões
             cardsMedicos.querySelectorAll('.permissions').forEach((botao) => {
                 botao.addEventListener('click', function () {
@@ -452,8 +455,8 @@ async function deletarArea(areaId) {
                     icon: 'warning',
                     title: 'Área em uso',
                     html: `Esta área está associada a <b>${emUso.length}</b> profissional(is).<br><small>${nomes}${emUso.length > 8 ? '<br>…' : ''}</small><br><br>` +
-                          `<div style="text-align:left">Selecione a nova área para reatribuir todos:<br>` +
-                          `<select id="novaAreaSel" class="swal2-select" style="width:100%">${options}</select></div>`,
+                        `<div style="text-align:left">Selecione a nova área para reatribuir todos:<br>` +
+                        `<select id="novaAreaSel" class="swal2-select" style="width:100%">${options}</select></div>`,
                     showCancelButton: true,
                     confirmButtonText: 'Reatribuir e excluir área',
                     cancelButtonText: 'Cancelar',
@@ -629,10 +632,10 @@ let colaboradorAtualId = null;
 function abrirModalPermissoes(medicoId, nomeCompleto) {
     colaboradorAtualId = Number(medicoId);
     document.getElementById('nomeColaboradorPermissoes').textContent = `Colaborador: ${nomeCompleto}`;
-    
+
     // Carrega permissões salvas
     carregarPermissoes(Number(medicoId));
-    
+
     document.getElementById('modalPermissoes').style.display = 'flex';
 }
 
@@ -648,17 +651,17 @@ async function carregarPermissoes(medicoId) {
         // Busca permissões salvas no backend
         const resposta = await fetch(`${API_BASE}/mc/permissoes-individuais/buscar/${medicoId}`);
         const resultado = await resposta.json();
-        
+
         if (resultado.permissoes) {
             const permissoes = JSON.parse(resultado.permissoes);
-            
+
             // Marca os checkboxes de menus
             document.getElementById('perm_menu_Colaborador').checked = permissoes.menus.includes('Colaborador');
             document.getElementById('perm_menu_Paciente').checked = permissoes.menus.includes('Paciente');
             document.getElementById('perm_menu_Dash').checked = permissoes.menus.includes('Dash');
             document.getElementById('perm_menu_Lead').checked = permissoes.menus.includes('Lead');
             document.getElementById('perm_menu_AgendaDiaria').checked = permissoes.menus.includes('AgendaDiaria');
-            
+
             // Marca os checkboxes de botões
             document.getElementById('perm_btn_btnAdicionarColaborador').checked = permissoes.botoes.includes('btnAdicionarColaborador');
             document.getElementById('perm_btn_addPacienteBtn').checked = permissoes.botoes.includes('addPacienteBtn');
@@ -678,7 +681,7 @@ async function carregarPermissoes(medicoId) {
 // Salva as permissões do colaborador
 async function salvarPermissoes() {
     if (!colaboradorAtualId) return;
-    
+
     try {
         // Coleta menus marcados
         const menus = [];
@@ -687,17 +690,17 @@ async function salvarPermissoes() {
         if (document.getElementById('perm_menu_Dash').checked) menus.push('Dash');
         if (document.getElementById('perm_menu_Lead').checked) menus.push('Lead');
         if (document.getElementById('perm_menu_AgendaDiaria').checked) menus.push('AgendaDiaria');
-        
+
         // Coleta botões marcados
         const botoes = [];
         if (document.getElementById('perm_btn_btnAdicionarColaborador').checked) botoes.push('btnAdicionarColaborador');
         if (document.getElementById('perm_btn_addPacienteBtn').checked) botoes.push('addPacienteBtn');
         if (document.getElementById('perm_btn_btnAdicionarConsulta').checked) botoes.push('btnAdicionarConsulta');
         if (document.getElementById('perm_btn_btnAdicionarArea').checked) botoes.push('btnAdicionarArea');
-        
+
         // Monta o objeto de permissões
         const permissoes = { menus, botoes };
-        
+
         // Salva no backend
         const resposta = await fetch(`${API_BASE}/mc/permissoes-individuais/salvar`, {
             method: 'POST',
@@ -707,11 +710,11 @@ async function salvarPermissoes() {
                 permissoes: JSON.stringify(permissoes)
             })
         });
-        
+
         if (!resposta.ok) {
             throw new Error('Erro ao salvar permissões');
         }
-        
+
         Swal.fire({
             icon: 'success',
             title: 'Permissões Salvas!',
@@ -719,7 +722,7 @@ async function salvarPermissoes() {
             showConfirmButton: false,
             timer: 1500
         });
-        
+
         fecharModalPermissoes();
     } catch (erro) {
         console.error('Erro ao salvar permissões:', erro);
@@ -731,5 +734,662 @@ async function salvarPermissoes() {
         });
     }
 }
+
+function formatarCPF(cpf) {
+  return cpf ? String(cpf).replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '';
+}
+
+function formatarTelefone(telefone) {
+  const t = telefone ? String(telefone).replace(/\D/g, '') : '';
+  if (t.length === 11) return t.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  if (t.length === 10) return t.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+  return telefone || '';
+}
+
+function obterInicioDaSemana(date) {
+  const day = date.getDay();
+  const diff = (day + 6) % 7;
+  const startDate = new Date(date);
+  startDate.setDate(date.getDate() - diff);
+  startDate.setHours(0, 0, 0, 0);
+  return startDate;
+}
+
+function formatarData(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+let dataInicioAtualColab = obterInicioDaSemana(new Date());
+let consultasColabOriginais = [];
+let bancoColabFiltrado = [];
+let currentColabId = null;
+
+const DIAS_SEMANA = [
+  { value: 'SEGUNDA', label: 'Segunda', order: 1 },
+  { value: 'TERCA', label: 'Terça', order: 2 },
+  { value: 'QUARTA', label: 'Quarta', order: 3 },
+  { value: 'QUINTA', label: 'Quinta', order: 4 },
+  { value: 'SEXTA', label: 'Sexta', order: 5 },
+  { value: 'SABADO', label: 'Sábado', order: 6 },
+  { value: 'DOMINGO', label: 'Domingo', order: 7 }
+];
+
+function normalizarDia(raw) {
+  if (!raw) return '';
+  return String(raw).trim().toUpperCase();
+}
+
+function obterLabelDia(value) {
+  const v = normalizarDia(value);
+  const achou = DIAS_SEMANA.find(d => d.value === v);
+  return achou ? achou.label : v;
+}
+
+function obterOrdemDia(value) {
+  const v = normalizarDia(value);
+  const achou = DIAS_SEMANA.find(d => d.value === v);
+  return achou ? achou.order : 999;
+}
+
+function abrirModalColaborador(idMedico) {
+  currentColabId = Number(idMedico);
+  document.getElementById('modalBackdropColab').style.display = 'flex';
+
+  fetch(`${API_BASE}/mc/medicos/${idMedico}`)
+    .then(r => {
+      if (!r.ok) throw new Error(`Falha ao carregar colaborador: ${r.status}`);
+      return r.json();
+    })
+    .then(medico => {
+      preencherDetalhesColab(medico);
+      preencherCalendarioColab(medico.id);
+      preencherCargaHoraria(medico.id);
+
+      openTabColab(null, 'colab_detalhes');
+      atualizarDisplayDataColab(dataInicioAtualColab);
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Não foi possível carregar as informações do colaborador.');
+    });
+}
+
+function fecharModalColaborador() {
+  document.getElementById('modalBackdropColab').style.display = 'none';
+  currentColabId = null;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('closeModalColab');
+  const backdrop = document.getElementById('modalBackdropColab');
+
+  if (btn) btn.addEventListener('click', fecharModalColaborador);
+  if (backdrop) {
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) fecharModalColaborador();
+    });
+  }
+});
+
+function openTabColab(event, tabId) {
+  const tabs = document.querySelectorAll('#modalBackdropColab .content');
+  tabs.forEach(t => t.classList.remove('show'));
+
+  const alvo = document.getElementById(tabId);
+  if (alvo) alvo.classList.add('show');
+
+  document.querySelectorAll('#modalBackdropColab .tab-btn').forEach(b => b.classList.remove('active'));
+  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+
+  if (tabId === 'colab_calendario') atualizarDisplayDataColab(dataInicioAtualColab);
+  if (tabId === 'colab_carga') preencherCargaHoraria(currentColabId);
+}
+
+function preencherDetalhesColab(medico) {
+  const foto = medico.foto || '../Assets/perfil.jpeg';
+  const nome = `${medico.nome || ''} ${medico.sobrenome || ''}`.trim();
+
+  document.getElementById('colabFoto').src = foto;
+  document.getElementById('colabNome').textContent = nome || 'Nome não informado';
+  document.getElementById('colabCPF').textContent = medico.cpf ? formatarCPF(medico.cpf) : 'CPF não informado';
+  document.getElementById('colabPermissao').textContent = medico?.permissao?.nome || 'Não informado';
+
+  document.getElementById('colabEmail').textContent = medico.email || 'Email não informado';
+  document.getElementById('colabTelefone').textContent = medico.telefone ? formatarTelefone(medico.telefone) : 'Telefone não informado';
+  document.getElementById('colabDataNascimento').textContent = medico.dataNascimento
+    ? new Date(medico.dataNascimento).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : 'Não informada';
+
+  document.getElementById('colabArea').textContent = medico?.especificacaoMedica?.area || 'Não informada';
+  document.getElementById('colabStatus').textContent = (medico.ativo === true || medico.ativo === 1 || String(medico.ativo).toLowerCase() === 'true')
+    ? 'Ativo'
+    : 'Inativo';
+}
+
+function preencherCalendarioColab(medicoId) {
+  currentColabId = Number(medicoId);
+  buscarConsultasColaborador(medicoId);
+}
+
+async function buscarConsultasColaborador(medicoId) {
+  try {
+    const resposta = await fetch(`${API_BASE}/mc/consultas`);
+    if (!resposta.ok) throw new Error(`HTTP error: ${resposta.status}`);
+    const todasConsultas = await resposta.json();
+
+    consultasColabOriginais = (todasConsultas || []).filter(c => {
+      const isThis = c?.medico?.id === Number(medicoId);
+      const medicoAtivo = c?.medico?.ativo !== false;
+      const pacienteAtivo = c?.paciente?.ativo !== false;
+      return isThis && medicoAtivo && pacienteAtivo;
+    });
+
+    bancoColabFiltrado = filtrarConsultasColabPorPermissao(consultasColabOriginais);
+    atualizarDisplayCalendarioColab(bancoColabFiltrado);
+  } catch (error) {
+    console.error('Erro ao buscar consultas do colaborador:', error);
+  }
+}
+
+function filtrarConsultasColabPorPermissao(lista) {
+  const permissao = (sessionStorage.getItem('PERMISSIONAMENTO_MEDICO') || '').toLowerCase();
+  const idMedicoLogado = Number(sessionStorage.getItem('ID_MEDICO'));
+  const areaSupervisor = (sessionStorage.getItem('ESPECIFICACAO_MEDICA') || '').toLowerCase();
+
+  if (permissao.includes('admin')) return lista;
+
+  if (permissao.includes('supervi')) {
+    return (lista || []).filter(c => {
+      const area = (c?.especificacaoMedica?.area || c?.medico?.especificacaoMedica?.area || '').toLowerCase();
+      return area && areaSupervisor && area.includes(areaSupervisor);
+    });
+  }
+
+  if (permissao.includes('medic') || permissao.includes('profiss')) {
+    return (lista || []).filter(c => Number(c?.medico?.id) === idMedicoLogado);
+  }
+
+  return lista;
+}
+function irParaEdicaoColaborador() {
+  if (!currentColabId) return
+  window.location.href = `atualizarColaborador.html?id=${currentColabId}`
+}
+
+function bindBotaoEditarColab() {
+  const btn = document.getElementById('btnEditarColab')
+  if (!btn) return
+
+  btn.onclick = irParaEdicaoColaborador
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  bindBotaoEditarColab()
+})
+
+
+function atualizarDisplayDataColab(startDate) {
+  dataInicioAtualColab = obterInicioDaSemana(startDate);
+  const endDate = new Date(dataInicioAtualColab);
+  endDate.setDate(dataInicioAtualColab.getDate() + 4);
+
+  const options = { day: '2-digit', month: 'long' };
+  const startStr = `${dataInicioAtualColab.toLocaleDateString('pt-BR', options)} ${dataInicioAtualColab.getFullYear()}`;
+  const endStr = `${endDate.toLocaleDateString('pt-BR', options)} ${endDate.getFullYear()}`;
+
+  const diasEl = document.getElementById('diasColab');
+  if (diasEl) diasEl.innerText = `${startStr} - ${endStr}`;
+
+  atualizarDiasDaSemanaColab(dataInicioAtualColab);
+}
+
+function atualizarDiasDaSemanaColab(startDate) {
+  const diasSemanaElement = document.getElementById('diasSemanaColab');
+  if (!diasSemanaElement) return;
+
+  diasSemanaElement.innerHTML = '';
+
+  for (let i = 0; i < 5; i++) {
+    const currentDate = new Date(startDate);
+    currentDate.setDate(startDate.getDate() + i);
+
+    const options = { weekday: 'short', day: '2-digit' };
+    const dayStr = currentDate.toLocaleDateString('pt-BR', options);
+
+    const dayElement = document.createElement('div');
+    dayElement.className = 'day';
+    dayElement.innerText = dayStr;
+
+    diasSemanaElement.appendChild(dayElement);
+  }
+
+  atualizarDisplayCalendarioColab(bancoColabFiltrado);
+}
+
+function atualizarDisplayCalendarioColab(consultas) {
+  const colunas = document.getElementById('colunasTarefasColab');
+  if (!colunas) return;
+
+  colunas.innerHTML = '';
+
+  for (let i = 0; i < 5; i++) {
+    const diaAtual = new Date(dataInicioAtualColab);
+    diaAtual.setDate(dataInicioAtualColab.getDate() + i);
+
+    const tarefas = (consultas || []).filter(c =>
+      String(c?.datahoraConsulta || '').startsWith(formatarData(diaAtual))
+    );
+
+    const colunaElement = document.createElement('div');
+    colunaElement.className = 'column';
+
+    if (!tarefas.length) {
+      const noTaskElement = document.createElement('div');
+      noTaskElement.className = 'task inactive';
+      noTaskElement.innerText = 'Sem tarefas';
+      colunaElement.appendChild(noTaskElement);
+    } else {
+      tarefas.forEach(consulta => {
+        const taskElement = document.createElement('div');
+        taskElement.className = 'task';
+        taskElement.innerText = consulta.descricao || 'Consulta';
+
+        taskElement.onclick = () => abrirDetalhesTarefaColab(consulta);
+
+        colunaElement.appendChild(taskElement);
+      });
+    }
+
+    colunas.appendChild(colunaElement);
+  }
+}
+
+function semanaPassadaColab() {
+  dataInicioAtualColab.setDate(dataInicioAtualColab.getDate() - 7);
+  atualizarDisplayDataColab(dataInicioAtualColab);
+}
+
+function proximaSemanaColab() {
+  dataInicioAtualColab.setDate(dataInicioAtualColab.getDate() + 7);
+  atualizarDisplayDataColab(dataInicioAtualColab);
+}
+
+function abrirDetalhesTarefaColab(consulta) {
+  const dataHora = consulta?.datahoraConsulta ? new Date(consulta.datahoraConsulta) : null;
+  const dataFormatada = dataHora ? dataHora.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Não informada';
+  const horaFormatada = dataHora ? dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Não informada';
+
+  const pacienteNome = consulta?.paciente ? `${consulta.paciente.nome || ''} ${consulta.paciente.sobrenome || ''}`.trim() : 'Desconhecido';
+  const medicoNome = consulta?.medico ? `${consulta.medico.nome || ''} ${consulta.medico.sobrenome || ''}`.trim() : 'Desconhecido';
+  const area = consulta?.medico?.especificacaoMedica?.area || consulta?.especificacaoMedica?.area || 'Desconhecida';
+  const status = consulta?.statusConsulta?.nomeStatus || 'Desconhecido';
+  const duracao = consulta?.duracaoConsulta ?? consulta?.duracao ?? '—';
+
+  const detalhesDiv = document.getElementById('detalhesTarefaColab');
+  if (!detalhesDiv) return;
+
+  detalhesDiv.innerHTML = `
+    <p><strong>Descrição:</strong> ${consulta?.descricao || 'Sem descrição'}</p>
+    <p><strong>Data e Hora:</strong> ${dataFormatada} às ${horaFormatada}</p>
+    <p><strong>Paciente:</strong> ${pacienteNome}</p>
+    <p><strong>Profissional:</strong> ${medicoNome} - ${area}</p>
+    <p><strong>Status:</strong> ${status}</p>
+    <p><strong>Duração:</strong> ${duracao}</p>
+  `;
+
+  const modal = document.getElementById('modalDetalhesTarefaColab');
+  if (modal) modal.style.display = 'flex';
+}
+
+function fecharModalDetalhesColab() {
+  const modal = document.getElementById('modalDetalhesTarefaColab');
+  if (modal) modal.style.display = 'none';
+}
+
+function criarLinhaCargaView(item) {
+  const diaVal = normalizarDia(item?.diaSemana || item?.dia_semana || item?.dia || item?.diaSemanaEnum);
+  const inicioVal = String(item?.horaInicio || item?.hora_inicio || item?.inicio || '').slice(0, 5);
+  const fimVal = String(item?.horaFim || item?.hora_fim || item?.fim || '').slice(0, 5);
+
+  const row = document.createElement('div');
+  row.className = 'carga-row';
+
+  row.innerHTML = `
+    <select class="carga-dia" disabled>
+      ${DIAS_SEMANA.map(d => `<option value="${d.value}">${d.label}</option>`).join('')}
+    </select>
+
+    <input type="time" class="carga-inicio" disabled>
+    <input type="time" class="carga-fim" disabled>
+  `;
+
+  const sel = row.querySelector('.carga-dia');
+  const ini = row.querySelector('.carga-inicio');
+  const fim = row.querySelector('.carga-fim');
+
+  if (sel) sel.value = diaVal || 'SEGUNDA';
+  if (ini) ini.value = inicioVal || '';
+  if (fim) fim.value = fimVal || '';
+
+  return row;
+}
+
+async function preencherCargaHoraria(medicoId) {
+  if (!medicoId) return;
+
+  const box = document.getElementById('cargaHorariaView');
+  const msg = document.getElementById('cargaViewMsg');
+  if (!box) return;
+
+  box.innerHTML = '';
+  if (msg) msg.textContent = 'Carregando...';
+
+  try {
+    const r = await fetch(`${API_BASE}/mc/carga-horaria/medico/${medicoId}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const lista = await r.json();
+
+    const dados = Array.isArray(lista) ? lista : [];
+    dados.sort((a, b) => {
+      const da = obterOrdemDia(a?.diaSemana || a?.dia_semana);
+      const db = obterOrdemDia(b?.diaSemana || b?.dia_semana);
+      if (da !== db) return da - db;
+      const ia = String(a?.horaInicio || a?.hora_inicio || '').slice(0, 5);
+      const ib = String(b?.horaInicio || b?.hora_inicio || '').slice(0, 5);
+      return ia.localeCompare(ib);
+    });
+
+    if (!dados.length) {
+      if (msg) msg.textContent = 'Sem carga horária cadastrada.';
+      return;
+    }
+
+    if (msg) msg.textContent = '';
+
+    dados.forEach(item => {
+      box.appendChild(criarLinhaCargaView(item));
+    });
+  } catch (e) {
+    console.error(e);
+    if (msg) msg.textContent = 'Falha ao carregar a carga horária.';
+  }
+}
+
+let cargaEditando = false
+let cargaCache = []
+
+function btn(id) {
+  return document.getElementById(id)
+}
+
+function setTexto(el, txt) {
+  if (el) el.textContent = txt
+}
+
+function isHoraValida(inicio, fim) {
+  if (!inicio || !fim) return false
+  return inicio < fim
+}
+
+function criarLinhaCargaView(item, editavel) {
+  const diaVal = normalizarDia(item?.diaSemana || item?.dia_semana || item?.dia || item?.diaSemanaEnum) || 'SEGUNDA'
+  const inicioVal = String(item?.horaInicio || item?.hora_inicio || item?.inicio || '').slice(0, 5)
+  const fimVal = String(item?.horaFim || item?.hora_fim || item?.fim || '').slice(0, 5)
+
+  const row = document.createElement('div')
+  row.className = 'carga-row'
+  row.innerHTML = `
+    <select class="carga-dia">
+      ${DIAS_SEMANA.map(d => `<option value="${d.value}">${d.label}</option>`).join('')}
+    </select>
+
+    <input type="time" class="carga-inicio">
+    <input type="time" class="carga-fim">
+
+    <button type="button" class="carga-remover" style="display:none">X</button>
+  `
+
+  const sel = row.querySelector('.carga-dia')
+  const ini = row.querySelector('.carga-inicio')
+  const fim = row.querySelector('.carga-fim')
+  const rem = row.querySelector('.carga-remover')
+
+  if (sel) sel.value = diaVal
+  if (ini) ini.value = inicioVal || ''
+  if (fim) fim.value = fimVal || ''
+
+  if (!editavel) {
+    if (sel) sel.disabled = true
+    if (ini) ini.disabled = true
+    if (fim) fim.disabled = true
+  } else {
+    if (rem) {
+      rem.style.display = 'inline-flex'
+      rem.addEventListener('click', () => {
+        const box = document.getElementById('cargaHorariaView')
+        if (!box) return
+        const total = box.querySelectorAll('.carga-row').length
+        if (total <= 1) return
+        row.remove()
+      })
+    }
+  }
+
+  return row
+}
+
+function renderCargaHoraria(dados, editavel) {
+  const box = document.getElementById('cargaHorariaView')
+  const msg = document.getElementById('cargaViewMsg')
+  if (!box) return
+
+  box.innerHTML = ''
+
+  const lista = Array.isArray(dados) ? dados : []
+
+  if (!lista.length && !editavel) {
+    setTexto(msg, 'Sem carga horária cadastrada.')
+    return
+  }
+
+  setTexto(msg, '')
+
+  const ordenado = [...lista]
+  ordenado.sort((a, b) => {
+    const da = obterOrdemDia(a?.diaSemana || a?.dia_semana)
+    const db = obterOrdemDia(b?.diaSemana || b?.dia_semana)
+    if (da !== db) return da - db
+    const ia = String(a?.horaInicio || a?.hora_inicio || '').slice(0, 5)
+    const ib = String(b?.horaInicio || b?.hora_inicio || '').slice(0, 5)
+    return ia.localeCompare(ib)
+  })
+
+  if (editavel && !ordenado.length) {
+    box.appendChild(criarLinhaCargaView({}, true))
+    return
+  }
+
+  ordenado.forEach(item => {
+    box.appendChild(criarLinhaCargaView(item, editavel))
+  })
+}
+
+function coletarCargaHorariaDoModal() {
+  const box = document.getElementById('cargaHorariaView')
+  if (!box) return null
+
+  const rows = box.querySelectorAll('.carga-row')
+  if (!rows.length) return null
+
+  const horarios = []
+
+  for (const r of rows) {
+    const dia = r.querySelector('.carga-dia')?.value || ''
+    const inicio = r.querySelector('.carga-inicio')?.value || ''
+    const fim = r.querySelector('.carga-fim')?.value || ''
+
+    if (!dia || !isHoraValida(inicio, fim)) return null
+
+    horarios.push({
+      diaSemana: dia,
+      horaInicio: inicio,
+      horaFim: fim
+    })
+  }
+
+  return horarios
+}
+
+function cargaEndpoint(medicoId) {
+  return `${API_BASE}/mc/carga-horaria/medico/${medicoId}`
+}
+
+async function deletarCargaHorariaDoMedico(medicoId) {
+  const resp = await fetch(cargaEndpoint(medicoId), { method: 'DELETE' })
+  if (resp.ok) return true
+
+  // Se o backend devolver 404 quando não existe carga, ignora
+  if (resp.status === 404) return true
+
+  const txt = await resp.text().catch(() => '')
+  throw new Error(txt || `Falha ao apagar carga horária. Status ${resp.status}`)
+}
+
+async function salvarCargaHorariaModal(medicoId, cargaHoraria) {
+  const tinhaCargaAntes = Array.isArray(cargaCache) && cargaCache.length > 0
+
+  if (tinhaCargaAntes) {
+    await deletarCargaHorariaDoMedico(medicoId)
+  }
+
+  const post = await fetch(cargaEndpoint(medicoId), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+    body: JSON.stringify(cargaHoraria)
+  })
+
+  if (!post.ok) {
+    const txt = await post.text().catch(() => '')
+    throw new Error(txt || `Falha ao salvar carga horária. Status ${post.status}`)
+  }
+
+  // Recarrega do backend para manter o cache consistente
+  try {
+    const r = await fetch(cargaEndpoint(medicoId))
+    if (r.ok) {
+      const lista = await r.json()
+      cargaCache = Array.isArray(lista) ? lista : []
+    } else {
+      cargaCache = cargaHoraria
+    }
+  } catch (_) {
+    cargaCache = cargaHoraria
+  }
+
+  return true
+}
+
+
+function setModoEdicaoCarga(on) {
+  cargaEditando = on
+
+  const bEdit = btn('btnEditarCargaColab')
+  const bAdd = btn('btnAddCargaColab')
+  const bSave = btn('btnSalvarCargaColab')
+
+  if (bEdit) bEdit.style.display = on ? 'none' : 'inline-flex'
+  if (bAdd) bAdd.style.display = on ? 'inline-flex' : 'none'
+  if (bSave) bSave.style.display = on ? 'inline-flex' : 'none'
+
+  renderCargaHoraria(cargaCache, on)
+}
+
+function bindEdicaoCarga() {
+  const bEdit = btn('btnEditarCargaColab')
+  const bAdd = btn('btnAddCargaColab')
+  const bSave = btn('btnSalvarCargaColab')
+
+  if (bEdit) {
+    bEdit.addEventListener('click', () => {
+      setModoEdicaoCarga(true)
+    })
+  }
+
+  if (bAdd) {
+    bAdd.addEventListener('click', () => {
+      const box = document.getElementById('cargaHorariaView')
+      if (!box) return
+      box.appendChild(criarLinhaCargaView({}, true))
+    })
+  }
+
+  if (bSave) {
+    bSave.addEventListener('click', async () => {
+      if (!currentColabId) return
+
+      const carga = coletarCargaHorariaDoModal()
+      if (!carga) {
+        if (window.Swal) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Carga horária inválida',
+            text: 'Preencha dia, início e fim. Início precisa ser menor que fim.'
+          })
+        }
+        return
+      }
+
+      try {
+        if (window.Swal) {
+          Swal.fire({ title: 'Salvando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
+        }
+
+        await salvarCargaHorariaModal(currentColabId, carga)
+
+        if (window.Swal) Swal.close()
+
+        cargaCache = carga
+        setModoEdicaoCarga(false)
+
+        if (window.Swal) {
+          Swal.fire({ icon: 'success', title: 'Carga horária salva', showConfirmButton: false, timer: 1200 })
+        }
+      } catch (e) {
+        if (window.Swal) {
+          Swal.fire({ icon: 'error', title: 'Falha ao salvar', text: e?.message || 'Erro' })
+        }
+      }
+    })
+  }
+}
+
+async function preencherCargaHoraria(medicoId) {
+  if (!medicoId) return
+
+  const msg = document.getElementById('cargaViewMsg')
+  setTexto(msg, 'Carregando...')
+
+  try {
+    const r = await fetch(`${API_BASE}/mc/carga-horaria/medico/${medicoId}`)
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
+    const lista = await r.json()
+
+    cargaCache = Array.isArray(lista) ? lista : []
+    setModoEdicaoCarga(false)
+  } catch (e) {
+    console.error(e)
+    cargaCache = []
+    setModoEdicaoCarga(false)
+    setTexto(msg, 'Falha ao carregar a carga horária.')
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  bindEdicaoCarga()
+})
+
 
 

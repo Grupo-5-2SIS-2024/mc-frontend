@@ -169,7 +169,7 @@
                     <span class="close" onclick="fecharModalPermissoes()">&times;</span>
                     <h2><i class="fas fa-user-shield"></i> Gerenciar Permissões</h2>
                     <p id="nomeColaboradorPermissoes" class="nome-colaborador-permissoes"></p>
-                    
+
                     <div class="permissoes-container">
                         <div class="secao-permissoes">
                             <h3><i class="fas fa-list"></i> Menus que o Usuário Pode Ver</h3>
@@ -309,6 +309,106 @@
             </div>
             <div class="listagemBox" id="listagem"></div>
         </div>
+
+        <!-- Modal Colaborador -->
+        <div id="modalBackdropColab" class="modal-backdrop" style="display: none;">
+            <div class="modalDetalhes">
+                <button class="close-btn" id="closeModalColab">×</button>
+
+                <div id="containerColab">
+                    <div class="left-section">
+                        <img src="../Assets/perfil.jpeg" class="patient-img" id="colabFoto" alt="Foto do Colaborador">
+                        <h2 class="patient-name" id="colabNome"></h2>
+                        <p><strong>CPF:</strong> <span id="colabCPF"></span></p>
+                        <p><strong>Permissão:</strong> <span id="colabPermissao"></span></p>
+                    </div>
+
+                    <div class="right-section">
+                        <div class="tab-buttons">
+                            <button class="tab-btn active"
+                                onclick="openTabColab(event, 'colab_detalhes')">Detalhes</button>
+                            <button class="tab-btn"
+                                onclick="openTabColab(event, 'colab_calendario')">Calendário</button>
+                            <button class="tab-btn" onclick="openTabColab(event, 'colab_carga')">Carga Horária</button>
+                        </div>
+
+                        <div class="tab-contents">
+                            <div class="content show" id="colab_detalhes">
+                                <div class="detalhes-header">
+                                    <h3>Detalhes do Colaborador</h3>
+
+                                    <button type="button" class="btn-editar-colab" id="btnEditarColab"
+                                        title="Editar colaborador" aria-label="Editar colaborador">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                </div>
+
+                                <div class="detalhes-bloco-superior">
+                                    <div><strong>Email:</strong> <span id="colabEmail"></span></div>
+                                    <div><strong>Telefone:</strong> <span id="colabTelefone"></span></div>
+                                    <div><strong>Data de Nascimento:</strong> <span id="colabDataNascimento"></span>
+                                    </div>
+                                    <div><strong>Área:</strong> <span id="colabArea"></span></div>
+                                    <div><strong>Status:</strong> <span id="colabStatus"></span></div>
+                                </div>
+                            </div>
+
+                            <div class="content" id="colab_calendario">
+                                <h1 class="content-title">Calendário do Colaborador</h1>
+                                <div class="count-dias">
+                                    <button class="nav-button" onclick="semanaPassadaColab()">&#8249;</button>
+                                    <div id="diasColab" class="semana-range"></div>
+                                    <button class="nav-button" onclick="proximaSemanaColab()">&#8250;</button>
+                                </div>
+                                <div class="week-days" id="diasSemanaColab"></div>
+                                <div class="tasks-columns" id="colunasTarefasColab"></div>
+                            </div>
+
+                            <div class="content" id="colab_carga">
+                                <h1 class="content-title">Carga Horária</h1>
+
+                                <div class="carga-view-top">
+                                    <div class="carga-view-title">Horários cadastrados</div>
+
+                                    <div class="carga-view-actions">
+                                        <button type="button" id="btnEditarCargaColab" class="btn-editar-carga"
+                                            title="Editar carga horária" aria-label="Editar carga horária">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </button>
+
+                                        <button type="button" id="btnAddCargaColab" class="btn-add-carga"
+                                            style="display:none">
+                                            Adicionar linha
+                                        </button>
+
+                                        <button type="button" id="btnSalvarCargaColab" class="btn-salvar-carga"
+                                            style="display:none">
+                                            Salvar
+                                        </button>
+                                    </div>
+
+                                    <div id="cargaViewMsg" class="carga-view-msg"></div>
+                                </div>
+
+
+                                <div id="cargaHorariaView" class="carga-view-list"></div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Detalhes de Consulta (reaproveita o seu do paciente, se quiser) -->
+        <div id="modalDetalhesTarefaColab" style="display: none;" class="modalDetalhesTarefa">
+            <div class="modal-content-Detalhes">
+                <span class="close" onclick="fecharModalDetalhesColab()">&times;</span>
+                <div id="detalhesTarefaColab"></div>
+            </div>
+        </div>
+
     </main>
     <script src="../Js/listagemColaborador.js"></script>
     <script src="../Js/funcoesPadroes.js"></script>

@@ -121,103 +121,6 @@ function validarCadastro() {
 }
 
 // =========================
-// CARGA HORARIA
-// =========================
-const lista = document.getElementById('listaHorarios')
-const btnAdd = document.getElementById('btnAddHorario')
-
-function adicionarLinha(preenchido) {
-  if (!lista) return
-
-  const row = document.createElement('div')
-  row.className = 'horario-row'
-
-  row.innerHTML = `
-    <select class="dia">
-      <option value="SEGUNDA">Segunda</option>
-      <option value="TERCA">Terça</option>
-      <option value="QUARTA">Quarta</option>
-      <option value="QUINTA">Quinta</option>
-      <option value="SEXTA">Sexta</option>
-      <option value="SABADO">Sábado</option>
-      <option value="DOMINGO">Domingo</option>
-    </select>
-
-    <input type="time" class="inicio">
-    <input type="time" class="fim">
-
-    <button type="button" class="btn-remover">X</button>
-  `
-
-  const selDia = row.querySelector('.dia')
-  const inpInicio = row.querySelector('.inicio')
-  const inpFim = row.querySelector('.fim')
-
-  if (preenchido) {
-    if (preenchido.diaSemana) selDia.value = preenchido.diaSemana
-    if (preenchido.horaInicio) inpInicio.value = normalizarHora(preenchido.horaInicio)
-    if (preenchido.horaFim) inpFim.value = normalizarHora(preenchido.horaFim)
-  }
-
-  row.querySelector('.btn-remover').onclick = () => {
-    const total = document.querySelectorAll('.horario-row').length
-    if (total <= 1) return
-    row.remove()
-  }
-
-  lista.appendChild(row)
-}
-
-function normalizarHora(v) {
-  if (!v) return ''
-  if (typeof v === 'string' && v.length >= 5) return v.slice(0, 5)
-  return v
-}
-
-function coletarCargaHoraria() {
-  const rows = document.querySelectorAll('.horario-row')
-  if (rows.length === 0) return null
-
-  const horarios = []
-
-  for (const r of rows) {
-    const inicio = r.querySelector('.inicio').value
-    const fim = r.querySelector('.fim').value
-
-    if (!inicio || !fim || inicio >= fim) return null
-
-    horarios.push({
-      diaSemana: r.querySelector('.dia').value,
-      horaInicio: inicio,
-      horaFim: fim
-    })
-  }
-
-  return horarios
-}
-
-async function carregarCargaHorariaDoColaborador(id) {
-  if (!lista) return
-
-  lista.innerHTML = ''
-
-  try {
-    const r = await fetch(`${API_BASE}/carga-horaria/medico/${id}`)
-    if (!r.ok) throw new Error(`Status ${r.status}`)
-    const arr = await r.json()
-
-    if (Array.isArray(arr) && arr.length > 0) {
-      arr.forEach(h => adicionarLinha(h))
-      return
-    }
-
-    adicionarLinha()
-  } catch (e) {
-    adicionarLinha()
-  }
-}
-
-// =========================
 // ESPECIFICACOES
 // =========================
 async function carregarEspecificacoes() {
@@ -290,31 +193,6 @@ async function buscarValores(id) {
   }
 }
 
-async function salvarCargaHoraria(id, cargaHoraria) {
-  // 1) tenta PUT em lote
-  const put = await fetch(`${API_BASE}/carga-horaria/medico/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-    body: JSON.stringify(cargaHoraria)
-  })
-
-  if (put.ok) return
-
-  // 2) fallback: apaga e recria
-  await fetch(`${API_BASE}/carga-horaria/medico/${id}`, { method: 'DELETE' })
-
-  const post = await fetch(`${API_BASE}/carga-horaria/medico/${id}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-    body: JSON.stringify(cargaHoraria)
-  })
-
-  if (!post.ok) {
-    const txt = await post.text()
-    throw new Error(txt || `Status ${post.status}`)
-  }
-}
-
 async function atualizarColaborador() {
   const id = getIdFromURL()
   if (!id) {
@@ -323,17 +201,6 @@ async function atualizarColaborador() {
   }
 
   if (!validarCadastro()) return
-
-  const cargaHoraria = coletarCargaHoraria()
-  if (!cargaHoraria) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Carga horária obrigatória',
-      html: 'Adicione pelo menos 1 horário e preencha início e fim corretamente.',
-      confirmButtonText: 'Ok'
-    })
-    return
-  }
 
   const payload = {
     nome: document.getElementById('nome').value.trim(),
@@ -362,8 +229,6 @@ async function atualizarColaborador() {
       throw new Error(txt || `Status ${r.status}`)
     }
 
-    await salvarCargaHoraria(id, cargaHoraria)
-
     Swal.fire({
       icon: 'success',
       title: 'Atualização realizada com sucesso!',
@@ -387,15 +252,10 @@ async function atualizarColaborador() {
 document.addEventListener('DOMContentLoaded', async () => {
   initUI()
 
-  if (btnAdd) btnAdd.onclick = () => adicionarLinha()
-
   const id = getIdFromURL()
   await carregarEspecificacoes()
 
   if (id) {
     await buscarValores(id)
-    await carregarCargaHorariaDoColaborador(id)
-  } else {
-    if (lista && lista.children.length === 0) adicionarLinha()
   }
 })
