@@ -204,7 +204,13 @@ async function cadastrarPacienteSemResponsavel() {
                     window.location.href = "listagemPaciente.html";
                 });
             } else {
-                const msg = raw || 'Por favor, tente novamente.';
+                let msg = raw || 'Por favor, tente novamente.';
+                
+                // Mensagem específica para conflito de email
+                if (respostaCadastro.status === 409) {
+                    msg = 'Este email já está cadastrado no sistema. Por favor, use outro email ou verifique se o paciente já existe.';
+                }
+                
                 Swal.fire({
                     icon: 'error',
                     title: 'Erro ao cadastrar paciente',

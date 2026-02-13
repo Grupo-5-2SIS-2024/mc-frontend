@@ -5,19 +5,19 @@ const SLOT_DURATION_NEURO = '01:00:00';
 
 // Slots para ABA (50min) - conforme regra existente (manhã e tarde)
 const SCHEDULE_SLOTS_ABA = [
-    '08:00', '08:50', '09:40', '10:30', // manhã termina 11:20
+    '08:00', '08:50', '09:40', '10:30','11:00','11:50', '12:40',// manhã termina 11:20
     '13:40', '14:30', '15:20', '16:10', '17:00' // tarde termina 17:50 (encerrando 18:00)
 ];
 
 // Slots para Terapia Convencional (30min) - intervalos de :00 e :30
 const SCHEDULE_SLOTS_CONVENCIONAL = [
-    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', // manhã
+    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00','11:30','12:00','12:30','13:00', // manhã
     '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30' // tarde
 ];
 
 // Slots para Neuropsicologia (60min)
 const SCHEDULE_SLOTS_NEURO = [
-    '08:00', '09:00', '10:00', '11:00',
+    '08:00', '09:00', '10:00', '11:00', '12:00', 
     '13:00', '14:00', '15:00', '16:00', '17:00'
 ];
 
@@ -569,7 +569,7 @@ async function agendarConsulta() {
             paciente: { id: pacienteId },
             duracaoConsulta: duracaoConsulta
         });
-
+  
         // Impede duplicidade por slot/profissional/paciente
         const dup = isDuplicate(consultasExistentes, { dia, hora, medicoId, pacienteId });
         if (dup) {
