@@ -870,9 +870,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 atualizarGrafico(todas);
                 // Verificar agendamentos que vencem em 1 semana
                 verificarAgendamentosVencendo(todas);
-                // Carregar e popular lista de médicos para filtro do admin
+                // Carregar e popular lista de médicos ATIVOS para filtro do admin
                 try {
-                    const rMed = await fetch(`${API_BASE}/mc/medicos/todos`);
+                    const rMed = await fetch(`${API_BASE}/mc/medicos`);
                     medicosCache = rMed.ok ? await rMed.json() : [];
                     const sel = document.getElementById('filtroMedicoSelect');
                     if (sel && medicosCache.length) popularSelectMedicos(sel, medicosCache);

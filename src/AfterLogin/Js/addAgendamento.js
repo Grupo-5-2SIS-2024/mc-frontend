@@ -33,6 +33,30 @@ document.getElementById('responsavel').addEventListener('input', () => {
     updateAvailablePatients();
 });
 
+// Idempotência e checagem de duplicidade
+function makeConsultaKey({ dia, hora, medicoId, pacienteId, procedimentoId, duracao }) {
+    return `CONSULTA:${dia}T${hora}|M${medicoId}|P${pacienteId}|E${procedimentoId}|D${duracao}`;
+}
+
+function isStatusAtivo(c) {
+    const id = Number(c?.statusConsulta?.id);
+    const nome = String(c?.statusConsulta?.nomeStatus || '').toLowerCase();
+    return !(id === 3 || nome.includes('cancel'));
+}
+
+function isDuplicate(consultasArr, { dia, hora, medicoId, pacienteId }) {
+    return (consultasArr || []).some(c => {
+        if (typeof c?.datahoraConsulta !== 'string') return false;
+        if (!isStatusAtivo(c)) return false;
+        const sameDay = c.datahoraConsulta.startsWith(dia);
+        const cHora = c.datahoraConsulta.split('T')[1]?.substring(0, 5) || '';
+        const sameHour = cHora === hora;
+        const sameMedico = String(c?.medico?.id) === String(medicoId);
+        const samePaciente = String(c?.paciente?.id) === String(pacienteId);
+        return sameDay && sameHour && (sameMedico || samePaciente);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     const diaInput = document.getElementById('dia');
     const diaConsulta = sessionStorage.getItem('DIA_CONSULTA');
@@ -471,6 +495,7 @@ async function agendarConsulta() {
     const descricao = document.getElementById('descricao').value || "Sem descrição";
     const procedimentoId = document.getElementById('procedimento').value;
     const recorrente = document.getElementById('recorrente').checked; // Verifica se o checkbox está marcado
+    const btn = document.getElementById('agendar');
 
     // validações rápidas
     if (!procedimentoId) {
@@ -482,6 +507,20 @@ async function agendarConsulta() {
         Swal.fire({ icon: 'warning', title: 'Campos obrigatórios', text: 'Preencha data, hora, profissional e paciente.' });
         return;
     }
+
+    // Idempotência simples para evitar duplo clique
+    const duracaoEscolhida = isNeuroSelecionado() ? SLOT_DURATION_NEURO : (isTerapiaConvencional() ? SLOT_DURATION_CONVENCIONAL : SLOT_DURATION_ABA);
+    const chave = makeConsultaKey({ dia, hora, medicoId, pacienteId, procedimentoId, duracao: duracaoEscolhida });
+    const pendKey = `PENDING_${chave}`;
+    const now = Date.now();
+    const prev = Number(sessionStorage.getItem(pendKey) || 0);
+    if (prev && (now - prev) < 30000) {
+        Swal.fire({ icon: 'info', title: 'Consulta já em criação', text: 'Aguarde alguns segundos para tentar novamente.' });
+        return;
+    }
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    sessionStorage.setItem(pendKey, String(now));
 
     try {
         const respostaEspec = await fetch(`${API_BASE}/mc/medicos`);
@@ -513,20 +552,12 @@ async function agendarConsulta() {
 
         const especificacaoMedicaId = procedimentoId;
 
-        // Determina duração: Neuropsicologia override para 60min
-        const duracaoConsulta = isNeuroSelecionado() ? SLOT_DURATION_NEURO : (isTerapiaConvencional() ? SLOT_DURATION_CONVENCIONAL : SLOT_DURATION_ABA);
+        // Determina duração
+        const duracaoConsulta = duracaoEscolhida;
 
         // Busca consultas existentes uma única vez para checagem de duplicidade por paciente/dia
         let consultasExistentes = [];
-        try {
-            const respTodas = await fetch(`${API_BASE}/mc/consultas`);
-            if (respTodas.ok) {
-                const texto = await respTodas.text();
-                if (texto && texto.trim().length > 0) {
-                    try { consultasExistentes = JSON.parse(texto); } catch (_) { consultasExistentes = []; }
-                }
-            }
-        } catch (e) { console.warn('Não foi possível verificar consultas existentes para evitar duplicidade.', e); }
+        try { consultasExistentes = await buscarConsultas(); } catch (e) { consultasExistentes = []; }
 
         // Função para criar o objeto da consulta
         const criarDadosConsulta = (dataConsulta) => ({
@@ -539,14 +570,10 @@ async function agendarConsulta() {
             duracaoConsulta: duracaoConsulta
         });
 
-        // Impede duplicidade: mesma paciente no mesmo dia
-        const existeNoDia = consultasExistentes.some(c => String(c?.paciente?.id) === String(pacienteId) && typeof c?.datahoraConsulta === 'string' && c.datahoraConsulta.startsWith(dia));
-        if (existeNoDia) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Já existe consulta para este paciente no dia',
-                text: 'Cada paciente pode ter somente uma consulta por dia nesta tela. Use recorrência para agendar semanas futuras.'
-            });
+        // Impede duplicidade por slot/profissional/paciente
+        const dup = isDuplicate(consultasExistentes, { dia, hora, medicoId, pacienteId });
+        if (dup) {
+            Swal.fire({ icon: 'warning', title: 'Conflito de horário', text: 'Já existe consulta ativa neste horário para este paciente ou profissional.' });
             return;
         }
 
@@ -568,35 +595,21 @@ async function agendarConsulta() {
         // Se o checkbox de recorrente estiver marcado, agendar as próximas 30 semanas
         if (recorrente) {
             const dataOriginal = new Date(dia);
-
-            // Agendar para as próximas 30 semanas (7 dias de diferença entre cada consulta)
             for (let i = 1; i <= 30; i++) {
                 const novaData = new Date(dataOriginal);
-                novaData.setDate(novaData.getDate() + (i * 7)); // Incrementar 7 dias para cada semana
-
-                const novaDataISO = novaData.toISOString().split('T')[0]; // Formata para 'yyyy-mm-dd'
-                const novaConsulta = criarDadosConsulta(novaDataISO);
-
-                // Evita duplicidade para o mesmo paciente na mesma novaDataISO
-                const jaExisteNaSemana = consultasExistentes.some(c => String(c?.paciente?.id) === String(pacienteId) && typeof c?.datahoraConsulta === 'string' && c.datahoraConsulta.startsWith(novaDataISO));
-                if (jaExisteNaSemana) {
-                    console.warn(`Consulta já existente para o paciente em ${novaDataISO}; pulando criação.`);
-                    continue;
-                }
-
-                // Faz a requisição para cadastrar a nova consulta
-                const respostaNovaConsulta = await fetch(`${API_BASE}/mc/consultas`, {
-                    method: "POST",
-                    body: JSON.stringify(novaConsulta),
-                    headers: {
-                        "Content-type": "application/json; charset=UTF-8",
-                        "Accept": "application/json"
-                    }
-                });
-
-                if (!respostaNovaConsulta.ok) {
-                    throw new Error(`Erro ao agendar a consulta para ${novaDataISO}`);
-                }
+                novaData.setDate(novaData.getDate() + (i * 7));
+                const novaDataISO = novaData.toISOString().split('T')[0];
+                try {
+                    try { consultasExistentes = await buscarConsultas(); } catch {}
+                    const dupFuture = isDuplicate(consultasExistentes, { dia: novaDataISO, hora, medicoId, pacienteId });
+                    if (dupFuture) continue;
+                    const novaConsulta = criarDadosConsulta(novaDataISO);
+                    await fetch(`${API_BASE}/mc/consultas`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                        body: JSON.stringify(novaConsulta)
+                    });
+                } catch (_) { /* ignora falhas pontuais */ }
             }
         }
 
@@ -616,6 +629,11 @@ async function agendarConsulta() {
             title: 'Erro',
             text: 'Erro ao agendar a consulta.',
         });
+    } finally {
+        btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+        try { sessionStorage.removeItem(pendKey); } catch {}
+        try { await buscarConsultas(); } catch {}
     }
 }
 async function excluirConsulta(idConsulta) {

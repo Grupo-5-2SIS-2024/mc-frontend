@@ -335,7 +335,56 @@ display: flex;
 justify-content: space-between;
 align-items: center;
 margin-bottom: 7px;
+ padding-right: 10px; /* dá folga da borda direita */
 }
+
+/* Ícones do cabeçalho do modal de detalhes (Excluir/Editar/Fechar) */
+.acoes-cabecalho {
+    display: inline-flex;
+    gap: 12px; /* ícones com mais espaçamento entre si */
+    align-items: center;
+    margin-left: auto; /* empurra o grupo para a direita */
+    margin-right: 6px; /* pequena folga da borda */
+}
+
+.icon-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+.icon-btn i { font-size: 14px; }
+
+.icon-btn:hover { transform: translateY(-2px); }
+
+.icon-btn.danger {
+    background-color: #e53935; /* vermelho */
+    color: #fff;
+}
+.icon-btn.danger:hover { background-color: #c62828; }
+
+.icon-btn.primary {
+    background-color: #1976D2; /* azul médio */
+    color: #fff;
+}
+.icon-btn.primary:hover { background-color: #1565C0; }
+
+.icon-btn.close {
+    background: transparent;
+    color: #666;
+    font-weight: 700;
+    font-size: 18px;
+    width: 28px;
+    height: 28px;
+    box-shadow: none;
+}
+.icon-btn.close:hover { color: #000; }
 
 .btn-secundario {
 background-color: #1976D2;

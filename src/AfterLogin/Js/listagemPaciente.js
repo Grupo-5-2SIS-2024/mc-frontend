@@ -838,8 +838,20 @@ function abrirDetalhesTarefa(consulta) {
     const medicoArea = consulta?.medico?.especificacaoMedica?.area || consulta?.especificacaoMedica?.area || 'Desconhecida';
     const statusNome = consulta?.statusConsulta?.nomeStatus || 'Desconhecido';
     const duracao = consulta?.duracaoConsulta ?? consulta?.duracao ?? '—';
-
+    // Cabeçalho com ícones, como na referência: lixeira (vermelho), editar (azul) e fechar (x)
     detalhesDiv.innerHTML = `
+        <div class="modal-header">
+            <h3 style="margin:0; color:#1976D2;">Detalhes da Consulta</h3>
+            <div class="acoes-cabecalho">
+                <button id="btnExcluirConsulta" class="icon-btn danger" title="Excluir consulta">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                <button id="btnEditarConsulta" class="icon-btn primary" title="Atualizar consulta">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button id="btnFecharDetalhes" class="icon-btn close" title="Fechar">×</button>
+            </div>
+        </div>
         <p><strong>Descrição:</strong> ${consulta.descricao || 'Sem descrição'}</p>
         <p><strong>Data e Hora:</strong> ${dataFormatada} às ${horaFormatada}</p>
         <p><strong>Paciente:</strong> ${pacienteNome}</p>
@@ -848,10 +860,76 @@ function abrirDetalhesTarefa(consulta) {
         <p><strong>Duração:</strong> ${duracao}</p>
     `;
     document.getElementById('modalDetalhesTarefa').style.display = 'flex';
+
+    try {
+        const idConsulta = consulta?.id;
+        const btnEditar = document.getElementById('btnEditarConsulta');
+        const btnExcluir = document.getElementById('btnExcluirConsulta');
+        const btnFechar = document.getElementById('btnFecharDetalhes');
+        if (btnEditar && idConsulta) btnEditar.onclick = () => redirecionarAtualizarConsulta(idConsulta);
+        if (btnExcluir && idConsulta) btnExcluir.onclick = () => cancelarConsulta(idConsulta);
+        if (btnFechar) btnFechar.onclick = fecharModalDetalhes;
+    } catch (_) { /* noop */ }
 }
 
 function fecharModalDetalhes() {
     document.getElementById('modalDetalhesTarefa').style.display = 'none';
+}
+
+// Redireciona para a página de edição da consulta
+function redirecionarAtualizarConsulta(idConsulta) {
+    if (!idConsulta) return;
+    window.location.href = `editarConsulta.html?consultaId=${idConsulta}`;
+}
+
+// Cancela (exclui logicamente) a consulta do paciente
+async function cancelarConsulta(idConsulta) {
+    try {
+        const confirmar = await Swal.fire({
+            title: 'Excluir consulta?',
+            text: 'Esta ação marcará a consulta como cancelada.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, excluir',
+            cancelButtonText: 'Cancelar'
+        });
+        if (!confirmar.isConfirmed) return;
+
+        // Recupera consultas e encontra a selecionada
+        const resp = await fetch(`${API_BASE}/mc/consultas`);
+        if (!resp.ok) throw new Error(`Falha ao buscar consultas (status ${resp.status})`);
+        const todas = await resp.json();
+        const consultaExistente = (todas || []).find(c => Number(c.id) === Number(idConsulta));
+        if (!consultaExistente) throw new Error('Consulta não encontrada.');
+
+        const payload = {
+            datahoraConsulta: consultaExistente.datahoraConsulta,
+            descricao: consultaExistente.descricao,
+            duracaoConsulta: consultaExistente.duracaoConsulta,
+            especificacaoMedica: { id: consultaExistente.especificacaoMedica.id },
+            medico: { id: consultaExistente.medico.id },
+            paciente: { id: consultaExistente.paciente.id },
+            statusConsulta: { id: 3 }
+        };
+
+        const put = await fetch(`${API_BASE}/mc/consultas/${idConsulta}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!put.ok) {
+            const txt = await put.text().catch(() => '');
+            throw new Error(txt || 'Não foi possível cancelar a consulta.');
+        }
+
+        Swal.fire({ icon: 'success', title: 'Consulta cancelada!', timer: 1400, showConfirmButton: false });
+        fecharModalDetalhes();
+        // Atualiza calendário do paciente
+        try { await buscarConsultasCliente(currentPacienteId); } catch {}
+    } catch (erro) {
+        console.error('Erro ao cancelar consulta:', erro);
+        Swal.fire({ icon: 'error', title: 'Erro ao excluir', text: erro.message || 'Falha ao cancelar a consulta.' });
+    }
 }
 
 function atualizarDisplayData(startDate) {
