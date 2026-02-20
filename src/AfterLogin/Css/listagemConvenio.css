@@ -1,0 +1,647 @@
+body {
+    display: flex;
+    height: 100vh;
+    background-image: url(https://img.freepik.com/fotos-gratis/vista-do-luxuoso-espaco-interior-do-hotel_23-2150683473.jpg?t=st=1717014718~exp=1717018318~hmac=808a6ebab494c075a2c564e18bca7eba2f1680aa38e734a6d283539f03177540&w=740);
+    background-size: cover;
+    background-position: 100%;
+    overflow-x: hidden;
+    font-size: 1rem;
+}
+
+/* Container Principal */
+.container-listagem {
+    width: 85vw;
+    height: 90vh;
+    padding: 2rem;
+    background-color: #fffffff2;
+    border-radius: 15px;
+    overflow-y: auto;
+}
+
+/* Header da Listagem */
+.header-listagem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.header-listagem h1 {
+    color: #333;
+    font-size: 2rem;
+    margin: 0;
+}
+
+.convenio-title {
+    color: #00796b;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* Search Container */
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-container i {
+    position: absolute;
+    left: 1rem;
+    color: #757575;
+}
+
+#searchInput {
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    width: 300px;
+    transition: all 0.3s;
+}
+
+#searchInput:focus {
+    outline: none;
+    border-color: #00796b;
+}
+
+.btn-novo {
+    padding: 0.75rem 1.5rem;
+    background-color: #00796b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.btn-novo:hover {
+    background-color: #005f56;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 121, 107, 0.3);
+}
+
+/* Filter Tabs */
+.filter-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.tab-button {
+    padding: 0.75rem 1.5rem;
+    background-color: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #757575;
+    transition: all 0.3s;
+}
+
+.tab-button:hover {
+    color: #00796b;
+}
+
+.tab-button.active {
+    color: #00796b;
+    border-bottom-color: #00796b;
+    font-weight: 600;
+}
+
+/* Grid de Convênios */
+.convenios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Card de Convênio */
+.convenio-card {
+    background-color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.convenio-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0, 121, 107, 0.2);
+    border-color: #00796b;
+}
+
+.convenio-card.inativo {
+    opacity: 0.6;
+}
+
+.convenio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.convenio-header h3 {
+    color: #333;
+    font-size: 1.3rem;
+    margin: 0;
+    flex: 1;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.ativo {
+    background-color: #4caf50;
+    color: white;
+}
+
+.status-badge.inativo {
+    background-color: #f44336;
+    color: white;
+}
+
+.convenio-descricao {
+    color: #666;
+    font-size: 0.95rem;
+    margin: 1rem 0;
+    line-height: 1.5;
+    max-height: 3rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.convenio-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.planos-count {
+    color: #757575;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.planos-count i {
+    color: #00796b;
+}
+
+.btn-ver-mais {
+    background-color: transparent;
+    color: #00796b;
+    border: 2px solid #00796b;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-ver-mais:hover {
+    background-color: #00796b;
+    color: white;
+    transform: translateX(5px);
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #ddd;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    color: #757575;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: #999;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease-out;
+}
+
+.modal-content.modal-edit {
+    max-width: 800px;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.close,
+.close-edit {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close:hover,
+.close:focus,
+.close-edit:hover,
+.close-edit:focus {
+    color: #000;
+}
+
+#modalTitulo {
+    color: #00796b;
+    margin-bottom: 1rem;
+}
+
+#modalDescricao {
+    color: #666;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+#modalPlanos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.plano-badge {
+    background-color: #e0f2f1;
+    color: #00796b;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.plano-badge.inativo {
+    background-color: #ffebee;
+    color: #f44336;
+}
+
+.plano-status {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+.btn-editar,
+.btn-inativar,
+.btn-salvar,
+.btn-cancelar {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-editar {
+    background-color: #2196F3;
+    color: white;
+}
+
+.btn-editar:hover {
+    background-color: #1976D2;
+    transform: translateY(-2px);
+}
+
+.btn-inativar {
+    background-color: #ff9800;
+    color: white;
+}
+
+.btn-inativar:hover {
+    background-color: #f57c00;
+    transform: translateY(-2px);
+}
+
+.btn-salvar {
+    background-color: #4caf50;
+    color: white;
+}
+
+.btn-salvar:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+}
+
+.btn-cancelar {
+    background-color: #757575;
+    color: white;
+}
+
+.btn-cancelar:hover {
+    background-color: #616161;
+    transform: translateY(-2px);
+}
+
+/* Modal de Edição */
+.section-planos-edit {
+    margin-top: 2rem;
+}
+
+.section-planos-edit h3 {
+    color: #00796b;
+    margin-bottom: 1rem;
+}
+
+#listaPlanosEdit {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.plano-item-edit {
+    background-color: #f5f5f5;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+}
+
+.plano-inputs-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.plano-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+}
+
+.btn-toggle-plano {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-toggle-plano.ativo {
+    background-color: #4caf50;
+    color: white;
+}
+
+.btn-toggle-plano.inativo {
+    background-color: #757575;
+    color: white;
+}
+
+.btn-toggle-plano:hover {
+    opacity: 0.8;
+}
+
+.btn-remover-plano-edit {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-remover-plano-edit:hover {
+    background-color: #d32f2f;
+}
+
+.btn-add-plano-edit {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #00796b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-add-plano-edit:hover {
+    background-color: #005f56;
+}
+
+.no-planos {
+    text-align: center;
+    color: #999;
+    padding: 2rem;
+}
+
+/* Input Fields no Modal */
+.modal .input {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+.modal .input__field {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.modal .input__field:focus {
+    outline: none;
+    border-color: #00796b;
+}
+
+.modal .input__field.textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+.modal .input__label {
+    position: absolute;
+    left: 0.75rem;
+    top: 0.75rem;
+    color: #999;
+    transition: all 0.3s;
+    pointer-events: none;
+    background-color: white;
+    padding: 0 0.25rem;
+}
+
+.modal .input__field:focus + .input__label,
+.modal .input__field:not(:placeholder-shown) + .input__label {
+    top: -0.5rem;
+    left: 0.5rem;
+    font-size: 0.75rem;
+    color: #00796b;
+}
+
+/* Scrollbar personalizada */
+.container-listagem::-webkit-scrollbar,
+#listaPlanosEdit::-webkit-scrollbar {
+    width: 8px;
+}
+
+.container-listagem::-webkit-scrollbar-track,
+#listaPlanosEdit::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.container-listagem::-webkit-scrollbar-thumb,
+#listaPlanosEdit::-webkit-scrollbar-thumb {
+    background: #00796b;
+    border-radius: 10px;
+}
+
+.container-listagem::-webkit-scrollbar-thumb:hover,
+#listaPlanosEdit::-webkit-scrollbar-thumb:hover {
+    background: #005f56;
+}
+
+/* Responsividade */
+@media (max-width: 1024px) {
+    .convenios-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .container-listagem {
+        width: 95vw;
+        padding: 1rem;
+    }
+
+    .header-listagem {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    #searchInput {
+        width: 100%;
+    }
+
+    .btn-novo {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .convenios-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .btn-editar,
+    .btn-inativar,
+    .btn-salvar,
+    .btn-cancelar {
+        width: 100%;
+        justify-content: center;
+    }
+}
+

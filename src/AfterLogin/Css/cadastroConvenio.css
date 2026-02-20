@@ -1,0 +1,284 @@
+body {
+    display: flex;
+    height: 100vh;
+    background-image: url(https://img.freepik.com/fotos-gratis/vista-do-luxuoso-espaco-interior-do-hotel_23-2150683473.jpg?t=st=1717014718~exp=1717018318~hmac=808a6ebab494c075a2c564e18bca7eba2f1680aa38e734a6d283539f03177540&w=740);
+    background-size: cover;
+    background-position: 100%;
+    overflow-x: hidden;
+    font-size: 1rem;
+}
+
+/* Box do Cadastro */
+.ContainerCadastro {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    flex-direction: column;
+    width: 70vw;
+    height: 90vh;
+    padding: 2rem;
+    background-color: #fffffff2;
+    border-radius: 15px;
+    overflow-y: auto;
+}
+
+.convenio-title {
+    color: #00796b;
+}
+
+/* Inputs Container */
+.inputs_Container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 2rem;
+    width: 100%;
+    padding: 1rem;
+}
+
+.inputs_section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 600px;
+}
+
+/* Input Fields */
+.input {
+    position: relative;
+    width: 100%;
+}
+
+.input__field {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s;
+    background-color: white;
+}
+
+.input__field:focus {
+    outline: none;
+    border-color: #00796b;
+}
+
+.input__field.textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+.input__label {
+    position: absolute;
+    left: 0.75rem;
+    top: 0.75rem;
+    color: #999;
+    transition: all 0.3s;
+    pointer-events: none;
+    background-color: white;
+    padding: 0 0.25rem;
+}
+
+.input__field:focus + .input__label,
+.input__field:not(:placeholder-shown) + .input__label {
+    top: -0.5rem;
+    left: 0.5rem;
+    font-size: 0.75rem;
+    color: #00796b;
+}
+
+.error {
+    color: red;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+/* Seção de Planos */
+.section-planos {
+    width: 100%;
+    max-width: 800px;
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: #f5f5f5;
+    border-radius: 10px;
+}
+
+.section-planos h2 {
+    color: #00796b;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+}
+
+#listaPlanos {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.plano-item {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    transition: all 0.3s;
+}
+
+.plano-item:hover {
+    border-color: #00796b;
+    box-shadow: 0 2px 8px rgba(0, 121, 107, 0.1);
+}
+
+.plano-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.plano-header h3 {
+    color: #00796b;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.btn-remover-plano {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+}
+
+.btn-remover-plano:hover {
+    background-color: #d32f2f;
+    transform: translateY(-2px);
+}
+
+.plano-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.btn-add-plano {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #00796b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-add-plano:hover {
+    background-color: #005f56;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 121, 107, 0.3);
+}
+
+/* Área de Botões */
+.btn-area {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    width: 100%;
+    max-width: 600px;
+    justify-content: center;
+}
+
+.btn-voltar {
+    padding: 0.75rem 2rem;
+    background-color: #757575;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-voltar:hover {
+    background-color: #616161;
+    transform: translateY(-2px);
+}
+
+.registrar {
+    padding: 0.75rem 2rem;
+    background-color: #00796b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.registrar:hover {
+    background-color: #005f56;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 121, 107, 0.3);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .ContainerCadastro {
+        width: 90vw;
+        padding: 1rem;
+    }
+
+    .inputs_Container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .btn-area {
+        flex-direction: column;
+    }
+
+    .btn-voltar,
+    .registrar {
+        width: 100%;
+    }
+}
+
+/* Scrollbar personalizada */
+.ContainerCadastro::-webkit-scrollbar {
+    width: 8px;
+}
+
+.ContainerCadastro::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.ContainerCadastro::-webkit-scrollbar-thumb {
+    background: #00796b;
+    border-radius: 10px;
+}
+
+.ContainerCadastro::-webkit-scrollbar-thumb:hover {
+    background: #005f56;
+}
+

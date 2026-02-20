@@ -358,7 +358,8 @@ async function cadastrarPacienteComResponsavel() {
                 "numero": numeroDigitado,
                 "complemento": complementoDigitado,
                 "bairro": bairroDigitado
-            }
+            },
+            "plano": obterPlanoSelecionado() ? { "id": obterPlanoSelecionado() } : null
         };
 
         try {

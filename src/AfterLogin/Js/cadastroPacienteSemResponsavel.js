@@ -179,7 +179,8 @@ async function cadastrarPacienteSemResponsavel() {
             "logradouro": ruaDigitada,
             "numero": numeroDigitado,
             "complemento": complementoDigitado,
-            "bairro": bairroDigitado
+            "bairro": bairroDigitado,
+            "plano": obterPlanoSelecionado() ? { "id": obterPlanoSelecionado() } : null
         };
 
         try {

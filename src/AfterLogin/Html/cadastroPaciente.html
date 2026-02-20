@@ -121,6 +121,20 @@
                         <small class="error" id="error-especialidade"></small>
                     </div>
                     <div class="input">
+                        <select class="input__field" id="convenio" onchange="carregarPlanos()">
+                            <option value=""></option>
+                        </select>
+                        <label for="convenio" class="input__label">Convênio</label>
+                        <small class="error" id="error-convenio"></small>
+                    </div>
+                    <div class="input">
+                        <select class="input__field" id="plano" disabled>
+                            <option value="">Selecione um convênio primeiro</option>
+                        </select>
+                        <label for="plano" class="input__label">Plano</label>
+                        <small class="error" id="error-plano"></small>
+                    </div>
+                    <div class="input">
                         <input class="input__field" id="dataNascimento" type="date" min="1900-01-01" max="2020-12-31" required />
                         <label for="dataNascimento" class="input__labelDate">Data de Nascimento</label>
                         <small class="error" id="error-dataNascimento"></small>
@@ -180,6 +194,7 @@
     </script>
     <script src="../Js/datePickerHelper.js"></script>
     <script src="../Js/viaCep.js"></script>
+    <script src="../Js/convenioPlanoManager.js"></script>
     <script src="../Js/cadastroPacienteSemResponsavel.js"></script>
     <script src="../Js/funcoesPadroes.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

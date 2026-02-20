@@ -7,7 +7,7 @@ if (!window.API_BASE) {
 
 const PERMISSOES = {
     'admin': {
-        menus: ['Home', 'Colaborador', 'Paciente', 'Dash', 'Lead', 'AgendaDiaria'],
+        menus: ['Home', 'Colaborador', 'Paciente', 'Dash', 'Lead', 'AgendaDiaria', 'Convenios'],
         botoes: ['btnAdicionarColaborador', 'addPacienteBtn', 'btnAdicionarConsulta', 'btnAdicionarArea']
     },
     'supervisor': {
@@ -181,7 +181,26 @@ async function aplicarPermissoes(nivelPermissao) {
     }
 }
 
+// Função para verificar permissão de convênios
+function verificarPermissaoConvenios() {
+    const permissao = sessionStorage.getItem("PERMISSIONAMENTO_MEDICO");
+    const menuConvenios = document.getElementById("menuConvenios");
+    const menuConveniosOverlay = document.getElementById("menuConveniosOverlay");
+    
+    // Mostra o menu apenas se for Admin
+    const isAdmin = permissao && permissao.toLowerCase().includes("admin");
+    
+    if (menuConvenios) {
+        menuConvenios.style.display = isAdmin ? "block" : "none";
+    }
+    
+    if (menuConveniosOverlay) {
+        menuConveniosOverlay.style.display = isAdmin ? "block" : "none";
+    }
+}
+
 validarSessao();
+verificarPermissaoConvenios();
 
 function deslogar() {
     var emailMedico = sessionStorage.getItem("EMAIL_MEDICO");
