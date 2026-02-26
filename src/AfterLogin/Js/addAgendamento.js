@@ -298,37 +298,29 @@ function verificarSobreposicao(inicio1, duracao1Min, inicio2, duracao2Min) {
 
 // Função para obter horários disponíveis considerando médico/paciente e sobreposição
 async function getAvailableHours(dia) {
-    const slotsBase = isNeuroSelecionado() ? SCHEDULE_SLOTS_NEURO : (isTerapiaConvencional() ? SCHEDULE_SLOTS_CONVENCIONAL : SCHEDULE_SLOTS_ABA);
-    const medicoId = document.getElementById('medico').value;
-    const pacienteId = document.getElementById('paciente').value;
-    if (!dia) return slotsBase;
-    if (!medicoId && !pacienteId) return slotsBase;
+     const medicoId = document.getElementById('medico').value
+  const pacienteId = document.getElementById('paciente').value
 
-    const consultasDoDia = (consultas || []).filter(c => typeof c?.datahoraConsulta === 'string' && c.datahoraConsulta.startsWith(dia));
-    const bloqueios = consultasDoDia.filter(c => {
-        const bloqueiaMedico = medicoId ? String(c?.medico?.id) === String(medicoId) : false;
-        const bloqueiaPaciente = pacienteId ? String(c?.paciente?.id) === String(pacienteId) : false;
-        return bloqueiaMedico || bloqueiaPaciente;
-    });
+  const durMin = isNeuroSelecionado() ? 60 : (isTerapiaConvencional() ? 30 : 50)
 
-    const durMin = isNeuroSelecionado() ? 60 : (isTerapiaConvencional() ? 30 : 50);
-    const slotsDisponiveis = slotsBase.filter(slot => {
-        return !bloqueios.some(c => {
-            const dataHora = c.datahoraConsulta.split('T')[1]?.substring(0, 5) || '00:00';
-            // Parse duração da consulta existente
-            let durExistMin = 0;
-            const d = c?.duracaoConsulta;
-            if (typeof d === 'number') durExistMin = d;
-            else if (typeof d === 'string') {
-                const parts = d.split(':');
-                if (parts.length >= 2) durExistMin = (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
-                else { const n = parseInt(d, 10); durExistMin = isNaN(n) ? 0 : n; }
-            }
-            return verificarSobreposicao(slot, durMin, dataHora, durExistMin);
-        });
-    });
+  if (!dia || !medicoId) {
+    return ['Sem horários disponíveis']
+  }
 
-    return slotsDisponiveis.length ? slotsDisponiveis : ['Sem horários disponíveis'];
+  const url = new URL(`${API_BASE}/mc/consultas/disponiveis`)
+  url.searchParams.set('medicoId', medicoId)
+  url.searchParams.set('data', dia)
+  url.searchParams.set('duracaoMin', String(durMin))
+  if (pacienteId) url.searchParams.set('pacienteId', pacienteId)
+
+  const r = await fetch(url.toString())
+  if (!r.ok) return ['Sem horários disponíveis']
+
+  const j = await r.json().catch(() => null)
+  const arr = j?.horarios
+  if (!Array.isArray(arr) || !arr.length) return ['Sem horários disponíveis']
+
+  return arr
 }
 
 // Função para atualizar as horas disponíveis após a seleção da data e procedimento
