@@ -185,6 +185,24 @@ body {
 .tasks-columns {
     display: flex;
     justify-content: space-between;
+    position: relative;
+    transition: opacity 0.22s ease, filter 0.22s ease;
+}
+
+.tasks-columns.is-loading {
+    opacity: 0.9;
+    filter: saturate(0.95);
+    pointer-events: none;
+}
+
+.tasks-columns.is-loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
 }
 
 .column {

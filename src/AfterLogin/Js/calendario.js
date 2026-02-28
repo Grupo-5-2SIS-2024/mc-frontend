@@ -132,6 +132,7 @@ function exportarSemanaPDF() {
         // Dataset e filtros persistentes
         let bancoDeDadosFiltrado = [];
         let datasetAposPermissao = [];
+        let consultaRequestToken = 0;
         let filtrosAtivos = false;
         let currentFilters = {
             medicoId: null,
@@ -162,6 +163,12 @@ function exportarSemanaPDF() {
         function aplicarFiltrosPersistentes() {
             if (!Array.isArray(datasetAposPermissao)) datasetAposPermissao = consultasOriginais || [];
             bancoDeDadosFiltrado = filtrosAtivos ? filtrarComEstado(datasetAposPermissao, currentFilters) : datasetAposPermissao;
+        }
+
+        function setCalendarioLoading(isLoading) {
+            const colunas = document.getElementById('colunasTarefas');
+            if (!colunas) return;
+            colunas.classList.toggle('is-loading', !!isLoading);
         }
 
         async function buscarMedicos() {
@@ -261,12 +268,22 @@ function exportarSemanaPDF() {
             }
         }
 
-        async function buscarConsultas() {
+        async function buscarConsultas(options = {}) {
+            const { showLoading = false } = options;
+            const reqToken = ++consultaRequestToken;
             try {
-                const resposta = await fetch(`${API_BASE_LOCAL}/mc/consultas`);
+                const inicioSemana = obterInicioDaSemana(dataInicioAtual || new Date());
+                const inicioParam = formatarData(inicioSemana);
+                if (showLoading) setCalendarioLoading(true);
+
+                const resposta = await fetch(`${API_BASE_LOCAL}/mc/consultas/semana?inicio=${encodeURIComponent(inicioParam)}`);
                 if (!resposta.ok) {
                     throw new Error(`HTTP error! Status: ${resposta.status}`);
                 }
+
+                // Se outra requisição mais nova já começou, ignora esta resposta
+                if (reqToken !== consultaRequestToken) return;
+
                 consultasOriginais = await resposta.json();
 
                 // Apply permission-based filtering:
@@ -311,8 +328,11 @@ function exportarSemanaPDF() {
                 aplicarFiltrosPersistentes();
 
                 atualizarDisplayData(dataInicioAtual);
+                if (showLoading) setCalendarioLoading(false);
             } catch (error) {
+                if (reqToken !== consultaRequestToken) return;
                 console.error('Erro ao buscar consultas:', error);
+                if (showLoading) setCalendarioLoading(false);
             }
         }
 
@@ -549,27 +569,29 @@ function exportarSemanaPDF() {
             }
         }
 
-        function semanaPassada() {
+        async function semanaPassada() {
             dataInicioAtual.setDate(dataInicioAtual.getDate() - 7);
             dataInicioAtual = obterInicioDaSemana(dataInicioAtual);
+            await buscarConsultas({ showLoading: true });
             atualizarDisplayData(dataInicioAtual);
         }
 
-        function proximaSemana() {
+        async function proximaSemana() {
             dataInicioAtual.setDate(dataInicioAtual.getDate() + 7);
             dataInicioAtual = obterInicioDaSemana(dataInicioAtual);
+            await buscarConsultas({ showLoading: true });
             atualizarDisplayData(dataInicioAtual);
         }
 
         // Inicialização
         async function inicializarPagina() {
+            dataInicioAtual = obterInicioDaSemana(new Date());
             await buscarMedicos();
             await buscarPacientes();
             await buscarEspecificacoesMedicas();
             await buscarStatusConsulta();
             await buscarConsultas();
-            
-            dataInicioAtual = obterInicioDaSemana(new Date());
+
             atualizarDisplayData(dataInicioAtual);
 
             // Atualiza as informações a cada 30 segundos

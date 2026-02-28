@@ -508,7 +508,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (btnPrint) {
-            btnPrint.addEventListener('click', () => imprimirPainelDoDia());
+            btnPrint.addEventListener('click', () => imprimirPainelDoDia(consultasBase));
         }
 
         atualizarUI();
@@ -527,13 +527,107 @@ document.addEventListener('DOMContentLoaded', async () => {
         return new Date(date).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
     }
 
-    function imprimirPainelDoDia() {
-        const table = document.querySelector('.agenda table');
-        if (!table) return;
+    function imprimirPainelDoDia(consultasBase = []) {
         const modo = document.getElementById('modoAtualLabel')?.textContent || '';
         const sel = document.getElementById('filtroMedicoSelect');
         const medicoTexto = sel && sel.value ? sel.options[sel.selectedIndex].text : 'Todos';
         const cabec = `${formatarDataCabecalho(painelDiaSelecionado)} • ${modo} • ${medicoTexto}`;
+
+        const dia = new Date(painelDiaSelecionado);
+        dia.setHours(0, 0, 0, 0);
+        const isDiaSelecionado = (d) => {
+            const dt = new Date(d);
+            dt.setHours(0, 0, 0, 0);
+            return dt.getTime() === dia.getTime();
+        };
+
+        const duracaoEmMinutos = (c) => {
+            const d = c?.duracaoConsulta;
+            if (typeof d === 'number') return d;
+            if (typeof d === 'string') {
+                const partes = d.split(':');
+                if (partes.length >= 2) {
+                    const horas = parseInt(partes[0], 10) || 0;
+                    const minutos = parseInt(partes[1], 10) || 0;
+                    return horas * 60 + minutos;
+                }
+                const m = parseInt(d, 10);
+                return isNaN(m) ? 0 : m;
+            }
+            return 0;
+        };
+
+        const tipoTerapia = (c) => {
+            const mins = duracaoEmMinutos(c);
+            if (mins === 50 || mins === 60) return 'ABA';
+            if (mins === 30) return 'Convencional';
+            return 'Outros';
+        };
+
+        const calcularIdade = (dataNasc) => {
+            if (!dataNasc) return '—';
+            const hoje = new Date();
+            const nasc = new Date(dataNasc);
+            if (isNaN(nasc.getTime())) return '—';
+            let idade = hoje.getFullYear() - nasc.getFullYear();
+            const mes = hoje.getMonth() - nasc.getMonth();
+            if (mes < 0 || (mes === 0 && hoje.getDate() < nasc.getDate())) idade--;
+            return `${idade} anos`;
+        };
+
+        const obterConvenio = (paciente) => {
+            if (!paciente) return '—';
+            return (
+                paciente?.convenio?.nome ||
+                paciente?.convenioNome ||
+                paciente?.nomeConvenio ||
+                (typeof paciente?.convenio === 'string' ? paciente.convenio : '') ||
+                '—'
+            );
+        };
+
+        const consultasHoje = (consultasBase || [])
+            .filter(c => c && c.datahoraConsulta && isDiaSelecionado(c.datahoraConsulta))
+            .filter(c => !selectedMedicoId || String(c?.medico?.id) === String(selectedMedicoId))
+            .filter(c => tipoTerapia(c) === filtroTerapia)
+            .sort((a, b) => new Date(a.datahoraConsulta) - new Date(b.datahoraConsulta));
+
+        const linhasTabela = consultasHoje.map((consulta) => {
+            const hora = new Date(consulta.datahoraConsulta).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const pacienteNome = `${consulta?.paciente?.nome || ''} ${consulta?.paciente?.sobrenome || ''}`.trim() || '—';
+            const idade = calcularIdade(consulta?.paciente?.dataNascimento || consulta?.paciente?.dtNasc);
+            const convenio = obterConvenio(consulta?.paciente);
+            const profissional = `${consulta?.medico?.nome || ''} ${consulta?.medico?.sobrenome || ''}`.trim() || '—';
+            const status = consulta?.statusConsulta?.nomeStatus ?? 'Agendada';
+
+            return `<tr>
+                <td>${hora}</td>
+                <td>${pacienteNome}</td>
+                <td>${idade}</td>
+                <td>${convenio}</td>
+                <td>${profissional}</td>
+                <td>${status}</td>
+            </tr>`;
+        }).join('');
+
+        const tabelaHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Horário</th>
+                        <th>Paciente</th>
+                        <th>Idade</th>
+                        <th>Convênio</th>
+                        <th>Profissional</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${linhasTabela || '<tr><td colspan="6">Sem agendamentos para o dia selecionado.</td></tr>'}
+                </tbody>
+            </table>
+        `;
+
         const css = `
             body { font-family: Arial, sans-serif; padding: 16px; }
             h1 { font-size: 18px; margin: 0 0 12px; }
@@ -545,7 +639,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!w) return;
         w.document.write(`<html><head><title>Painel do Dia</title><style>${css}</style></head><body>`);
         w.document.write(`<h1>${cabec}</h1>`);
-        w.document.write(table.outerHTML);
+        w.document.write(tabelaHtml);
         w.document.write('</body></html>');
         w.document.close();
         w.focus();

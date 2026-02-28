@@ -33,6 +33,95 @@ function fecharModalFiltro() {
 
 // Estado: alterna entre ativos e inativos
 let mostrarInativosPacientes = false;
+const PAGE_SIZE_PACIENTE = 20;
+let paginaAtualPaciente = 1;
+let hasNextPagePaciente = true;
+let carregandoPaginaPaciente = false;
+let ultimoFiltroPaciente = { nome: '', email: '', cpf: '', telefone: '', dataNascimento: '' };
+let backendPageOffsetPaciente = 0;
+
+function resetPaginacaoPacientes() {
+    paginaAtualPaciente = 1;
+    hasNextPagePaciente = true;
+}
+
+function bindAcoesCardsPacientes(cardsPacientes, permissionamentoMedico) {
+    cardsPacientes.querySelectorAll('.cardPaciente').forEach((card) => {
+        if (card.dataset.boundEvents === '1') return;
+
+        if (permissionamentoMedico !== "Supervisor") {
+            const btnDelete = card.querySelector('.delete');
+            const btnActivate = card.querySelector('.activate');
+            const btnUpdate = card.querySelector('.update');
+
+            if (btnDelete) {
+                btnDelete.addEventListener('click', function () {
+                    const id = card.dataset.pacienteId;
+                    if (id) {
+                        Swal.fire({
+                            title: 'Inativar paciente?',
+                            text: 'Isso irá inativar o paciente e ocultar suas consultas.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sim, inativar',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) inativarPaciente(Number(id));
+                        });
+                    }
+                });
+            }
+
+            if (btnActivate) {
+                btnActivate.addEventListener('click', function () {
+                    const id = card.dataset.pacienteId;
+                    if (id) {
+                        Swal.fire({
+                            title: 'Ativar paciente?',
+                            text: 'O paciente voltará a aparecer nas listagens ativas.',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sim, ativar',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) ativarPaciente(Number(id));
+                        });
+                    }
+                });
+            }
+
+            if (btnUpdate) {
+                btnUpdate.addEventListener('click', function () {
+                    const id = card.dataset.pacienteId;
+                    if (id) window.location.href = `atualizarPaciente.html?id=${id}`;
+                });
+            }
+        }
+
+        card.dataset.boundEvents = '1';
+    });
+}
+
+function configurarScrollInfinitoPacientes() {
+    const scrollContainer = document.querySelector('.listagemBox');
+    if (!scrollContainer || scrollContainer.dataset.infiniteBoundPaciente === '1') return;
+
+    scrollContainer.dataset.infiniteBoundPaciente = '1';
+    scrollContainer.addEventListener('scroll', () => {
+        if (carregandoPaginaPaciente || !hasNextPagePaciente) return;
+        const nearBottom = scrollContainer.scrollTop + scrollContainer.clientHeight >= (scrollContainer.scrollHeight - 40);
+        if (!nearBottom) return;
+
+        buscarPacientes(
+            ultimoFiltroPaciente.nome,
+            ultimoFiltroPaciente.email,
+            ultimoFiltroPaciente.cpf,
+            ultimoFiltroPaciente.telefone,
+            ultimoFiltroPaciente.dataNascimento,
+            { append: true }
+        );
+    });
+}
 
 // Funções para limpar e aplicar filtros
 function limparFiltros() {
@@ -42,7 +131,7 @@ function limparFiltros() {
     document.getElementById('filtroTelefone').value = '';
     document.getElementById('filtroDataNascimento').value = '';
     document.getElementById('listaFiltrosAtivos').innerHTML = ''; // Limpa a lista de filtros ativos
-    buscarPacientes(); // Busca os pacientes sem filtros
+    buscarPacientes('', '', '', '', '', { reset: true }); // Busca os pacientes sem filtros
 }
 
 function aplicarFiltros() {
@@ -79,7 +168,7 @@ function aplicarFiltros() {
             listaFiltrosAtivos.appendChild(li);
         }
     }
-    buscarPacientes(nome, email, cpf, telefone, dataNascimento);
+    buscarPacientes(nome, email, cpf, telefone, dataNascimento, { reset: true });
 }
 
 function removerFiltroEspecifico(filtro) {
@@ -88,126 +177,82 @@ function removerFiltroEspecifico(filtro) {
 }
 
 // Função para buscar pacientes com filtros específicos
-async function buscarPacientes(nomeFiltro = '', emailFiltro = '', cpfFiltro = '', telefoneFiltro = '', dataNascimentoFiltro = '') {
-    const permRaw = sessionStorage.getItem("PERMISSIONAMENTO_MEDICO") || '';
-    const idMedico = Number(sessionStorage.getItem("ID_MEDICO")) || null;
-    const especificacaoMedicaArea = sessionStorage.getItem("ESPECIFICACAO_MEDICA") || '';
+async function buscarPacientes(nomeFiltro = '', emailFiltro = '', cpfFiltro = '', telefoneFiltro = '', dataNascimentoFiltro = '', options = {}) {
+    const { append = false, reset = false } = options;
 
-    // Normalizador seguro (remove acentos e lowercase)
-    const normalize = (s) => {
-        if (!s) return '';
-        try { return s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim(); }
-        catch { return String(s).replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
-    };
-    const perm = normalize(permRaw);
-    const areaNorm = normalize(especificacaoMedicaArea);
+    if (carregandoPaginaPaciente) return;
+    if (append && !hasNextPagePaciente) return;
+
+    if (reset) resetPaginacaoPacientes();
+
+    const paginaSolicitada = append ? (paginaAtualPaciente + 1) : paginaAtualPaciente;
+    carregandoPaginaPaciente = true;
 
     try {
-        let listaPacientes = [];
-        const isAtivo = (v) => v === true || v === 1 || String(v).toLowerCase() === 'true';
+        ultimoFiltroPaciente = {
+            nome: nomeFiltro || '',
+            email: emailFiltro || '',
+            cpf: cpfFiltro || '',
+            telefone: telefoneFiltro || '',
+            dataNascimento: dataNascimentoFiltro || ''
+        };
 
-        if (perm.includes('admin')) {
-            // Admin: lista todos os pacientes
-            const endpoint = mostrarInativosPacientes ? `${API_BASE}/mc/pacientes/todos` : `${API_BASE}/mc/pacientes`;
-            const resposta = await fetch(endpoint);
+        const endpoint = mostrarInativosPacientes ? `${API_BASE}/mc/pacientes/todos` : `${API_BASE}/mc/pacientes`;
+
+        const params = new URLSearchParams();
+        if (nomeFiltro) params.set('nome', nomeFiltro);
+        if (emailFiltro) params.set('email', emailFiltro);
+        if (cpfFiltro) params.set('cpf', cpfFiltro);
+        if (telefoneFiltro) params.set('telefone', telefoneFiltro);
+        if (dataNascimentoFiltro) params.set('dataNascimento', dataNascimentoFiltro);
+        params.set('ativo', mostrarInativosPacientes ? 'false' : 'true');
+        let paginaBackend = Math.max(0, paginaSolicitada - backendPageOffsetPaciente);
+        params.set('page', String(paginaBackend));
+        params.set('size', String(PAGE_SIZE_PACIENTE));
+
+        let resposta = await fetch(`${endpoint}?${params.toString()}`);
+        if (!resposta.ok) throw new Error(`Falha ao carregar pacientes: ${resposta.status}`);
+        let retorno = await resposta.json();
+
+        // Fallback: se page=1 vier como não-primeira, backend é 0-based e precisamos page=0
+        if (!append && paginaSolicitada === 1 && typeof retorno?.first === 'boolean' && retorno.first === false) {
+            backendPageOffsetPaciente = 1;
+            paginaBackend = 0;
+            params.set('page', '0');
+            resposta = await fetch(`${endpoint}?${params.toString()}`);
             if (!resposta.ok) throw new Error(`Falha ao carregar pacientes: ${resposta.status}`);
-            listaPacientes = await resposta.json();
-            // Quando usando /todos, filtra por status conforme toggle
-            if (endpoint.endsWith('/todos')) {
-                listaPacientes = listaPacientes.filter(p => mostrarInativosPacientes ? !isAtivo(p.ativo) : isAtivo(p.ativo));
-            }
-        } else if (perm.includes('supervi')) {
-            // Supervisor: pacientes com consultas na sua área (comparação case-insensitive)
-            const [respPac, respCons] = await Promise.all([
-                fetch(mostrarInativosPacientes ? `${API_BASE}/mc/pacientes/todos` : `${API_BASE}/mc/pacientes`),
-                fetch(`${API_BASE}/mc/consultas`)
-            ]);
-            const [todosPacientes, todasConsultas] = await Promise.all([
-                respPac.ok ? respPac.json() : [],
-                respCons.ok ? respCons.json() : []
-            ]);
-            if (!areaNorm) {
-                // Se a área não estiver definida na sessão, exibe todos para não retornar vazio
-                listaPacientes = todosPacientes;
-            } else {
-                listaPacientes = todosPacientes.filter(paciente =>
-                    (todasConsultas || []).some(consulta => {
-                        if (!consulta?.paciente?.id || consulta.paciente.id !== paciente.id) return false;
-                        const areaConsulta = normalize(consulta?.especificacaoMedica?.area || consulta?.medico?.especificacaoMedica?.area || '');
-                        return areaConsulta.includes(areaNorm);
-                    })
-                );
-            }
-            if (mostrarInativosPacientes && respPac.url.endsWith('/todos')) {
-                listaPacientes = listaPacientes.filter(p => !isAtivo(p.ativo));
-            }
-        } else if (perm.includes('medic') || perm.includes('profiss')) {
-            // Médico/Profissional: pacientes que possuem consultas com este médico
-            const [respCons, respPac] = await Promise.all([
-                fetch(`${API_BASE}/mc/consultas`),
-                fetch(mostrarInativosPacientes ? `${API_BASE}/mc/pacientes/todos` : `${API_BASE}/mc/pacientes`)
-            ]);
-            const [todasConsultas, todosPacientes] = await Promise.all([
-                respCons.ok ? respCons.json() : [],
-                respPac.ok ? respPac.json() : []
-            ]);
-            if (!idMedico) {
-                listaPacientes = [];
-            } else {
-                const idsPacientes = new Set(
-                    (todasConsultas || [])
-                        .filter(c => c?.medico?.id === idMedico && c?.paciente?.id)
-                        .map(c => c.paciente.id)
-                );
-                listaPacientes = (todosPacientes || []).filter(p => idsPacientes.has(p.id));
-            }
-            if (mostrarInativosPacientes && respPac.url.endsWith('/todos')) {
-                listaPacientes = listaPacientes.filter(p => !isAtivo(p.ativo));
-            }
-        } else {
-            // Permissão desconhecida: fallback para exibir todos (evita lista vazia)
-            console.warn("Permissão não reconhecida ('" + permRaw + "'). Exibindo todos os pacientes por fallback.");
-            const resposta = await fetch(mostrarInativosPacientes ? `${API_BASE}/mc/pacientes/todos` : `${API_BASE}/mc/pacientes`);
-            if (!resposta.ok) throw new Error(`Falha ao carregar pacientes: ${resposta.status}`);
-            listaPacientes = await resposta.json();
-            if (mostrarInativosPacientes && resposta.url.endsWith('/todos')) {
-                listaPacientes = listaPacientes.filter(p => !isAtivo(p.ativo));
-            }
+            retorno = await resposta.json();
+        } else if (!append && paginaSolicitada === 1 && typeof retorno?.first === 'boolean' && retorno.first === true) {
+            backendPageOffsetPaciente = 0;
         }
 
-        const pacientesFiltrados = (listaPacientes || []).filter(paciente => {
-            const nomeCompleto = `${paciente.nome || ''} ${paciente.sobrenome || ''}`.toLowerCase();
-            const email = (paciente.email || '').toLowerCase();
-            const cpf = String(paciente.cpf || '');
-            const telefone = String(paciente.telefone || '');
-            const dataNascimento = paciente.dataNascimento ? new Date(paciente.dataNascimento).toISOString().split('T')[0] : '';
-            return (
-                (nomeCompleto.includes(nomeFiltro) || nomeFiltro === '') &&
-                (email.includes(emailFiltro) || emailFiltro === '') &&
-                (cpf.includes(cpfFiltro) || cpfFiltro === '') &&
-                (telefone.includes(telefoneFiltro) || telefoneFiltro === '') &&
-                (dataNascimento === dataNascimentoFiltro || dataNascimentoFiltro === '')
-            );
-        });
+        const listaPacientes = Array.isArray(retorno)
+            ? retorno
+            : (Array.isArray(retorno?.content) ? retorno.content : []);
 
-        atualizarListagemPacientes(pacientesFiltrados);
+        const totalPages = Number(retorno?.totalPages);
+        if (!Number.isNaN(totalPages) && totalPages > 0) {
+            hasNextPagePaciente = paginaSolicitada < totalPages;
+        } else if (typeof retorno?.last === 'boolean') {
+            hasNextPagePaciente = !retorno.last;
+        } else {
+            hasNextPagePaciente = listaPacientes.length >= PAGE_SIZE_PACIENTE;
+        }
+        paginaAtualPaciente = paginaSolicitada;
+
+        atualizarListagemPacientes(listaPacientes, { append });
     } catch (e) {
-        console.log(e);
-        // Em caso de erro, evitar tela vazia total: tenta exibir todos como fallback
-        try {
-            const resposta = await fetch(`${API_BASE}/mc/pacientes`);
-            if (resposta.ok) {
-                const lista = await resposta.json();
-                atualizarListagemPacientes(lista);
-            }
-        } catch {}
+        console.error(e);
+    } finally {
+        carregandoPaginaPaciente = false;
     }
 }
 
-function atualizarListagemPacientes(listaPacientes) {
+function atualizarListagemPacientes(listaPacientes, options = {}) {
+    const { append = false } = options;
     const cardsPacientes = document.getElementById("listagem");
     const permissionamentoMedico = sessionStorage.getItem("PERMISSIONAMENTO_MEDICO");
-    cardsPacientes.innerHTML = listaPacientes.map((paciente) => {
+    const htmlCards = listaPacientes.map((paciente) => {
         const responsavel = paciente.responsavel ? `${paciente.responsavel.nome} ${paciente.responsavel.sobrenome}` : 'Não informado';
         const dataNascimentoFormatada = new Date(paciente.dataNascimento).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const foto = paciente.foto || "../Assets/perfil.jpeg";
@@ -262,48 +307,10 @@ function atualizarListagemPacientes(listaPacientes) {
         `;
     }).join('');
 
-    cardsPacientes.querySelectorAll('.delete').forEach((botao) => {
-        botao.addEventListener('click', function () {
-            const id = this.closest('.cardPaciente').dataset.pacienteId;
-            if (id) {
-                Swal.fire({
-                    title: 'Inativar paciente?',
-                    text: 'Isso irá inativar o paciente e ocultar suas consultas.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sim, inativar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) inativarPaciente(Number(id));
-                });
-            }
-        });
-    });
+    if (append) cardsPacientes.insertAdjacentHTML('beforeend', htmlCards);
+    else cardsPacientes.innerHTML = htmlCards;
 
-    cardsPacientes.querySelectorAll('.activate').forEach((botao) => {
-        botao.addEventListener('click', function () {
-            const id = this.closest('.cardPaciente').dataset.pacienteId;
-            if (id) {
-                Swal.fire({
-                    title: 'Ativar paciente?',
-                    text: 'O paciente voltará a aparecer nas listagens ativas.',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sim, ativar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) ativarPaciente(Number(id));
-                });
-            }
-        });
-    });
-
-    cardsPacientes.querySelectorAll('.update').forEach((botao) => {
-        botao.addEventListener('click', function () {
-            const id = this.closest('.cardPaciente').dataset.pacienteId;
-            if (id) window.location.href = `atualizarPaciente.html?id=${id}`;
-        });
-    });
+    bindAcoesCardsPacientes(cardsPacientes, permissionamentoMedico);
 }
 
 
@@ -363,7 +370,7 @@ async function inativarPaciente(id) {
             showConfirmButton: false,
             timer: 1800
         });
-        buscarPacientes();
+        buscarPacientes('', '', '', '', '', { reset: true });
     } catch (erro) {
         console.error('Erro ao inativar paciente:', erro);
         Swal.fire({
@@ -381,7 +388,7 @@ async function ativarPaciente(id) {
         const resp = await fetch(`${API_BASE}/mc/pacientes/${pacienteId}/ativar`, { method: 'PATCH' });
         if (!resp.ok) throw new Error(`Falha ao ativar: ${resp.status}`);
         Swal.fire({ icon: 'success', title: 'Paciente ativado!', showConfirmButton: false, timer: 1200 });
-        buscarPacientes();
+        buscarPacientes('', '', '', '', '', { reset: true });
     } catch (erro) {
         console.error('Erro ao ativar paciente:', erro);
         Swal.fire({ icon: 'error', title: 'Erro ao ativar', text: 'Não foi possível ativar o paciente.' });
@@ -427,25 +434,27 @@ async function buscarKPIsPaciente() {
     }
 }
 
-buscarPacientes();
 buscarKPIsPaciente();
 
 // Toggle inativos: listener
 document.addEventListener('DOMContentLoaded', () => {
     const toggle = document.getElementById('toggleInativosPacientes');
+    const saved = sessionStorage.getItem('mostrarInativosPacientes') === 'true';
+    mostrarInativosPacientes = saved;
+
+    configurarScrollInfinitoPacientes();
+
     if (toggle) {
-        // Restaura estado salvo do toggle
-        const saved = sessionStorage.getItem('mostrarInativosPacientes') === 'true';
         toggle.checked = saved;
-        mostrarInativosPacientes = saved;
-        buscarPacientes();
 
         toggle.addEventListener('change', (e) => {
             mostrarInativosPacientes = e.target.checked;
             sessionStorage.setItem('mostrarInativosPacientes', String(mostrarInativosPacientes));
-            buscarPacientes();
+            buscarPacientes('', '', '', '', '', { reset: true });
         });
     }
+
+    buscarPacientes('', '', '', '', '', { reset: true });
 });
 
 // Função para abrir o modal com os dados do paciente

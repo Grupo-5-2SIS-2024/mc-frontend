@@ -14,7 +14,7 @@ function limparFiltros() {
     document.getElementById('filtroEmail').value = '';
     document.getElementById('filtroEspecialidade').value = '';
     document.getElementById('listaFiltrosAtivos').innerHTML = '';
-    buscarMedicos()
+  buscarMedicos('', '', '', '', { reset: true })
 }
 
 function aplicarFiltros() {
@@ -39,27 +39,166 @@ function aplicarFiltros() {
 
     // Chama buscarMedicos com os valores dos filtros
     // Nota: status não estava definido aqui; passando vazio para evitar erro de referência
-    buscarMedicos(nome, email, especialidade, '');
+    buscarMedicos(nome, email, especialidade, '', { reset: true });
 }
 
 // Estado: alterna entre ativos e inativos
 let mostrarInativosColab = false;
+  const PAGE_SIZE_COLAB = 20;
+  let paginaAtualColab = 1;
+  let hasNextPageColab = true;
+  let carregandoPaginaColab = false;
+  let ultimoFiltroColab = { nome: '', email: '', especialidade: '', status: '' };
+  let backendPageOffsetColab = 0;
 
-async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFiltro = '', statusFiltro = '') {
+  function resetPaginacaoColab() {
+    paginaAtualColab = 1;
+    hasNextPageColab = true;
+  }
+
+  function bindAcoesCardsColab(cardsMedicos, nivelPermissao) {
+    if (nivelPermissao === "Supervisor") return;
+
+    cardsMedicos.querySelectorAll('.cardColaborador').forEach((card) => {
+      if (card.dataset.boundEvents === '1') return;
+
+      const botaoDelete = card.querySelector('.delete');
+      const botaoUpdate = card.querySelector('.update');
+      const botaoActivate = card.querySelector('.activate');
+      const botaoPermissions = card.querySelector('.permissions');
+
+      if (botaoDelete) {
+        botaoDelete.addEventListener('click', function () {
+          const id = card.dataset.medicoId;
+          if (id) {
+            Swal.fire({
+              title: 'Inativar colaborador?',
+              text: "Isso irá inativar o colaborador e ocultar suas consultas.",
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Sim, inativar',
+              cancelButtonText: 'Cancelar'
+            }).then((result) => {
+              if (result.isConfirmed) inativarMedico(id);
+            });
+          }
+        });
+      }
+
+      if (botaoUpdate) {
+        botaoUpdate.addEventListener('click', function () {
+          const id = card.dataset.medicoId;
+          if (id) window.location.href = `atualizarColaborador.html?id=${id}`;
+        });
+      }
+
+      if (botaoActivate) {
+        botaoActivate.addEventListener('click', function () {
+          const id = card.dataset.medicoId;
+          if (id) {
+            Swal.fire({
+              title: 'Ativar colaborador?',
+              text: 'O colaborador voltará à listagem ativa.',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Sim, ativar',
+              cancelButtonText: 'Cancelar'
+            }).then((result) => {
+              if (result.isConfirmed) ativarMedico(id);
+            });
+          }
+        });
+      }
+
+      if (botaoPermissions) {
+        botaoPermissions.addEventListener('click', function () {
+          const id = card.dataset.medicoId;
+          const nomeCompleto = card.querySelector('.field:first-child p')?.textContent || '';
+          if (id) abrirModalPermissoes(id, nomeCompleto);
+        });
+      }
+
+      card.dataset.boundEvents = '1';
+    });
+  }
+
+  function configurarScrollInfinitoColab() {
+    const scrollContainer = document.querySelector('.listagemBox');
+    if (!scrollContainer || scrollContainer.dataset.infiniteBound === '1') return;
+
+    scrollContainer.dataset.infiniteBound = '1';
+    scrollContainer.addEventListener('scroll', () => {
+      if (carregandoPaginaColab || !hasNextPageColab) return;
+
+      const nearBottom = scrollContainer.scrollTop + scrollContainer.clientHeight >= (scrollContainer.scrollHeight - 40);
+      if (!nearBottom) return;
+
+      buscarMedicos(
+        ultimoFiltroColab.nome,
+        ultimoFiltroColab.email,
+        ultimoFiltroColab.especialidade,
+        ultimoFiltroColab.status,
+        { append: true }
+      );
+    });
+  }
+
+  async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFiltro = '', statusFiltro = '', options = {}) {
+    const { append = false, reset = false } = options;
+
+    if (carregandoPaginaColab) return;
+    if (append && !hasNextPageColab) return;
+
+    if (reset) resetPaginacaoColab();
+
+    const paginaSolicitada = append ? (paginaAtualColab + 1) : paginaAtualColab;
+    carregandoPaginaColab = true;
+
     try {
         const nivelPermissao = sessionStorage.getItem("PERMISSIONAMENTO_MEDICO");
         const areaEspecializacaoSupervisor = sessionStorage.getItem("ESPECIFICACAO_MEDICA");
         const idMedicoLogado = Number(sessionStorage.getItem("ID_MEDICO"));
 
-        const endpoint = mostrarInativosColab ? `${API_BASE}/mc/medicos/todos` : `${API_BASE}/mc/medicos`;
-        const resposta = await fetch(endpoint);
-        const listaMedicosAll = await resposta.json();
+      ultimoFiltroColab = {
+        nome: nomeFiltro || '',
+        email: emailFiltro || '',
+        especialidade: especialidadeFiltro || '',
+        status: statusFiltro || ''
+      };
 
-        // Filtra por status conforme toggle quando usando /todos
-        const isAtivo = (v) => v === true || v === 1 || String(v).toLowerCase() === 'true';
-        const listaMedicos = endpoint.endsWith('/todos')
-            ? (listaMedicosAll || []).filter(m => mostrarInativosColab ? !isAtivo(m.ativo) : isAtivo(m.ativo))
-            : (listaMedicosAll || []);
+    const endpoint = mostrarInativosColab ? `${API_BASE}/mc/medicos/todos` : `${API_BASE}/mc/medicos`;
+
+    const params = new URLSearchParams();
+    if (nomeFiltro) params.set('nome', nomeFiltro);
+    if (emailFiltro) params.set('email', emailFiltro);
+    if (especialidadeFiltro) {
+      params.set('especialidade', especialidadeFiltro);
+      params.set('area', especialidadeFiltro);
+    }
+    params.set('ativo', mostrarInativosColab ? 'false' : 'true');
+      let paginaBackend = Math.max(0, paginaSolicitada - backendPageOffsetColab);
+      params.set('page', String(paginaBackend));
+      params.set('size', String(PAGE_SIZE_COLAB));
+
+    let resposta = await fetch(`${endpoint}?${params.toString()}`);
+    if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+    let retorno = await resposta.json();
+
+    // Fallback: se page=1 vier como não-primeira, backend é 0-based e precisamos page=0
+    if (!append && paginaSolicitada === 1 && typeof retorno?.first === 'boolean' && retorno.first === false) {
+      backendPageOffsetColab = 1;
+      paginaBackend = 0;
+      params.set('page', '0');
+      resposta = await fetch(`${endpoint}?${params.toString()}`);
+      if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+      retorno = await resposta.json();
+    } else if (!append && paginaSolicitada === 1 && typeof retorno?.first === 'boolean' && retorno.first === true) {
+      backendPageOffsetColab = 0;
+    }
+
+    const listaMedicos = Array.isArray(retorno)
+      ? retorno
+      : (Array.isArray(retorno?.content) ? retorno.content : []);
 
         let medicosFiltrados = listaMedicos.filter(medico => medico.id !== idMedicoLogado);
 
@@ -71,20 +210,20 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
             });
         }
 
-        const medicosFiltradosFinal = medicosFiltrados.filter(medico => {
-            const nomeCompleto = `${medico.nome} ${medico.sobrenome}`.toLowerCase();
-            const isAtivo = medico.ativo ? 'Ativo' : 'Inativo';
+        const medicosFiltradosFinal = medicosFiltrados;
 
-            return (
-                (nomeCompleto.includes(nomeFiltro) || nomeFiltro === '') &&
-                (medico.email.toLowerCase().includes(emailFiltro) || emailFiltro === '') &&
-                (medico.especificacaoMedica?.area.toLowerCase().includes(especialidadeFiltro) || especialidadeFiltro === '') &&
-                (isAtivo === statusFiltro || statusFiltro === '')
-            );
-        });
+    const totalPages = Number(retorno?.totalPages);
+    if (!Number.isNaN(totalPages) && totalPages > 0) {
+      hasNextPageColab = paginaSolicitada < totalPages;
+    } else if (typeof retorno?.last === 'boolean') {
+      hasNextPageColab = !retorno.last;
+    } else {
+      hasNextPageColab = listaMedicos.length >= PAGE_SIZE_COLAB;
+    }
+    paginaAtualColab = paginaSolicitada;
 
         const cardsMedicos = document.getElementById("listagem");
-        cardsMedicos.innerHTML = medicosFiltradosFinal.map((medico) => {
+    const htmlCards = medicosFiltradosFinal.map((medico) => {
             const status = medico.ativo ? 'Ativo' : 'Inativo';
             const foto = medico.foto || "../Assets/perfil.jpeg";
             const statusAtivo = (medico.ativo === true || medico.ativo === 1 || String(medico.ativo).toLowerCase() === 'true');
@@ -134,65 +273,19 @@ async function buscarMedicos(nomeFiltro = '', emailFiltro = '', especialidadeFil
                 </div>`;
         }).join('');
 
-        if (nivelPermissao !== "Supervisor") {
-            cardsMedicos.querySelectorAll('.delete').forEach((botao) => {
-                botao.addEventListener('click', function () {
-                    const id = this.closest('.cardColaborador').dataset.medicoId;
-                    if (id) {
-                        Swal.fire({
-                            title: 'Inativar colaborador?',
-                            text: "Isso irá inativar o colaborador e ocultar suas consultas.",
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonText: 'Sim, inativar',
-                            cancelButtonText: 'Cancelar'
-                        }).then((result) => {
-                            if (result.isConfirmed) inativarMedico(id);
-                        });
-                    }
-                });
-            });
+              if (append) {
+                cardsMedicos.insertAdjacentHTML('beforeend', htmlCards);
+              } else {
+                cardsMedicos.innerHTML = htmlCards;
+              }
 
-            cardsMedicos.querySelectorAll('.update').forEach((botao) => {
-                botao.addEventListener('click', function () {
-                    const id = this.closest('.cardColaborador').dataset.medicoId;
-                    if (id) window.location.href = `atualizarColaborador.html?id=${id}`;
-                });
-            });
-
-            cardsMedicos.querySelectorAll('.activate').forEach((botao) => {
-                botao.addEventListener('click', function () {
-                    const id = this.closest('.cardColaborador').dataset.medicoId;
-                    if (id) {
-                        Swal.fire({
-                            title: 'Ativar colaborador?',
-                            text: 'O colaborador voltará à listagem ativa.',
-                            icon: 'question',
-                            showCancelButton: true,
-                            confirmButtonText: 'Sim, ativar',
-                            cancelButtonText: 'Cancelar'
-                        }).then((result) => {
-                            if (result.isConfirmed) ativarMedico(id);
-                        });
-                    }
-                });
-            });
-
-            // Adicionar evento aos botões de permissões
-            cardsMedicos.querySelectorAll('.permissions').forEach((botao) => {
-                botao.addEventListener('click', function () {
-                    const id = this.closest('.cardColaborador').dataset.medicoId;
-                    const nomeCompleto = this.closest('.cardColaborador').querySelector('.field:first-child p').textContent;
-                    if (id) abrirModalPermissoes(id, nomeCompleto);
-                });
-            });
-        }
+              bindAcoesCardsColab(cardsMedicos, nivelPermissao);
     } catch (e) {
         console.error('Erro ao buscar Profissionais:', e);
+            } finally {
+              carregandoPaginaColab = false;
     }
 }
-
-buscarMedicos();
 
 // Inativa o colaborador (Médico) em vez de deletar
 async function inativarMedico(id) {
@@ -310,19 +403,20 @@ buscarKPIsMedico();
 // Listener do toggle de inativos
 document.addEventListener('DOMContentLoaded', () => {
     const toggle = document.getElementById('toggleInativosColab');
-    if (toggle) {
-        // Restaura estado salvo do toggle
-        const saved = sessionStorage.getItem('mostrarInativosColab') === 'true';
-        toggle.checked = saved;
-        mostrarInativosColab = saved;
-        buscarMedicos();
+  const saved = sessionStorage.getItem('mostrarInativosColab') === 'true';
+  mostrarInativosColab = saved;
 
+  if (toggle) {
+    toggle.checked = saved;
         toggle.addEventListener('change', (e) => {
             mostrarInativosColab = e.target.checked;
             sessionStorage.setItem('mostrarInativosColab', String(mostrarInativosColab));
-            buscarMedicos();
+      buscarMedicos('', '', '', '', { reset: true });
         });
     }
+
+  configurarScrollInfinitoColab();
+  buscarMedicos('', '', '', '', { reset: true });
 });
 
 async function buscarAreasClinica() {
