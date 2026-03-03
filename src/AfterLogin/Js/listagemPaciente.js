@@ -888,7 +888,7 @@ function fecharModalDetalhes() {
 // Redireciona para a página de edição da consulta
 function redirecionarAtualizarConsulta(idConsulta) {
     if (!idConsulta) return;
-    window.location.href = `editarConsulta.html?consultaId=${idConsulta}`;
+    window.location.href = `editarConsulta.html?id=${idConsulta}`;
 }
 
 // Cancela (exclui logicamente) a consulta do paciente

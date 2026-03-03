@@ -1,6 +1,6 @@
 const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : ''
 const qs = new URLSearchParams(window.location.search)
-const consultaId = qs.get('id')
+const consultaId = qs.get('id') || qs.get('consultaId')
 let medicosCache = []
 let pacientesCache = []
 let statusCache = []
@@ -87,6 +87,21 @@ function fDate(dtStr) {
     const ss = String(d.getSeconds()).padStart(2, '0')
     return { date: `${yyyy}-${mm}-${dd}`, time: `${hh}:${mi}`, full: `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}` }
 }
+
+function resolverEspecificacaoIdDaConsulta(consulta) {
+    const direto = consulta?.especificacaoMedica?.id
+    if (direto != null && direto !== '') return direto
+
+    const viaMedico = consulta?.medico?.especificacaoMedica?.id
+    if (viaMedico != null && viaMedico !== '') return viaMedico
+
+    const areaNome = (consulta?.especificacaoMedica?.area || consulta?.medico?.especificacaoMedica?.area || '').toString().trim().toLowerCase()
+    if (!areaNome) return ''
+
+    const encontrada = (especsCache || []).find(e => (e?.area || '').toString().trim().toLowerCase() === areaNome)
+    return encontrada?.id || ''
+}
+
 async function carregarConsulta() {
     const res = await fetch(`${API_BASE}/mc/consultas/id/${consultaId}`)
     if (!res.ok) {
@@ -106,12 +121,12 @@ async function carregarConsulta() {
     $('#data').value = dt.date
     $('#hora').value = dt.time
     $('#duracao').value = (c.duracaoConsulta || '00:30:00')
+    const especificacaoId = resolverEspecificacaoIdDaConsulta(c)
+    $('#especificacao').value = especificacaoId || ''
+    fillMedicosFiltrados(c.medico?.id || '')
     $('#medico').value = c.medico?.id || ''
     $('#paciente').value = c.paciente?.id || ''
     $('#status').value = c.statusConsulta?.id || ''
-    $('#especificacao').value = c.especificacaoMedica?.id || ''
-     fillMedicosFiltrados(c.medico?.id || '')
-
     $('#paciente').value = c.paciente?.id || ''
     setFloatLabels()
 }
