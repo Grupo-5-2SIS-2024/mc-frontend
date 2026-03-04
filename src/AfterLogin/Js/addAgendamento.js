@@ -297,17 +297,21 @@ function verificarSobreposicao(inicio1, duracao1Min, inicio2, duracao2Min) {
 }
 
 // Função para obter horários disponíveis considerando médico/paciente e sobreposição
-async function getAvailableHours(dia) {
-     const medicoId = document.getElementById('medico').value
-  const pacienteId = document.getElementById('paciente').value
+function apiUrl(path) {
+  // em dev: API_BASE = 'http://localhost:8080'
+  // em prod: API_BASE = ''  (mesma origem)
+  const base = API_BASE && API_BASE.startsWith('http') ? API_BASE : window.location.origin
+  return new URL(path.startsWith('/') ? path : `/${path}`, base)
+}
 
+async function getAvailableHours(dia) {
+  const medicoId = document.getElementById('medico').value
+  const pacienteId = document.getElementById('paciente').value
   const durMin = isNeuroSelecionado() ? 60 : (isTerapiaConvencional() ? 30 : 50)
 
-  if (!dia || !medicoId) {
-    return ['Sem horários disponíveis']
-  }
+  if (!dia || !medicoId) return ['Sem horários disponíveis']
 
-  const url = new URL(`${API_BASE}/mc/consultas/disponiveis`)
+  const url = apiUrl('/mc/consultas/disponiveis')
   url.searchParams.set('medicoId', medicoId)
   url.searchParams.set('data', dia)
   url.searchParams.set('duracaoMin', String(durMin))
@@ -319,7 +323,6 @@ async function getAvailableHours(dia) {
   const j = await r.json().catch(() => null)
   const arr = j?.horarios
   if (!Array.isArray(arr) || !arr.length) return ['Sem horários disponíveis']
-
   return arr
 }
 
