@@ -5,19 +5,19 @@ const SLOT_DURATION_NEURO = '01:00:00';
 
 // Slots para ABA (50min) - conforme regra existente (manhã e tarde)
 const SCHEDULE_SLOTS_ABA = [
-    '08:00', '08:50', '09:40', '10:30','11:00','11:50', '12:40',// manhã termina 11:20
+    '08:00', '08:50', '09:40', '10:30', '11:00', '11:50', '12:40',// manhã termina 11:20
     '13:40', '14:30', '15:20', '16:10', '17:00' // tarde termina 17:50 (encerrando 18:00)
 ];
 
 // Slots para Terapia Convencional (30min) - intervalos de :00 e :30
 const SCHEDULE_SLOTS_CONVENCIONAL = [
-    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00','11:30','12:00','12:30','13:00', // manhã
+    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', // manhã
     '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30' // tarde
 ];
 
 // Slots para Neuropsicologia (60min)
 const SCHEDULE_SLOTS_NEURO = [
-    '08:00', '09:00', '10:00', '11:00', '12:00', 
+    '08:00', '09:00', '10:00', '11:00', '12:00',
     '13:00', '14:00', '15:00', '16:00', '17:00'
 ];
 
@@ -298,32 +298,32 @@ function verificarSobreposicao(inicio1, duracao1Min, inicio2, duracao2Min) {
 
 // Função para obter horários disponíveis considerando médico/paciente e sobreposição
 function apiUrl(path) {
-  // em dev: API_BASE = 'http://localhost:8080'
-  // em prod: API_BASE = ''  (mesma origem)
-  const base = API_BASE && API_BASE.startsWith('http') ? API_BASE : window.location.origin
-  return new URL(path.startsWith('/') ? path : `/${path}`, base)
+    // em dev: API_BASE = 'http://localhost:8080'
+    // em prod: API_BASE = ''  (mesma origem)
+    const base = API_BASE && API_BASE.startsWith('http') ? API_BASE : window.location.origin
+    return new URL(path.startsWith('/') ? path : `/${path}`, base)
 }
 
 async function getAvailableHours(dia) {
-  const medicoId = document.getElementById('medico').value
-  const pacienteId = document.getElementById('paciente').value
-  const durMin = isNeuroSelecionado() ? 60 : (isTerapiaConvencional() ? 30 : 50)
+    const medicoId = document.getElementById('medico').value
+    const pacienteId = document.getElementById('paciente').value
+    const durMin = isNeuroSelecionado() ? 60 : (isTerapiaConvencional() ? 30 : 50)
 
-  if (!dia || !medicoId) return ['Sem horários disponíveis']
+    if (!dia || !medicoId) return ['Sem horários disponíveis']
 
-  const url = apiUrl('/mc/consultas/disponiveis')
-  url.searchParams.set('medicoId', medicoId)
-  url.searchParams.set('data', dia)
-  url.searchParams.set('duracaoMin', String(durMin))
-  if (pacienteId) url.searchParams.set('pacienteId', pacienteId)
+    const url = apiUrl('/mc/consultas/disponiveis')
+    url.searchParams.set('medicoId', medicoId)
+    url.searchParams.set('data', dia)
+    url.searchParams.set('duracaoMin', String(durMin))
+    if (pacienteId) url.searchParams.set('pacienteId', pacienteId)
 
-  const r = await fetch(url.toString())
-  if (!r.ok) return ['Sem horários disponíveis']
+    const r = await fetch(url.toString())
+    if (!r.ok) return ['Sem horários disponíveis']
 
-  const j = await r.json().catch(() => null)
-  const arr = j?.horarios
-  if (!Array.isArray(arr) || !arr.length) return ['Sem horários disponíveis']
-  return arr
+    const j = await r.json().catch(() => null)
+    const arr = j?.horarios
+    if (!Array.isArray(arr) || !arr.length) return ['Sem horários disponíveis']
+    return arr
 }
 
 // Função para atualizar as horas disponíveis após a seleção da data e procedimento
@@ -564,7 +564,7 @@ async function agendarConsulta() {
             paciente: { id: pacienteId },
             duracaoConsulta: duracaoConsulta
         });
-  
+
         // Impede duplicidade por slot/profissional/paciente
         const dup = isDuplicate(consultasExistentes, { dia, hora, medicoId, pacienteId });
         if (dup) {
@@ -589,23 +589,36 @@ async function agendarConsulta() {
 
         // Se o checkbox de recorrente estiver marcado, agendar as próximas 30 semanas
         if (recorrente) {
-            const dataOriginal = new Date(dia);
-            for (let i = 1; i <= 30; i++) {
-                const novaData = new Date(dataOriginal);
-                novaData.setDate(novaData.getDate() + (i * 7));
-                const novaDataISO = novaData.toISOString().split('T')[0];
-                try {
-                    try { consultasExistentes = await buscarConsultas(); } catch {}
-                    const dupFuture = isDuplicate(consultasExistentes, { dia: novaDataISO, hora, medicoId, pacienteId });
-                    if (dupFuture) continue;
-                    const novaConsulta = criarDadosConsulta(novaDataISO);
-                    await fetch(`${API_BASE}/mc/consultas`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                        body: JSON.stringify(novaConsulta)
-                    });
-                } catch (_) { /* ignora falhas pontuais */ }
+            const durMin = isNeuroSelecionado() ? 60 : (isTerapiaConvencional() ? 30 : 50)
+
+            const payload = {
+                dataInicial: dia,
+                hora: hora,
+                semanas: 31,                  // 1 original + 30 semanas futuras
+                medicoId: Number(medicoId),
+                pacienteId: Number(pacienteId),
+                especificacaoMedicaId: Number(procedimentoId),
+                statusConsultaId: 1,
+                duracaoMin: durMin,
+                descricao: descricao
             }
+
+            const r = await fetch(`${API_BASE}/mc/consultas/recorrentes`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body: JSON.stringify(payload)
+            })
+
+            if (!r.ok) throw new Error("Erro ao cadastrar recorrência")
+
+            const out = await r.json().catch(() => null)
+
+            Swal.fire({
+                icon: "success",
+                title: "Consulta agendada com sucesso!'",
+            }).then(() => window.location.reload())
+
+            return
         }
 
         Swal.fire({
@@ -627,8 +640,8 @@ async function agendarConsulta() {
     } finally {
         btn.disabled = false;
         btn.removeAttribute('aria-busy');
-        try { sessionStorage.removeItem(pendKey); } catch {}
-        try { await buscarConsultas(); } catch {}
+        try { sessionStorage.removeItem(pendKey); } catch { }
+        try { await buscarConsultas(); } catch { }
     }
 }
 async function excluirConsulta(idConsulta) {
