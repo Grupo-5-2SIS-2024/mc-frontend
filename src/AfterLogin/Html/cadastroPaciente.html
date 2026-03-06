@@ -175,8 +175,72 @@
                 </div>
             </div>
 
+            <!-- Checkbox para indicar se é menor de idade -->
+            <div style="margin: 25px 0; padding: 18px 25px; background: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 10px; transition: all 0.3s ease;">
+                <label style="font-size: 16px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; color: #495057;">
+                    <input type="checkbox" id="menorIdade" onchange="toggleResponsavelSection()" style="width: 20px; height: 20px; cursor: pointer; accent-color: #00796b;">
+                    <span><i class="fa-solid fa-child" style="color: #00796b;"></i> Paciente menor de 15 anos? (requer cadastro de responsável)</span>
+                </label>
+            </div>
+
+            <!-- Seção de Responsável (inicialmente oculta) -->
+            <div id="responsavelSection" style="display: none; opacity: 0; max-height: 0; overflow: hidden; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
+                <div style="background: #ffffff; padding: 30px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 20px rgba(0,121,107,0.12); border: 2px solid #00796b;">
+                    <h2 style="text-align: center; margin: 0 0 30px 0; color: #00796b; font-size: 20px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <i class="fa-solid fa-user-shield" style="font-size: 24px;"></i>
+                        <span>Dados do Responsável Legal</span>
+                    </h2>
+                <div class="inputs_Container">
+                    <div class="inputs_coluna">
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: #00796b; font-weight: 600; font-size: 14px;">Nome do Responsável</label>
+                            <input class="input__field" id="nomeResponsavel" type="text" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;" />
+                            <small class="error" id="error-nomeResponsavel"></small>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: #00796b; font-weight: 600; font-size: 14px;">Sobrenome do Responsável</label>
+                            <input class="input__field" id="sobrenomeResponsavel" type="text" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;" />
+                            <small class="error" id="error-sobrenomeResponsavel"></small>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: #00796b; font-weight: 600; font-size: 14px;">E-mail do Responsável</label>
+                            <input class="input__field" id="emailResponsavel" type="email" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;" />
+                            <small class="error" id="error-emailResponsavel"></small>
+                        </div>
+                    </div>
+
+                    <div class="inputs_coluna">
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: #00796b; font-weight: 600; font-size: 14px;">Telefone do Responsável</label>
+                            <input class="input__field" id="telefoneResponsavel" type="tel" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;" />
+                            <small class="error" id="error-telefoneResponsavel"></small>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: #00796b; font-weight: 600; font-size: 14px;">CPF do Responsável <span style="color: #999; font-weight: normal;">(opcional)</span></label>
+                            <input class="input__field" id="cpfResponsavel" type="text" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;" />
+                            <small class="error" id="error-cpfResponsavel"></small>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: #00796b; font-weight: 600; font-size: 14px;">Gênero do Responsável</label>
+                            <select class="input__field" id="generoResponsavel" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                <option value="">Selecione</option>
+                                <option value="masculino">Masculino</option>
+                                <option value="feminino">Feminino</option>
+                            </select>
+                            <small class="error" id="error-generoResponsavel"></small>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: #00796b; font-weight: 600; font-size: 14px;">Data de Nascimento do Responsável</label>
+                            <input class="input__field" id="dataNascimentoResponsavel" type="date" min="1900-01-01" max="2020-12-31" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;" />
+                            <small class="error" id="error-dataNascimentoResponsavel"></small>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+
             <div>
-                <button class="registrar" onclick="cadastrarPacienteSemResponsavel()">Cadastrar</button>
+                <button class="registrar" onclick="cadastrarPaciente()">Cadastrar</button>
             </div>
         </div>
     </main>
@@ -187,10 +251,58 @@
             const anoAtual = hoje.getFullYear();
             const dataMax = anoAtual + '-12-31';
             const inputData = document.getElementById('dataNascimento');
+            const inputDataResp = document.getElementById('dataNascimentoResponsavel');
             if (inputData) {
                 inputData.setAttribute('max', dataMax);
             }
+            if (inputDataResp) {
+                inputDataResp.setAttribute('max', dataMax);
+            }
         });
+
+        // Função para mostrar/ocultar seção de responsável com animação suave
+        function toggleResponsavelSection() {
+            const checkbox = document.getElementById('menorIdade');
+            const section = document.getElementById('responsavelSection');
+            
+            if (checkbox.checked) {
+                // Mostra a seção com animação suave
+                section.style.display = 'block';
+                requestAnimationFrame(() => {
+                    section.style.opacity = '1';
+                    section.style.maxHeight = '1200px';
+                    section.style.marginTop = '20px';
+                    section.style.marginBottom = '20px';
+                });
+                
+                // Scroll suave até a seção
+                setTimeout(() => {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 200);
+            } else {
+                // Esconde com animação suave
+                section.style.opacity = '0';
+                section.style.maxHeight = '0';
+                section.style.marginTop = '0';
+                section.style.marginBottom = '0';
+                
+                setTimeout(() => {
+                    section.style.display = 'none';
+                    
+                    // Limpa os campos do responsável
+                    document.getElementById('nomeResponsavel').value = '';
+                    document.getElementById('sobrenomeResponsavel').value = '';
+                    document.getElementById('emailResponsavel').value = '';
+                    document.getElementById('telefoneResponsavel').value = '';
+                    document.getElementById('cpfResponsavel').value = '';
+                    document.getElementById('generoResponsavel').value = '';
+                    document.getElementById('dataNascimentoResponsavel').value = '';
+                    
+                    // Limpa erros
+                    document.querySelectorAll('#responsavelSection .error').forEach(el => el.textContent = '');
+                }, 400);
+            }
+        }
     </script>
     <script src="../Js/datePickerHelper.js"></script>
     <script src="../Js/viaCep.js"></script>

@@ -24,3 +24,13 @@ document.addEventListener("click", (e) => {
     }
 });
 
+// Função para formatar campos com máscara (ex: CEP, CPF, telefone)
+function formatar(mascara, documento) {
+    const i = documento.value.length;
+    const saida = mascara.substring(0, 1);
+    const texto = mascara.substring(i);
+    
+    if (texto.substring(0, 1) !== saida && texto.substring(0, 1) !== '#') {
+        documento.value += texto.substring(0, 1);
+    }
+}
