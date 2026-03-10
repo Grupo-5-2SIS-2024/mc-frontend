@@ -1,7 +1,7 @@
 // Gerenciador de Convênios e Planos para Formulários de Pacientes
 // Este arquivo deve ser incluído nas páginas que precisam carregar convênios e planos
 
-const API_BASE = window.location.origin.includes('localhost')
+const API_BASE_CONVENIO = window.location.origin.includes('localhost')
   ? 'http://localhost:8080/mc'
   : '/mc'
 
@@ -17,7 +17,7 @@ async function carregarConvenios() {
     if (!selectConvenio) return;
     
     try {
-        const response = await fetch(`${API_BASE}/convenios/ativos`);
+        const response = await fetch(`${API_BASE_CONVENIO}/convenios/ativos`);
         
         if (response.ok) {
             const convenios = await response.json();
@@ -83,7 +83,7 @@ async function carregarPlanos() {
     selectPlano.disabled = false;
     
     try {
-        const response = await fetch(`${API_BASE}/planos/convenio/${convenioId}/ativos`);
+        const response = await fetch(`${API_BASE_CONVENIO}/planos/convenio/${convenioId}/ativos`);
         
         if (response.ok) {
             const planos = await response.json();

@@ -18,19 +18,10 @@ async function buscarCep() {
                     // Preenche os campos com os dados retornados
                     document.getElementById("rua").value = respostaJson.logradouro || '';
                     document.getElementById("bairro").value = respostaJson.bairro || '';
-
-                    // Limpa a mensagem de erro, se existir
-                    document.getElementById("error-cep").innerHTML = '';
-
-                } else {
-                    document.getElementById("error-cep").innerHTML = 'CEP não encontrado.';
                 }
             }
         } catch (erro) {
             console.log("Erro ao buscar o CEP:", erro);
-            document.getElementById("error-cep").innerHTML = 'Erro ao buscar o CEP.';
         }
-    } else {
-        document.getElementById("error-cep").innerHTML = 'CEP inválido. Deve conter 8 dígitos.';
     }
 }

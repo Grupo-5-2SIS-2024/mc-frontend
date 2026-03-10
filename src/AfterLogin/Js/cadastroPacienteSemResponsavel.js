@@ -459,3 +459,6 @@ async function cadastrarPacienteSemResponsavel() {
         }
     }
 }
+
+// Garante que a função esteja disponível globalmente
+window.cadastrarPaciente = cadastrarPaciente;
