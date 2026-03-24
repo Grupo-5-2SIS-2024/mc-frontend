@@ -1110,14 +1110,74 @@ function proximaSemanaColab() {
   dataInicioAtualColab.setDate(dataInicioAtualColab.getDate() + 7);
   atualizarDisplayDataColab(dataInicioAtualColab);
 }
+function getDuracaoMinutos(entry) {
+  const raw = entry?.duracaoConsulta ?? entry?.duracao;
+  if (raw == null) return null;
+
+  if (typeof raw === 'number' && isFinite(raw)) return raw;
+
+  if (typeof raw === 'string') {
+    const s = raw.trim();
+
+    let m = s.match(/^([0-9]{1,2}):([0-9]{2}):([0-9]{2})$/);
+    if (m) {
+      const hh = Number(m[1]);
+      const mm = Number(m[2]);
+      return (hh * 60) + mm;
+    }
+
+    m = s.match(/^([0-9]{1,2}):([0-9]{2})$/);
+    if (m) {
+      const hh = Number(m[1]);
+      const mm = Number(m[2]);
+      return (hh * 60) + mm;
+    }
+
+    const n = Number(s);
+    if (!Number.isNaN(n) && isFinite(n)) return n;
+  }
+
+  return null;
+}
+
+function timeHHMMFromISO(iso) {
+  try {
+    const d = new Date(iso);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  } catch {
+    return '';
+  }
+}
+
+function computeSeriesKeyFromConsulta(c) {
+  const medicoId = c?.medico?.id ?? '';
+  const pacienteId = c?.paciente?.id ?? '';
+  const especId = c?.especificacaoMedica?.id ?? '';
+  const durMin = getDuracaoMinutos(c);
+  const hhmm = timeHHMMFromISO(c?.datahoraConsulta);
+
+  return `${medicoId}|${pacienteId}|${especId}|${durMin ?? ''}|${hhmm}`;
+}
 
 function abrirDetalhesTarefaColab(consulta) {
   const dataHora = consulta?.datahoraConsulta ? new Date(consulta.datahoraConsulta) : null;
-  const dataFormatada = dataHora ? dataHora.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Não informada';
-  const horaFormatada = dataHora ? dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Não informada';
+  const dataFormatada = dataHora
+    ? dataHora.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+    : 'Não informada';
+  const horaFormatada = dataHora
+    ? dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    : 'Não informada';
 
-  const pacienteNome = consulta?.paciente ? `${consulta.paciente.nome || ''} ${consulta.paciente.sobrenome || ''}`.trim() : 'Desconhecido';
-  const medicoNome = consulta?.medico ? `${consulta.medico.nome || ''} ${consulta.medico.sobrenome || ''}`.trim() : 'Desconhecido';
+  const pacienteNome = consulta?.paciente
+    ? `${consulta.paciente.nome || ''} ${consulta.paciente.sobrenome || ''}`.trim()
+    : 'Desconhecido';
+
+  const medicoNome = consulta?.medico
+    ? `${consulta.medico.nome || ''} ${consulta.medico.sobrenome || ''}`.trim()
+    : 'Desconhecido';
+
   const area = consulta?.medico?.especificacaoMedica?.area || consulta?.especificacaoMedica?.area || 'Desconhecida';
   const status = consulta?.statusConsulta?.nomeStatus || 'Desconhecido';
   const duracao = consulta?.duracaoConsulta ?? consulta?.duracao ?? '—';
@@ -1126,6 +1186,18 @@ function abrirDetalhesTarefaColab(consulta) {
   if (!detalhesDiv) return;
 
   detalhesDiv.innerHTML = `
+    <div class="modal-header">
+      <h3 style="margin:0; color:#1976D2;">Detalhes da Consulta</h3>
+      <div class="acoes-cabecalho">
+        <button id="btnExcluirConsultaColab" class="icon-btn danger" title="Excluir consulta">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+        <button id="btnEditarConsultaColab" class="icon-btn primary" title="Atualizar consulta">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button id="btnFecharDetalhesColab" class="icon-btn close" title="Fechar">×</button>
+      </div>
+    </div>
     <p><strong>Descrição:</strong> ${consulta?.descricao || 'Sem descrição'}</p>
     <p><strong>Data e Hora:</strong> ${dataFormatada} às ${horaFormatada}</p>
     <p><strong>Paciente:</strong> ${pacienteNome}</p>
@@ -1136,11 +1208,336 @@ function abrirDetalhesTarefaColab(consulta) {
 
   const modal = document.getElementById('modalDetalhesTarefaColab');
   if (modal) modal.style.display = 'flex';
+
+  const btnEditar = document.getElementById('btnEditarConsultaColab');
+  const btnExcluir = document.getElementById('btnExcluirConsultaColab');
+  const btnFechar = document.getElementById('btnFecharDetalhesColab');
+
+  if (btnEditar && consulta?.id) {
+    btnEditar.onclick = () => {
+      window.location.href = `editarConsulta.html?id=${consulta.id}`;
+    };
+  }
+
+  if (btnExcluir && consulta?.id) {
+   btnExcluir.onclick = () => excluirConsultaColab(consulta);
+  }
+
+  if (btnFechar) {
+    btnFechar.onclick = fecharModalDetalhesColab;
+  }
 }
 
 function fecharModalDetalhesColab() {
   const modal = document.getElementById('modalDetalhesTarefaColab');
   if (modal) modal.style.display = 'none';
+}
+
+async function cancelarConsultaColab(consulta) {
+  try {
+    if (!consulta?.id) {
+      throw new Error('Consulta inválida.');
+    }
+
+    fecharModalDetalhesColab();
+
+    const escolha = await Swal.fire({
+      title: 'Excluir recorrência?',
+      text: 'Deseja excluir somente esta consulta ou todas as recorrentes deste dia em diante?',
+      icon: 'question',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: 'Somente esta',
+      denyButtonText: 'Recorrentes a partir desta',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (escolha.isDismissed) return;
+
+    if (escolha.isConfirmed) {
+      const confirmar = await Swal.fire({
+        title: 'Tem certeza?',
+        text: 'Deseja excluir esta consulta?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, excluir',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#d33'
+      });
+
+      if (!confirmar.isConfirmed) return;
+
+      const resp = await fetch(`${API_BASE}/mc/consultas/${consulta.id}`, {
+        method: 'DELETE',
+        headers: { 'Accept': 'application/json' }
+      });
+
+      if (!resp.ok) {
+        const msg = await resp.text().catch(() => '');
+        throw new Error(msg || `Erro ${resp.status} ao excluir a consulta.`);
+      }
+
+      await buscarConsultasColaborador(currentColabId);
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Excluída',
+        text: 'Consulta excluída com sucesso.'
+      });
+
+      return;
+    }
+
+    const confirmarSerie = await Swal.fire({
+      title: 'Tem certeza?',
+      text: 'Isto irá excluir todas as consultas recorrentes deste dia em diante.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, excluir todas',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33'
+    });
+
+    if (!confirmarSerie.isConfirmed) return;
+
+    Swal.fire({
+      title: 'Excluindo recorrências...',
+      text: 'Removendo consultas futuras.',
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    const respTodas = await fetch(`${API_BASE}/mc/consultas`);
+    if (!respTodas.ok) {
+      throw new Error(`Erro ao buscar consultas. Status ${respTodas.status}`);
+    }
+
+    const todas = await respTodas.json();
+    const dataInicial = new Date(consulta.datahoraConsulta);
+    const chaveSerie = computeSeriesKeyFromConsulta(consulta);
+
+    const recorrentes = (todas || []).filter(c => {
+      const dataConsulta = new Date(c.datahoraConsulta);
+      return computeSeriesKeyFromConsulta(c) === chaveSerie && dataConsulta >= dataInicial;
+    });
+
+    const exclusoes = await Promise.allSettled(
+      recorrentes.map(c =>
+        fetch(`${API_BASE}/mc/consultas/${c.id}`, {
+          method: 'DELETE',
+          headers: { 'Accept': 'application/json' }
+        })
+      )
+    );
+
+    const falhas = exclusoes.filter(r => r.status === 'rejected' || (r.value && !r.value.ok));
+
+    await buscarConsultasColaborador(currentColabId);
+
+    Swal.close();
+
+    if (falhas.length === 0) {
+      await Swal.fire({
+        icon: 'success',
+        title: 'Excluídas',
+        text: `Consultas recorrentes excluídas: ${recorrentes.length}.`
+      });
+    } else {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Exclusão parcial',
+        text: `Algumas consultas não puderam ser excluídas. Falhas: ${falhas.length}.`
+      });
+    }
+  } catch (erro) {
+    console.error('Erro ao excluir consulta(s) do colaborador:', erro);
+    Swal.close();
+    await Swal.fire({
+      icon: 'error',
+      title: 'Erro ao excluir',
+      text: erro.message || 'Falha ao excluir a consulta.'
+    });
+  }
+}
+
+function getDuracaoMinutos(entry) {
+  const raw = entry?.duracaoConsulta ?? entry?.duracao;
+  if (raw == null) return null;
+
+  if (typeof raw === 'number' && isFinite(raw)) return raw;
+
+  if (typeof raw === 'string') {
+    const s = raw.trim();
+
+    let m = s.match(/^([0-9]{1,2}):([0-9]{2}):([0-9]{2})$/);
+    if (m) {
+      const hh = Number(m[1]);
+      const mm = Number(m[2]);
+      return (hh * 60) + mm;
+    }
+
+    m = s.match(/^([0-9]{1,2}):([0-9]{2})$/);
+    if (m) {
+      const hh = Number(m[1]);
+      const mm = Number(m[2]);
+      return (hh * 60) + mm;
+    }
+
+    const n = Number(s);
+    if (!Number.isNaN(n) && isFinite(n)) return n;
+  }
+
+  return null;
+}
+
+function timeHHMMFromISO(iso) {
+  try {
+    const d = new Date(iso);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  } catch {
+    return '';
+  }
+}
+
+function computeSeriesKeyFromConsulta(c) {
+  const medicoId = c?.medico?.id ?? '';
+  const pacienteId = c?.paciente?.id ?? '';
+  const especId = c?.especificacaoMedica?.id ?? '';
+  const durMin = getDuracaoMinutos(c);
+  const hhmm = timeHHMMFromISO(c?.datahoraConsulta);
+
+  return `${medicoId}|${pacienteId}|${especId}|${durMin ?? ''}|${hhmm}`;
+}
+
+async function excluirConsultaColab(consulta) {
+  try {
+    if (!consulta?.id) {
+      throw new Error('Consulta inválida.');
+    }
+
+    fecharModalDetalhesColab();
+
+    const escolha = await Swal.fire({
+      title: 'Excluir recorrência?',
+      text: 'Deseja excluir somente esta consulta ou todas as recorrentes deste dia em diante?',
+      icon: 'question',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: 'Somente esta',
+      denyButtonText: 'Recorrentes a partir desta',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (escolha.isDismissed) return;
+
+    if (escolha.isConfirmed) {
+      const confirmar = await Swal.fire({
+        title: 'Tem certeza?',
+        text: 'Deseja excluir esta consulta?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, excluir',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#d33'
+      });
+
+      if (!confirmar.isConfirmed) return;
+
+      const resp = await fetch(`${API_BASE}/mc/consultas/${consulta.id}`, {
+        method: 'DELETE',
+        headers: { 'Accept': 'application/json' }
+      });
+
+      if (!resp.ok) {
+        const msg = await resp.text().catch(() => '');
+        throw new Error(msg || `Erro ${resp.status} ao excluir a consulta.`);
+      }
+
+      await buscarConsultasColaborador(currentColabId);
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Excluída',
+        text: 'Consulta excluída com sucesso.'
+      });
+
+      return;
+    }
+
+    const confirmarSerie = await Swal.fire({
+      title: 'Tem certeza?',
+      text: 'Isto irá excluir todas as consultas recorrentes deste dia em diante.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, excluir todas',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33'
+    });
+
+    if (!confirmarSerie.isConfirmed) return;
+
+    Swal.fire({
+      title: 'Excluindo recorrências...',
+      text: 'Removendo consultas futuras.',
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    const respTodas = await fetch(`${API_BASE}/mc/consultas`);
+    if (!respTodas.ok) {
+      throw new Error(`Erro ao buscar consultas. Status ${respTodas.status}`);
+    }
+
+    const todas = await respTodas.json();
+    const dataInicial = new Date(consulta.datahoraConsulta);
+    const chaveSerie = computeSeriesKeyFromConsulta(consulta);
+
+    const recorrentes = (todas || []).filter(c => {
+      const dataConsulta = new Date(c.datahoraConsulta);
+      return computeSeriesKeyFromConsulta(c) === chaveSerie && dataConsulta >= dataInicial;
+    });
+
+    const exclusoes = await Promise.allSettled(
+      recorrentes.map(c =>
+        fetch(`${API_BASE}/mc/consultas/${c.id}`, {
+          method: 'DELETE',
+          headers: { 'Accept': 'application/json' }
+        })
+      )
+    );
+
+    const falhas = exclusoes.filter(r => r.status === 'rejected' || (r.value && !r.value.ok));
+
+    await buscarConsultasColaborador(currentColabId);
+
+    Swal.close();
+
+    if (falhas.length === 0) {
+      await Swal.fire({
+        icon: 'success',
+        title: 'Excluídas',
+        text: `Consultas recorrentes excluídas: ${recorrentes.length}.`
+      });
+    } else {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Exclusão parcial',
+        text: `Algumas consultas não puderam ser excluídas. Falhas: ${falhas.length}.`
+      });
+    }
+  } catch (erro) {
+    console.error('Erro ao excluir consulta(s) do colaborador:', erro);
+    Swal.close();
+    await Swal.fire({
+      icon: 'error',
+      title: 'Erro ao excluir',
+      text: erro.message || 'Falha ao excluir a consulta.'
+    });
+  }
 }
 
 function criarLinhaCargaView(item) {

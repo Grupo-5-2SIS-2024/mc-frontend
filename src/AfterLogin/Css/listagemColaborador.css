@@ -736,6 +736,75 @@ a {
 }
 .modal-permissoes .close:hover { color: #111; }
 
+.swal2-container {
+  z-index: 99999 !important;
+}
+
+#modalBackdropColab {
+  z-index: 9990;
+}
+
+#modalDetalhesTarefaColab {
+  z-index: 9991;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 7px;
+    padding-right: 10px;
+}
+
+.acoes-cabecalho {
+    display: inline-flex;
+    gap: 12px;
+    align-items: center;
+    margin-left: auto;
+    margin-right: 6px;
+}
+
+.icon-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.icon-btn i {
+    font-size: 14px;
+}
+
+.icon-btn:hover {
+    transform: translateY(-2px);
+}
+
+.icon-btn.danger {
+    background-color: #e53935;
+    color: #fff;
+}
+
+.icon-btn.primary {
+    background-color: #1976D2;
+    color: #fff;
+}
+
+.icon-btn.close {
+    background: transparent;
+    color: #666;
+    font-weight: 700;
+    font-size: 18px;
+    width: 28px;
+    height: 28px;
+    box-shadow: none;
+}
+
 /* Responsive: permissions modal */
 @media (max-width: 900px) {
     .modal-content.modal-permissoes {
