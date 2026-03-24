@@ -2,6 +2,8 @@
 const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
 
 let selectedImage = null; // Variável para armazenar a imagem inicial ou a nova imagem selecionada
+let convenioPreselecionadoId = null;
+let planoPreselecionadoId = null;
 
 const inputFile = document.querySelector("#picture__input");
 const pictureImage = document.querySelector(".picture__image");
@@ -34,6 +36,48 @@ inputFile.addEventListener("change", function (e) {
     }
 });
 
+async function preselecionarConvenioEPlanoDoPaciente(paciente) {
+    const planoId = paciente?.plano?.id;
+    if (!planoId) return;
+
+    const selectConvenio = document.getElementById('convenio');
+    const selectPlano = document.getElementById('plano');
+
+    if (!selectConvenio || !selectPlano) return;
+
+    try {
+        const response = await fetch(`${window.location.origin.includes('localhost') ? 'http://localhost:8080/mc' : '/mc'}/convenios/ativos`);
+        if (!response.ok) return;
+
+        const convenios = await response.json();
+
+        let convenioEncontrado = null;
+
+        for (const convenio of convenios) {
+            const planoEncontrado = (convenio.planos || []).find(p => Number(p.id) === Number(planoId));
+            if (planoEncontrado) {
+                convenioEncontrado = convenio;
+                break;
+            }
+        }
+
+        if (!convenioEncontrado) return;
+
+        convenioPreselecionadoId = convenioEncontrado.id;
+        planoPreselecionadoId = planoId;
+
+        selectConvenio.value = String(convenioPreselecionadoId);
+
+        if (typeof carregarPlanos === 'function') {
+            await carregarPlanos();
+        }
+
+        selectPlano.value = String(planoPreselecionadoId);
+    } catch (error) {
+        console.error('Erro ao pré selecionar convênio e plano:', error);
+    }
+}
+
 // Função para buscar os valores do paciente e preencher o formulário
 async function buscarValoresPaciente(id) {
     try {
@@ -51,12 +95,17 @@ async function buscarValoresPaciente(id) {
         document.getElementById("cns").value = paciente.cns || '';
         document.getElementById("genero").value = paciente.genero || '';
         document.getElementById("cep").value = paciente.endereco?.cep || '';
-        document.getElementById("rua").value = paciente.endereco?.rua || '';
+        document.getElementById("rua").value = paciente.endereco?.rua || paciente.endereco?.logradouro || '';
         document.getElementById("bairro").value = paciente.endereco?.bairro || '';
         document.getElementById("numero").value = paciente.endereco?.numero || '';
         document.getElementById("complemento").value = paciente.endereco?.complemento || '';
 
-        // Exibir a imagem do paciente existente
+        if (typeof carregarConvenios === 'function') {
+            await carregarConvenios();
+        }
+
+        await preselecionarConvenioEPlanoDoPaciente(paciente);
+
         if (pictureImage) {
             if (paciente.foto) {
                 const img = document.createElement("img");
@@ -64,7 +113,7 @@ async function buscarValoresPaciente(id) {
                 img.classList.add("picture__img");
                 pictureImage.innerHTML = "";
                 pictureImage.appendChild(img);
-                selectedImage = paciente.foto; // Armazena a imagem existente
+                selectedImage = paciente.foto;
             } else {
                 pictureImage.innerHTML = pictureImageTxt;
                 selectedImage = null;
@@ -211,6 +260,9 @@ async function atualizarPaciente() {
         const bairro = document.getElementById("bairro").value.trim();
         const numero = document.getElementById("numero").value;
         const complemento = document.getElementById("complemento").value.trim();
+        const planoSelecionado = typeof obterPlanoSelecionado === 'function'
+            ? obterPlanoSelecionado()
+            : (document.getElementById("plano")?.value || null);
 
         // Criando o objeto com chave-valor explícito
         const dadosPaciente = {
@@ -229,7 +281,8 @@ async function atualizarPaciente() {
                 "numero": numero,
                 "complemento": complemento
             },
-            "foto": selectedImage // Envia a imagem atual ou nova imagem selecionada
+            "foto": selectedImage,
+            "plano": planoSelecionado ? { "id": Number(planoSelecionado) } : null
         };
 
         try {
@@ -266,10 +319,19 @@ function getIdFromURL() {
     return urlParams.get('id');
 }
 
-window.onload = function () {
+window.onload = async function () {
     const id = getIdFromURL();
+
+    try {
+        if (typeof carregarConvenios === 'function') {
+            await carregarConvenios();
+        }
+    } catch (e) {
+        console.warn('Não foi possível carregar convênios ao iniciar.', e);
+    }
+
     if (id) {
-        buscarValoresPaciente(id);
+        await buscarValoresPaciente(id);
     } else {
         console.error('ID do paciente não encontrado na URL.');
     }
