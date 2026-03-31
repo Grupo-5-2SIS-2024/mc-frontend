@@ -5,38 +5,358 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Filtro de visualização de terapia (ABA | Convencional). Default alinhado ao calendário
     let filtroTerapia = 'ABA';
     const nivelPermissaoGlobal = sessionStorage.getItem('PERMISSIONAMENTO_MEDICO');
-    let selectedMedicoId = '';
+    let selectedMedicoNome = '';
+    let consultasPainelRenderizadas = [];
     let medicosCache = [];
-    // Define base da API (ajusta para localhost em dev)
-    const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+    let cacheIdsDiaIso = '';
+    let cacheIdsPorChave = new Map();
+    // Define bases candidatas da API. Em localhost tenta 8080 e mesma origem (ex.: 3000 + proxy)
+    const API_BASES = window.location.origin.includes('localhost')
+        ? ['http://localhost:8080', window.location.origin, '']
+        : [''];
 
-    // Função para buscar todas as consultas e filtrar pelo ID do médico
-    async function buscarConsultas(idMedico) {
-        try {
-            const response = await fetch(`${API_BASE}/mc/consultas`); // Busca todas as consultas
-            if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
-            const data = await response.json();
+    async function apiFetch(path, options = {}) {
+        let ultimoErro = null;
 
-            // Filtra apenas as consultas que pertencem ao Profissional com o ID especificado
-            const consultasMedico = data.filter(consulta => consulta.medico.id === parseInt(idMedico, 10));
-            return consultasMedico; // Retorna apenas as consultas do Profissional
-        } catch (error) {
-            console.error('Erro ao buscar consultas:', error);
-            return [];
+        for (const base of API_BASES) {
+            const url = `${base}${path}`;
+            try {
+                const resp = await fetch(url, options);
+                // Se conectou ao servidor e não é 404, já devolve a resposta.
+                if (resp.status !== 404) return resp;
+            } catch (erro) {
+                ultimoErro = erro;
+            }
         }
+
+        if (ultimoErro) throw ultimoErro;
+        throw new Error('Nao foi possivel conectar em nenhuma base da API.');
     }
 
-    // Função para buscar a foto do Profissional
-    async function buscarFotoMedico(idMedico) {
-        try {
-            const response = await fetch(`${API_BASE}/mc/medicos/${idMedico}/foto`);
-            if (!response.ok) throw new Error(`Erro HTTP! Status: ${response.status}`);
-            const fotoData = await response.json();
-            return fotoData.url; // Supondo que o URL da foto esteja no campo 'url'
-        } catch (error) {
-            console.error('Erro ao buscar foto do Profissional:', error);
-            return null;
+    function formatarDataIsoLocal(data) {
+        const d = new Date(data);
+        const ano = d.getFullYear();
+        const mes = String(d.getMonth() + 1).padStart(2, '0');
+        const dia = String(d.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+    }
+
+    function normalizarTexto(valor) {
+        return String(valor || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+    }
+
+    function primeiroNomeNormalizado(valor) {
+        return normalizarTexto(valor).split(/\s+/).filter(Boolean)[0] || '';
+    }
+
+    function obterNomeFiltroApiMedico(nomeCompleto) {
+        const nome = String(nomeCompleto || '').trim();
+        if (!nome) return '';
+        return nome.split(/\s+/)[0] || '';
+    }
+
+    function extrairHoraMinuto(valor) {
+        if (!valor) return '';
+        if (typeof valor === 'string') {
+            const match = valor.match(/(\d{2}):(\d{2})/);
+            if (match) return `${match[1]}:${match[2]}`;
+            return '';
         }
+        const d = new Date(valor);
+        if (isNaN(d.getTime())) return '';
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function construirChavePainel(hhmm, nomePaciente, nomeProfissional) {
+        return `${hhmm}|${primeiroNomeNormalizado(nomePaciente)}|${primeiroNomeNormalizado(nomeProfissional)}`;
+    }
+
+    async function buscarConsultasDetalhadasDia(dataRef) {
+        const dataIso = formatarDataIsoLocal(dataRef);
+        const query = new URLSearchParams();
+        query.set('data', dataIso);
+
+        const caminhos = [
+            `/mc/consultas?${query.toString()}`,
+            `/consultas?${query.toString()}`,
+            '/mc/consultas',
+            '/consultas'
+        ];
+
+        for (const path of caminhos) {
+            try {
+                const resp = await apiFetch(path);
+                if (!resp.ok) continue;
+                const data = await resp.json();
+                if (!Array.isArray(data)) continue;
+                return data;
+            } catch (erro) {
+                console.warn('[PainelDia] falha ao buscar consultas detalhadas:', path, erro);
+            }
+        }
+
+        return [];
+    }
+
+    async function garantirCacheIdsDoDia(dataRef) {
+        const dataIso = formatarDataIsoLocal(dataRef);
+        if (cacheIdsDiaIso === dataIso && cacheIdsPorChave.size > 0) return;
+
+        const lista = await buscarConsultasDetalhadasDia(dataRef);
+        const mapa = new Map();
+
+        for (const c of lista) {
+            const id = c?.id ?? c?.consultaId ?? c?.consulta?.id ?? null;
+            if (!id) continue;
+
+            const hhmm = extrairHoraMinuto(c?.datahoraConsulta || c?.horario);
+            const paciente = `${c?.paciente?.nome || ''} ${c?.paciente?.sobrenome || ''}`.trim() || c?.pacienteNome || c?.paciente || '';
+            const profissional = `${c?.medico?.nome || ''} ${c?.medico?.sobrenome || ''}`.trim() || c?.profissionalNome || c?.medico || c?.profissional || '';
+            if (!hhmm || !paciente || !profissional) continue;
+
+            const chave = construirChavePainel(hhmm, paciente, profissional);
+            if (!mapa.has(chave)) mapa.set(chave, id);
+        }
+
+        cacheIdsDiaIso = dataIso;
+        cacheIdsPorChave = mapa;
+    }
+
+    async function resolverIdConsulta(consulta, dataRef) {
+        if (consulta?.id) return consulta.id;
+        await garantirCacheIdsDoDia(dataRef);
+
+        const hhmm = extrairHoraMinuto(consulta?.datahoraConsulta || consulta?.horarioHHMM || consulta?.horario);
+        const paciente = nomePacienteLinha(consulta);
+        const profissional = nomeProfissionalLinha(consulta);
+        const chave = construirChavePainel(hhmm, paciente, profissional);
+        const idResolvido = cacheIdsPorChave.get(chave) ?? null;
+
+        if (idResolvido) consulta.id = idResolvido;
+        return idResolvido;
+    }
+
+    function duracaoEmMinutos(c) {
+        const d = c?.duracaoConsulta;
+        if (typeof d === 'number') return d;
+        if (typeof d === 'string') {
+            const partes = d.split(':');
+            if (partes.length >= 2) {
+                const horas = parseInt(partes[0], 10) || 0;
+                const minutos = parseInt(partes[1], 10) || 0;
+                return horas * 60 + minutos;
+            }
+            const m = parseInt(d, 10);
+            return isNaN(m) ? 0 : m;
+        }
+        return 0;
+    }
+
+    function tipoTerapia(c) {
+        const tipoApi = normalizarTexto(c?.tipoTerapia || c?.painelTipoTerapia || '');
+        if (tipoApi === 'aba') return 'ABA';
+        if (tipoApi.includes('convenc')) return 'Convencional';
+
+        const mins = duracaoEmMinutos(c);
+        if (mins === 50 || mins === 60) return 'ABA';
+        if (mins === 30) return 'Convencional';
+        // Se a API nao enviou duracao/tipo, nao forca exclusao pelo filtro de visualizacao.
+        return null;
+    }
+
+    function duracaoPorFiltro(modo) {
+        return modo === 'Convencional' ? 30 : 50;
+    }
+
+    function nomePacienteLinha(consulta) {
+        if (consulta?.pacienteNome) return consulta.pacienteNome;
+        if (consulta?.paciente && consulta?.pacienteSobrenome) {
+            return `${consulta.paciente} ${consulta.pacienteSobrenome}`.trim();
+        }
+        const nome = consulta?.paciente?.nome || '';
+        const sobrenome = consulta?.paciente?.sobrenome || '';
+        return `${nome} ${sobrenome}`.trim();
+    }
+
+    function nomeProfissionalLinha(consulta) {
+        if (consulta?.profissionalNome) return consulta.profissionalNome;
+        if (consulta?.medico && consulta?.medicoSobrenome) {
+            return `${consulta.medico} ${consulta.medicoSobrenome}`.trim();
+        }
+        const nome = consulta?.medico?.nome || '';
+        const sobrenome = consulta?.medico?.sobrenome || '';
+        return `${nome} ${sobrenome}`.trim();
+    }
+
+    function nomeEspecialidadeLinha(consulta) {
+        return String(
+            consulta?.especialidadeNome ||
+            consulta?.medico?.especificacaoMedica?.area ||
+            consulta?.especificacaoMedica?.area ||
+            ''
+        ).trim();
+    }
+
+    function statusNomePorId(statusId) {
+        const mapa = {
+            1: 'Agendada',
+            2: 'Confirmada',
+            3: 'Atendida',
+            4: 'Cancelada',
+            5: 'Faltou'
+        };
+        return mapa[Number(statusId)] || '';
+    }
+
+    async function buscarPainelDoDia(dataRef, medico = null, duracao = null) {
+        const query = new URLSearchParams();
+        query.set('data', formatarDataIsoLocal(dataRef));
+        const medicoFiltroApi = obterNomeFiltroApiMedico(medico);
+        if (medicoFiltroApi) query.set('medico', medicoFiltroApi);
+        if (typeof duracao === 'number' && !Number.isNaN(duracao)) query.set('duracao', String(duracao));
+
+        const caminhos = [
+            `/mc/consultas/painel-dia?${query.toString()}`,
+            `/consultas/painel-dia?${query.toString()}`,
+            `/mc/painel-dia?${query.toString()}`,
+            `/painel-dia?${query.toString()}`
+        ];
+
+        for (const path of caminhos) {
+            console.info('[PainelDia] GET', path, 'bases:', API_BASES);
+            try {
+                const resp = await apiFetch(path);
+                if (!resp.ok) {
+                    console.warn('[PainelDia] tentativa falhou:', path, 'status:', resp.status);
+                    continue;
+                }
+                const data = await resp.json();
+                const lista = Array.isArray(data) ? data : [];
+                console.info('[PainelDia] sucesso:', path, 'itens:', lista.length);
+                return lista;
+            } catch (erro) {
+                console.warn('[PainelDia] erro na tentativa:', path, erro);
+            }
+        }
+
+        console.error('[PainelDia] nenhuma rota respondeu com sucesso.');
+        return [];
+    }
+
+    function normalizarLinhaPainelDoDia(linha, dataRef) {
+        const dataIso = formatarDataIsoLocal(dataRef);
+        const dataHoraOriginal = linha?.datahoraConsulta ? new Date(linha.datahoraConsulta) : null;
+        const hhmm = extrairHoraMinuto(linha?.datahoraConsulta || linha?.horario);
+        const datahora = dataHoraOriginal && !isNaN(dataHoraOriginal.getTime())
+            ? linha.datahoraConsulta
+            : (hhmm ? `${dataIso}T${hhmm}:00` : `${dataIso}T00:00:00`);
+        const statusId = linha?.statusId ?? linha?.statusConsulta?.idStatus ?? linha?.statusConsulta?.id ?? linha?.status?.id ?? null;
+        const status = String(
+            (linha?.statusConsulta?.nomeStatus ?? (typeof linha?.status === 'string' ? linha.status : '')) ||
+            statusNomePorId(statusId) ||
+            'Agendada'
+        ).trim();
+
+        const pacienteNome = String(
+            linha?.pacienteNome ||
+            `${linha?.paciente || ''} ${linha?.pacienteSobrenome || ''}`.trim() ||
+            `${linha?.paciente?.nome || ''} ${linha?.paciente?.sobrenome || ''}`.trim() ||
+            linha?.paciente ||
+            ''
+        ).trim();
+        const profissionalNome = String(
+            linha?.profissionalNome ||
+            `${linha?.medico || ''} ${linha?.medicoSobrenome || ''}`.trim() ||
+            `${linha?.medico?.nome || ''} ${linha?.medico?.sobrenome || ''}`.trim() ||
+            linha?.medico ||
+            linha?.profissional ||
+            ''
+        ).trim();
+
+        return {
+            id: linha?.consultaId ?? linha?.id ?? linha?.consulta?.id ?? null,
+            horarioHHMM: hhmm,
+            datahoraConsulta: datahora,
+            pacienteNome: pacienteNome,
+            profissionalNome: profissionalNome,
+            especialidadeNome: String(
+                linha?.especialidadeNome ??
+                linha?.especialidade ??
+                linha?.medico?.especificacaoMedica?.area ??
+                linha?.especificacaoMedica?.area ??
+                ''
+            ).trim(),
+            painelIdade: linha?.painelIdade ?? linha?.idade ?? null,
+            painelConvenio: linha?.painelConvenio ?? linha?.convenio?.nome ?? linha?.convenio ?? null,
+            painelStatus: status,
+            painelTipoTerapia: linha?.painelTipoTerapia ?? linha?.tipoTerapia ?? null,
+            statusConsulta: linha?.statusConsulta || { idStatus: statusId, nomeStatus: status },
+            paciente: linha?.paciente || { nome: pacienteNome, sobrenome: '' },
+            medico: linha?.medico || { id: linha?.medicoId ?? null, nome: profissionalNome, sobrenome: '' },
+            duracaoConsulta: linha?.duracaoConsulta ?? linha?.duracao ?? null
+        };
+    }
+
+    function atualizarOpcoesProfissional(consultasDoPainel = []) {
+        const selMed = document.getElementById('filtroMedicoSelect');
+        if (!selMed) return;
+
+        if (Array.isArray(medicosCache) && medicosCache.length > 0) {
+            const opcoes = medicosCache
+                .map((m) => {
+                    const nome = `${m?.nome || ''} ${m?.sobrenome || ''}`.trim();
+                    const especialidade = String(m?.especificacaoMedica?.area || '').trim();
+                    if (!nome) return null;
+                    return {
+                        value: nome,
+                        label: especialidade ? `${nome} - ${especialidade}` : nome
+                    };
+                })
+                .filter(Boolean)
+                .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+
+            const unicas = [];
+            const vistos = new Set();
+            for (const op of opcoes) {
+                const chave = `${normalizarTexto(op.value)}|${normalizarTexto(op.label)}`;
+                if (vistos.has(chave)) continue;
+                vistos.add(chave);
+                unicas.push(op);
+            }
+
+            selMed.innerHTML = '<option value="">Todos</option>' + unicas.map(op => `<option value="${op.value}">${op.label}</option>`).join('');
+            if (selectedMedicoNome) selMed.value = selectedMedicoNome;
+            return;
+        }
+
+        const opcoes = (consultasDoPainel || [])
+            .map((c) => {
+                const nome = nomeProfissionalLinha(c);
+                const especialidade = nomeEspecialidadeLinha(c);
+                if (!nome) return null;
+                return {
+                    value: nome,
+                    label: especialidade ? `${nome} - ${especialidade}` : nome
+                };
+            })
+            .filter(Boolean)
+            .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+
+        const unicas = [];
+        const vistos = new Set();
+        for (const op of opcoes) {
+            const chave = `${normalizarTexto(op.value)}|${normalizarTexto(op.label)}`;
+            if (vistos.has(chave)) continue;
+            vistos.add(chave);
+            unicas.push(op);
+        }
+
+        selMed.innerHTML = '<option value="">Todos</option>' + unicas.map(op => `<option value="${op.value}">${op.label}</option>`).join('');
+        if (selectedMedicoNome) selMed.value = selectedMedicoNome;
     }
 
 
@@ -91,24 +411,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // KPIs ADMIN (substitui KPIs do médico quando permissão for Admin)
     async function buscarKPIsAdmin() {
+        const extrairContagem = (payload) => {
+            if (Array.isArray(payload)) return payload.length;
+            if (typeof payload === 'number' && !isNaN(payload)) return payload;
+            if (!payload || typeof payload !== 'object') return 0;
+            if (Array.isArray(payload.content)) return payload.content.length;
+            if (typeof payload.totalElements === 'number') return payload.totalElements;
+            if (typeof payload.total === 'number') return payload.total;
+            if (typeof payload.count === 'number') return payload.count;
+            return 0;
+        };
+
+        const obterContagem = async (caminhos) => {
+            for (const path of caminhos) {
+                try {
+                    const resposta = await apiFetch(path);
+                    if (!resposta.ok) continue;
+                    const data = await resposta.json();
+                    return extrairContagem(data);
+                } catch (erro) {
+                    console.warn('Falha ao obter contagem em', path, erro);
+                }
+            }
+            return 0;
+        };
+
         try {
-            // Buscar o número total de médicos
-            const respostaTotalMedicos = await fetch(`${API_BASE}/mc/medicos/todos`);
-            const listaMedicos = await respostaTotalMedicos.json();
-            const totalMedicos = listaMedicos.length;
-
-            // Buscar o número de médicos ativos
-            const respostaMedicosAtivos = await fetch(`${API_BASE}/mc/medicos`);
-            const listaMedicosAtivos = await respostaMedicosAtivos.json();
-            const medicosAtivos = listaMedicosAtivos.length;
-
-            const respostaPacientesAtivos = await fetch(`${API_BASE}/mc/pacientes`);
-            const listaPacientesAtivos = await respostaPacientesAtivos.json()
-            const pacientesAtivos = listaPacientesAtivos.length
-
-            const respostaPacientes = await fetch(`${API_BASE}/mc/pacientes/todos`);
-            const pacientes = await respostaPacientes.json();
-            const totalPacientes = pacientes.length;
+            // Totais com fallback e suporte a payload paginado
+            const totalMedicos = await obterContagem(['/mc/medicos/todos', '/mc/medicos']);
+            const medicosAtivos = await obterContagem(['/mc/medicos']);
+            const pacientesAtivos = await obterContagem(['/mc/pacientes']);
+            const totalPacientes = await obterContagem(['/mc/pacientes/todos', '/mc/pacientes']);
 
             const formatarNumero = (numero) => numero.toString().padStart(2, '0');
 
@@ -123,6 +456,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (elPacientesAtivos) elPacientesAtivos.textContent = formatarNumero(pacientesAtivos);
         } catch (erro) {
             console.error('Erro ao buscar os dados dos KPIs admin:', erro);
+        }
+    }
+
+    async function carregarMedicosFiltro() {
+        try {
+            const resposta = await apiFetch('/mc/medicos');
+            if (!resposta.ok) {
+                medicosCache = [];
+                return;
+            }
+            const lista = await resposta.json();
+            medicosCache = Array.isArray(lista) ? lista : [];
+        } catch (erro) {
+            medicosCache = [];
+            console.warn('Falha ao carregar medicos para filtro:', erro);
         }
     }
 
@@ -176,69 +524,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         return '';
     }
 
-    // Utilitário: filtra consultas pela área informada do usuário (case-insensitive)
-    function filtrarAreaUsuario(consultas) {
-        const areaUsuario = getAreaUsuario();
-        // fallback: se não houver área definida, não filtra
-        if (!areaUsuario) return consultas;
-        return consultas.filter(c => {
-            const area = c.medico?.especificacaoMedica?.area || c.especificacaoMedica?.area || '';
-            return typeof area === 'string' && area.toLowerCase().includes(areaUsuario);
-        });
-    }
-
-
-
     // Atualizar tabela de agenda (agendamentos do dia selecionado, agrupados por horário)
-    async function atualizarAgenda(consultas, diaPainel = painelDiaSelecionado) {
-        const agendaBody = document.getElementById('agenda-body');
-        if (!agendaBody) return;
-        agendaBody.innerHTML = '';
-
+    async function atualizarAgenda(_consultas, diaPainel = painelDiaSelecionado) {
         // Normaliza datas para comparar apenas o dia
         const dia = new Date(diaPainel);
         dia.setHours(0, 0, 0, 0);
 
-        const isDiaSelecionado = (d) => {
-            const dt = new Date(d);
-            dt.setHours(0, 0, 0, 0);
-            return dt.getTime() === dia.getTime();
-        };
+        cacheIdsDiaIso = '';
+        cacheIdsPorChave = new Map();
 
-        // Admin: sem seleção exibe "Todos" por padrão; filtro por médico só quando selectedMedicoId estiver definido
+        const duracaoFiltro = duracaoPorFiltro(filtroTerapia);
+        const linhasPainelDoDia = await buscarPainelDoDia(dia, selectedMedicoNome || null, duracaoFiltro);
 
-        // Classificação da terapia pelo tempo de duração: ABA = 50min, Convencional = 30min
-        const duracaoEmMinutos = (c) => {
-            const d = c?.duracaoConsulta;
-            if (typeof d === 'number') return d;
-            if (typeof d === 'string') {
-                // Espera formato HH:MM:SS
-                const partes = d.split(':');
-                if (partes.length >= 2) {
-                    const horas = parseInt(partes[0], 10) || 0;
-                    const minutos = parseInt(partes[1], 10) || 0;
-                    return horas * 60 + minutos;
-                }
-                // Se vier como "50" ou "30" direto
-                const m = parseInt(d, 10);
-                return isNaN(m) ? 0 : m;
-            }
-            return 0;
-        };
+        const agendaBody = document.getElementById('agenda-body');
+        if (!agendaBody) return;
+        agendaBody.innerHTML = '';
 
-        const tipoTerapia = (c) => {
-            const mins = duracaoEmMinutos(c);
-                if (mins === 50 || mins === 60) return 'ABA';
-            if (mins === 30) return 'Convencional';
-            return 'Outros';
-        };
+        const consultasDoPainel = (linhasPainelDoDia || []).map((linha) => normalizarLinhaPainelDoDia(linha, dia));
+        atualizarOpcoesProfissional(consultasDoPainel);
 
-        const consultasHoje = consultas
-            .filter(c => c && c.datahoraConsulta && isDiaSelecionado(c.datahoraConsulta))
-            .filter(c => !selectedMedicoId || String(c?.medico?.id) === String(selectedMedicoId))
+        const consultasHoje = consultasDoPainel
+            .filter(c => !selectedMedicoNome || normalizarTexto(nomeProfissionalLinha(c)) === normalizarTexto(selectedMedicoNome))
             // mantém todas as consultas do dia, independentemente do status
-            .filter(c => tipoTerapia(c) === filtroTerapia)
+            .filter(c => {
+                const tipo = tipoTerapia(c);
+                if (!tipo) return filtroTerapia === 'ABA';
+                return tipo === filtroTerapia;
+            })
             .sort((a, b) => new Date(a.datahoraConsulta) - new Date(b.datahoraConsulta));
+
+        consultasPainelRenderizadas = [...consultasHoje];
 
         if (consultasHoje.length === 0) {
             const vazio = document.createElement('tr');
@@ -271,22 +586,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const horaExata = new Date(consulta.datahoraConsulta).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 // Build cells: horario, paciente, status, acoes
                 const tdHora = document.createElement('td'); tdHora.textContent = horaExata;
-                const tdPaciente = document.createElement('td'); tdPaciente.textContent = `${consulta.paciente?.nome || ''} ${consulta.paciente?.sobrenome || ''}`;
+                const tdPaciente = document.createElement('td'); tdPaciente.textContent = nomePacienteLinha(consulta);
                 const tdMedico = document.createElement('td');
-                tdMedico.textContent = `${consulta.medico?.nome || ''} ${consulta.medico?.sobrenome || ''}`.trim();
+                tdMedico.textContent = nomeProfissionalLinha(consulta);
                 const tdStatus = document.createElement('td');
                 // create a dedicated element for the status text and a separate container for action buttons
                 const spanStatusText = document.createElement('span');
                 spanStatusText.className = 'status-text';
                 // Show 'Agendada' when status is null so items remain visible
-                spanStatusText.textContent = consulta.statusConsulta?.nomeStatus ?? 'Agendada';
+                const statusAtualNome = consulta.statusConsulta?.nomeStatus || statusNomePorId(consulta?.statusConsulta?.idStatus) || 'Agendada';
+                spanStatusText.textContent = statusAtualNome;
                 const divStatusActions = document.createElement('div');
                 divStatusActions.className = 'status-actions';
                 tdStatus.appendChild(spanStatusText);
                 tdStatus.appendChild(divStatusActions);
 
                 // Only show action buttons for 'Agendada' appointments (treat null status as 'Agendada')
-                if ((consulta?.statusConsulta?.nomeStatus ?? 'Agendada') === 'Agendada') {
+                const statusNorm = normalizarTexto(statusAtualNome);
+                if (statusNorm === 'agendada') {
                     const btnAtendido = document.createElement('button');
                     btnAtendido.className = 'btn-status atendido';
                     btnAtendido.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i>';
@@ -312,15 +629,42 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     // Attach listeners (map to backend table: 3=Atendida, 4=Cancelada, 5=Faltou)
                     btnAtendido.addEventListener('click', async () => {
-                        await atualizarStatusConsulta(consulta.id, 3, tdStatus); // 3 = Atendida
+                        const idConsulta = await resolverIdConsulta(consulta, dia);
+                        if (!idConsulta) {
+                            if (window.Swal) {
+                                Swal.fire({ icon: 'warning', title: 'Sem identificador', text: 'Esta consulta não possui ID para atualização de status.' });
+                            } else {
+                                alert('Esta consulta não possui ID para atualização de status.');
+                            }
+                            return;
+                        }
+                        await atualizarStatusConsulta(idConsulta, 3, tdStatus); // 3 = Atendida
                     });
 
                     btnDesmarcado.addEventListener('click', async () => {
-                        await atualizarStatusConsulta(consulta.id, 4, tdStatus); // 4 = Cancelada
+                        const idConsulta = await resolverIdConsulta(consulta, dia);
+                        if (!idConsulta) {
+                            if (window.Swal) {
+                                Swal.fire({ icon: 'warning', title: 'Sem identificador', text: 'Esta consulta não possui ID para atualização de status.' });
+                            } else {
+                                alert('Esta consulta não possui ID para atualização de status.');
+                            }
+                            return;
+                        }
+                        await atualizarStatusConsulta(idConsulta, 4, tdStatus); // 4 = Cancelada
                     });
 
                     btnFalta.addEventListener('click', async () => {
-                        await atualizarStatusConsulta(consulta.id, 5, tdStatus); // 5 = Faltou
+                        const idConsulta = await resolverIdConsulta(consulta, dia);
+                        if (!idConsulta) {
+                            if (window.Swal) {
+                                Swal.fire({ icon: 'warning', title: 'Sem identificador', text: 'Esta consulta não possui ID para atualização de status.' });
+                            } else {
+                                alert('Esta consulta não possui ID para atualização de status.');
+                            }
+                            return;
+                        }
+                        await atualizarStatusConsulta(idConsulta, 5, tdStatus); // 5 = Faltou
                     });
                 }
 
@@ -344,7 +688,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Send as query param `status` and handle empty/no-body responses defensively.
             // Send both query params to be tolerant to backend variations (some expect 'status',
             // others expect 'statusId'). If backend requires JSON body instead, adjust accordingly.
-            const resp = await fetch(`${API_BASE}/mc/consultas/${consultaId}/status?statusId=${statusId}&status=${statusId}`, {
+            const resp = await apiFetch(`/mc/consultas/${consultaId}/status?statusId=${statusId}&status=${statusId}`, {
                 method: 'PATCH'
             });
 
@@ -363,12 +707,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Update status cell text (use returned object if available)
             const novoStatus = updated && updated.statusConsulta && updated.statusConsulta.nomeStatus
                 ? updated.statusConsulta.nomeStatus
-                : (statusId === 3 ? 'Atendida' : statusId === 4 ? 'Cancelada' : statusId === 5 ? 'Faltou' : (statusId === 2 ? 'Confirmada' : 'Agendada'));
+                : statusNomePorId(updated?.statusId ?? updated?.statusConsulta?.idStatus ?? statusId) || 'Agendada';
             // update the status text span and remove the actions container
             const span = tdStatusElement.querySelector('.status-text');
             const actions = tdStatusElement.querySelector('.status-actions');
             if (span) span.textContent = novoStatus;
             if (actions) actions.remove();
+
+            const item = consultasPainelRenderizadas.find(c => String(c?.id) === String(consultaId));
+            if (item) {
+                item.statusConsulta = item.statusConsulta || {};
+                item.statusConsulta.idStatus = updated?.statusId ?? updated?.statusConsulta?.idStatus ?? statusId;
+                item.statusConsulta.nomeStatus = novoStatus;
+            }
 
             // Show success alert
             if (window.Swal) {
@@ -488,12 +839,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btnConv) btnConv.addEventListener('click', () => { filtroTerapia = 'Convencional'; atualizarUI(); atualizarAgenda(consultasBase, painelDiaSelecionado); });
 
         if (selMed) {
-            // Popular opções se tiver cache
-            if (Array.isArray(medicosCache) && medicosCache.length > 0) {
-                popularSelectMedicos(selMed, medicosCache);
-            }
+            selectedMedicoNome = selMed.value || '';
             selMed.addEventListener('change', () => {
-                selectedMedicoId = selMed.value || '';
+                selectedMedicoNome = selMed.value || '';
                 atualizarAgenda(consultasBase, painelDiaSelecionado);
             });
             // Mostrar seletor apenas para Admin; ocultar para Supervisor/Médico
@@ -516,11 +864,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btnExpandir) btnExpandir.addEventListener('click', () => {
             window.location.href = 'agendaDiaria.html';
         });
-    }
-
-    function popularSelectMedicos(selectEl, medicos) {
-        // limpa mantendo primeira opção
-        selectEl.innerHTML = '<option value="">Todos</option>' + medicos.map(m => `<option value="${m.id}">${m.nome} ${m.sobrenome || ''} - ${m.especificacaoMedica?.area || ''}</option>`).join('');
     }
 
     function formatarDataCabecalho(date) {
@@ -586,18 +929,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             );
         };
 
-        const consultasHoje = (consultasBase || [])
-            .filter(c => c && c.datahoraConsulta && isDiaSelecionado(c.datahoraConsulta))
-            .filter(c => !selectedMedicoId || String(c?.medico?.id) === String(selectedMedicoId))
-            .filter(c => tipoTerapia(c) === filtroTerapia)
-            .sort((a, b) => new Date(a.datahoraConsulta) - new Date(b.datahoraConsulta));
+        const consultasHoje = (consultasPainelRenderizadas && consultasPainelRenderizadas.length)
+            ? [...consultasPainelRenderizadas]
+            : (consultasBase || [])
+                .filter(c => c && c.datahoraConsulta && isDiaSelecionado(c.datahoraConsulta))
+                .filter(c => !selectedMedicoNome || normalizarTexto(nomeProfissionalLinha(c)) === normalizarTexto(selectedMedicoNome))
+                .filter(c => {
+                    const tipo = tipoTerapia(c);
+                    return !tipo || tipo === filtroTerapia;
+                })
+                .sort((a, b) => new Date(a.datahoraConsulta) - new Date(b.datahoraConsulta));
 
         const linhasTabela = consultasHoje.map((consulta) => {
             const hora = new Date(consulta.datahoraConsulta).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            const pacienteNome = `${consulta?.paciente?.nome || ''} ${consulta?.paciente?.sobrenome || ''}`.trim() || '—';
-            const idade = calcularIdade(consulta?.paciente?.dataNascimento || consulta?.paciente?.dtNasc);
-            const convenio = obterConvenio(consulta?.paciente);
-            const profissional = `${consulta?.medico?.nome || ''} ${consulta?.medico?.sobrenome || ''}`.trim() || '—';
+            const pacienteNome = nomePacienteLinha(consulta) || '—';
+            const idade = (consulta?.painelIdade ?? null) !== null ? `${consulta.painelIdade} anos` : calcularIdade(consulta?.paciente?.dataNascimento || consulta?.paciente?.dtNasc);
+            const convenio = consulta?.painelConvenio || obterConvenio(consulta?.paciente);
+            const profissional = nomeProfissionalLinha(consulta) || '—';
             const status = consulta?.statusConsulta?.nomeStatus ?? 'Agendada';
 
             return `<tr>
@@ -647,39 +995,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         w.close();
     }
 
-    // Atualizar gráfico de desempenho
-    async function atualizarGrafico(consultas) {
-        const consultasMarcadas = consultas.filter(c => c?.statusConsulta?.nomeStatus === 'Agendada').length;
-        const consultasConcluidas = consultas.filter(c => c?.statusConsulta?.nomeStatus === 'Atendida').length;
-        const consultasCanceladas = consultas.filter(c => c?.statusConsulta?.nomeStatus === 'Cancelada').length;
-
-        const canvas = document.getElementById('consultasChart');
-        if (!canvas) {
-            console.warn('Canvas de gráfico não encontrado.');
-            return;
-        }
-        const ctx = canvas.getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Agendadas', 'Atendidas', 'Canceladas'],
-                datasets: [{
-                    label: 'Consultas',
-                    data: [consultasMarcadas, consultasConcluidas, consultasCanceladas],
-                    backgroundColor: ['#388E3C', '#4CAF50', '#D32F2F']
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    }
-
     // Relatório de Faltas: botão baixa CSV com Paciente, Horário, Profissional e Status
     function configurarRelatorioFaltas() {
         const inputInicio = document.getElementById('faltaDataInicio');
@@ -691,25 +1006,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (inputFim && !inputFim.value) inputFim.value = hojeISO;
 
         async function getConsultasParaRelatorio() {
-            const idMedico = sessionStorage.getItem('ID_MEDICO');
             const nivel = sessionStorage.getItem('PERMISSIONAMENTO_MEDICO') || '';
+            const nomeMedico = `${sessionStorage.getItem('NOME_MEDICO') || ''} ${sessionStorage.getItem('SOBRENOME_MEDICO') || ''}`.trim();
+            const dataInicio = inputInicio?.value;
+            const dataFim = inputFim?.value;
             try {
-                if (nivel === 'Admin') {
-                    const resp = await fetch(`${API_BASE}/mc/consultas`);
-                    if (!resp.ok) throw new Error('Falha ao buscar consultas');
-                    return await resp.json();
-                } else if (nivel.toLowerCase().includes('supervi')) {
-                    const resp = await fetch(`${API_BASE}/mc/consultas`);
-                    if (!resp.ok) throw new Error('Falha ao buscar consultas');
-                    const todas = await resp.json();
-                    return filtrarAreaUsuario(todas);
-                } else if (idMedico) {
-                    return await buscarConsultas(idMedico);
-                } else {
-                    const resp = await fetch(`${API_BASE}/mc/consultas`);
-                    if (!resp.ok) throw new Error('Falha ao buscar consultas');
-                    return await resp.json();
+                if (!dataInicio || !dataFim) return [];
+                const inicio = new Date(`${dataInicio}T00:00:00`);
+                const fim = new Date(`${dataFim}T00:00:00`);
+                if (isNaN(inicio.getTime()) || isNaN(fim.getTime()) || inicio > fim) return [];
+
+                const medicoFiltro = nivel.toLowerCase().includes('med') ? nomeMedico : '';
+                const linhas = [];
+                for (let d = new Date(inicio); d <= fim; d.setDate(d.getDate() + 1)) {
+                    const linhasDia = await buscarPainelDoDia(new Date(d), medicoFiltro || null, null);
+                    (linhasDia || []).forEach((linha) => {
+                        const consulta = normalizarLinhaPainelDoDia(linha, d);
+                        linhas.push(consulta);
+                    });
                 }
+                return linhas;
             } catch (e) {
                 console.error(e);
                 return [];
@@ -750,7 +1066,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 const consultas = await getConsultasParaRelatorio();
                 const faltas = consultas.filter(c => {
-                    const status = c?.statusConsulta?.nomeStatus ?? '';
+                    const status = c?.statusConsulta?.nomeStatus ?? c?.painelStatus ?? '';
                     return status === 'Faltou' && c?.datahoraConsulta && dentroDoIntervalo(c.datahoraConsulta, inicio, fim);
                 });
 
@@ -758,9 +1074,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const dt = new Date(c.datahoraConsulta);
                     const data = dt.toLocaleDateString('pt-BR');
                     const hora = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                    const paciente = `${c?.paciente?.nome || ''} ${c?.paciente?.sobrenome || ''}`.trim();
-                    const profissional = `${c?.medico?.nome || ''} ${c?.medico?.sobrenome || ''}`.trim();
-                    const status = c?.statusConsulta?.nomeStatus || '';
+                    const paciente = nomePacienteLinha(c);
+                    const profissional = nomeProfissionalLinha(c);
+                    const status = c?.statusConsulta?.nomeStatus ?? c?.painelStatus ?? '';
                     return { data, hora, paciente, profissional, status };
                 });
 
@@ -949,60 +1265,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (medicoKpis) medicoKpis.style.display = 'none';
         if (adminKpis) adminKpis.style.display = 'flex';
         buscarKPIsAdmin();
-        // Carregar gráfico geral para admin usando todas as consultas
-        try {
-            const resp = await fetch(`${API_BASE}/mc/consultas`);
-            if (resp.ok) {
-                const todas = await resp.json();
-                console.log('Consultas (admin) carregadas:', todas.length);
-                // Atualiza painel do dia (consultas do dia selecionado) e gráfico geral
-                // Admin vê todos por padrão (selectedMedicoId vazio)
-                selectedMedicoId = '';
-                atualizarAgenda(todas, painelDiaSelecionado);
-                configurarMiniCalendario(todas);
-                configurarAcoesPainel(todas);
-                atualizarGrafico(todas);
-                // Verificar agendamentos que vencem em 1 semana
-                verificarAgendamentosVencendo(todas);
-                // Carregar e popular lista de médicos ATIVOS para filtro do admin
-                try {
-                    const rMed = await fetch(`${API_BASE}/mc/medicos`);
-                    medicosCache = rMed.ok ? await rMed.json() : [];
-                    const sel = document.getElementById('filtroMedicoSelect');
-                    if (sel && medicosCache.length) popularSelectMedicos(sel, medicosCache);
-                } catch (e) { console.warn('Falha ao carregar médicos para filtro', e); }
-            } else {
-                console.error('Falha ao buscar consultas para gráfico admin. Status:', resp.status);
-            }
-        } catch (e) { console.warn('Falha ao carregar gráfico geral admin', e); }
+        await carregarMedicosFiltro();
+        selectedMedicoNome = '';
+        await atualizarAgenda([], painelDiaSelecionado);
+        configurarMiniCalendario([]);
+        configurarAcoesPainel([]);
     } else if (nivelPermissaoGlobal && nivelPermissaoGlobal.toLowerCase().includes('supervi')) {
-        // Supervisor: mostrar apenas consultas da área do usuário para o Painel do Dia
-        try {
-            const resp = await fetch(`${API_BASE}/mc/consultas`);
-            if (resp.ok) {
-                const todas = await resp.json();
-                const apenasArea = filtrarAreaUsuario(todas);
-                atualizarKPIs(apenasArea);
-                atualizarAgenda(apenasArea, painelDiaSelecionado);
-                configurarMiniCalendario(apenasArea);
-                configurarAcoesPainel(apenasArea);
-                // Opcional: refletir também no gráfico; se preferir, comente
-                atualizarGrafico(apenasArea);
-            } else {
-                console.error('Falha ao buscar consultas para supervisor. Status:', resp.status);
-            }
-        } catch (e) { console.warn('Falha ao carregar consultas para supervisor', e); }
+        atualizarKPIs([]);
+        await atualizarAgenda([], painelDiaSelecionado);
+        configurarMiniCalendario([]);
+        configurarAcoesPainel([]);
     } else {
-        if (idMedico) {
-            const consultas = await buscarConsultas(idMedico); // Busca os dados das consultas do backend para o médico específico
-            atualizarKPIs(consultas); // Atualiza os KPIs
-            atualizarAgenda(consultas, painelDiaSelecionado); // Preenche a tabela de agenda conforme dia selecionado
-            configurarMiniCalendario(consultas); // Habilita controle do dia via mini calendário
-            configurarAcoesPainel(consultas);
-            atualizarGrafico(consultas); // Atualiza o gráfico de desempenho
-        } else {
-            console.error('ID do médico não encontrado no sessionStorage.');
-        }
+        atualizarKPIs([]);
+        await atualizarAgenda([], painelDiaSelecionado);
+        configurarMiniCalendario([]);
+        configurarAcoesPainel([]);
     }
     // Inicializa o relatório de faltas (usa permissões no momento do download)
     configurarRelatorioFaltas();

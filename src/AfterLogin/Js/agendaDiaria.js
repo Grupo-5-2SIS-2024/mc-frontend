@@ -1,39 +1,88 @@
-// Base da API: usa localhost em dev, vazio em produção
-const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+// Agenda Diaria (expansao do Painel do Dia)
+// Fonte principal: GET /mc/consultas com filtro de data/horario no front-end
 
-// Variáveis globais
-let todasConsultas = [];
+const API_BASES = window.location.origin.includes('localhost')
+    ? ['http://localhost:8080', window.location.origin, '']
+    : [''];
+
+let consultasPainel = [];
 let consultasFiltradas = [];
 let medicosFiltro = [];
+let medicoSelecionadoNome = '';
+
 let usuarioLogado = {
     id: null,
     perfil: null,
-    especificacao: null,
-    areaId: null
+    especificacao: null
 };
-let filtroTerapia = 'ABA'; // ABA | Convencional (alinhado ao calendário)
 
-// Inicialização
-document.addEventListener('DOMContentLoaded', () => {
+let filtroTerapia = 'ABA'; // ABA | Convencional
+
+function obterDuracaoPorModo() {
+    return filtroTerapia === 'Convencional' ? 30 : 50;
+}
+
+function obterNomeFiltroApiMedico(nomeCompleto) {
+    const nome = String(nomeCompleto || '').trim();
+    if (!nome) return '';
+    return nome.split(/\s+/)[0] || '';
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
     carregarDadosUsuario();
     exibirDataAtual();
-    carregarMedicos();
-    carregarConsultas();
     configurarViewToggle();
-    
-    // Atualizar a cada 5 minutos
-    setInterval(carregarConsultas, 300000);
+    await carregarMedicos();
+    await carregarConsultas();
+
+    setInterval(() => {
+        carregarConsultas();
+    }, 300000);
 });
 
-// Carrega dados do usuário logado
+async function apiFetch(path, options = {}) {
+    let ultimoErro = null;
+
+    for (const base of API_BASES) {
+        const url = `${base}${path}`;
+        try {
+            const resp = await fetch(url, options);
+            if (resp.status !== 404) return resp;
+        } catch (erro) {
+            ultimoErro = erro;
+        }
+    }
+
+    if (ultimoErro) throw ultimoErro;
+    throw new Error('Nao foi possivel conectar em nenhuma base da API.');
+}
+
+function formatarDataIsoLocal(data) {
+    const d = new Date(data);
+    const ano = d.getFullYear();
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+}
+
+function normalizarTexto(v) {
+    return String(v || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
 function carregarDadosUsuario() {
-    usuarioLogado.id = parseInt(sessionStorage.getItem("ID_MEDICO"));
-    const nivelPermissao = sessionStorage.getItem("PERMISSIONAMENTO_MEDICO") || '';
-    const especificacao = sessionStorage.getItem("ESPECIFICACAO_MEDICA") || '';
-    
-    // Normaliza e identifica o perfil
-    const nivelNorm = nivelPermissao.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
-    
+    usuarioLogado.id = parseInt(sessionStorage.getItem('ID_MEDICO'), 10) || null;
+    const nome = (sessionStorage.getItem('NOME_MEDICO') || '').trim();
+    const sobrenome = (sessionStorage.getItem('SOBRENOME_MEDICO') || '').trim();
+    const nomeCompleto = `${nome} ${sobrenome}`.trim();
+    const nivelPermissao = sessionStorage.getItem('PERMISSIONAMENTO_MEDICO') || '';
+    const especificacao = sessionStorage.getItem('ESPECIFICACAO_MEDICA') || '';
+
+    const nivelNorm = normalizarTexto(nivelPermissao);
+
     if (nivelNorm.includes('admin')) {
         usuarioLogado.perfil = 'admin';
     } else if (nivelNorm.includes('supervi')) {
@@ -42,117 +91,214 @@ function carregarDadosUsuario() {
     } else {
         usuarioLogado.perfil = 'medico';
     }
-    
-    console.log('Usuário logado:', usuarioLogado);
+
+    if (usuarioLogado.perfil === 'medico' && nomeCompleto) {
+        medicoSelecionadoNome = nomeCompleto;
+    }
 }
 
-// Exibe a data atual no formato extenso
+function statusNomePorId(statusId) {
+    const mapa = {
+        1: 'Agendada',
+        2: 'Confirmada',
+        3: 'Atendida',
+        4: 'Cancelada',
+        5: 'Faltou'
+    };
+    return mapa[Number(statusId)] || '';
+}
+
+function obterNomeProfissional(linha) {
+    if (linha?.medico && linha?.medicoSobrenome) {
+        return `${linha.medico} ${linha.medicoSobrenome}`.trim();
+    }
+    if (typeof linha?.medico === 'string') return linha.medico.trim();
+    if (linha?.medico?.nome) {
+        return `${linha.medico.nome} ${linha?.medico?.sobrenome || ''}`.trim();
+    }
+    return String(linha?.profissional || '').trim();
+}
+
+function obterNomePaciente(linha) {
+    if (linha?.paciente && linha?.pacienteSobrenome) {
+        return `${linha.paciente} ${linha.pacienteSobrenome}`.trim();
+    }
+    if (typeof linha?.paciente === 'string') return linha.paciente.trim();
+    if (linha?.paciente?.nome) {
+        return `${linha.paciente.nome} ${linha?.paciente?.sobrenome || ''}`.trim();
+    }
+    return '';
+}
+
+function obterEspecialidade(linha) {
+    return String(
+        linha?.especialidade ||
+        linha?.medico?.especificacaoMedica?.area ||
+        linha?.especificacaoMedica?.area ||
+        ''
+    ).trim();
+}
+
 function exibirDataAtual() {
     const hoje = new Date();
-    const opcoes = { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+    const opcoes = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
     };
     const dataFormatada = hoje.toLocaleDateString('pt-BR', opcoes);
-    document.getElementById('dataAtual').textContent = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
+    const el = document.getElementById('dataAtual');
+    if (el) {
+        el.textContent = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
+    }
 }
 
-// Carrega lista de médicos para o filtro
 async function carregarMedicos() {
     try {
-        const resposta = await fetch(`${API_BASE}/mc/medicos`);
-        if (!resposta.ok) throw new Error('Erro ao carregar médicos');
-        
-        let todosMedicos = await resposta.json();
-        
-        // Filtra médicos baseado no perfil do usuário
+        const resposta = await apiFetch('/mc/medicos');
+        if (!resposta.ok) throw new Error('Erro ao carregar medicos');
+
+        const todosMedicos = await resposta.json();
+
         if (usuarioLogado.perfil === 'supervisor') {
-            // Supervisor vê apenas médicos da sua área
-            medicosFiltro = todosMedicos.filter(medico => 
-                medico.especificacaoMedica?.area === usuarioLogado.especificacao
+            medicosFiltro = todosMedicos.filter((medico) =>
+                normalizarTexto(medico?.especificacaoMedica?.area) === normalizarTexto(usuarioLogado.especificacao)
             );
         } else if (usuarioLogado.perfil === 'medico') {
-            // Médico vê apenas ele mesmo
-            medicosFiltro = todosMedicos.filter(medico => medico?.id === usuarioLogado.id);
+            medicosFiltro = todosMedicos.filter((medico) => medico?.id === usuarioLogado.id);
         } else {
-            // Admin vê todos
             medicosFiltro = todosMedicos;
         }
-        
+
         const select = document.getElementById('filtroMedico');
-        
-        // Se for médico (apenas 1 opção), esconde o filtro e o botão
+        if (!select) return;
+
         if (usuarioLogado.perfil === 'medico') {
             const filterGroup = select.closest('.filter-group');
             if (filterGroup) filterGroup.style.display = 'none';
-            
-            const filterButton = document.querySelector('.filter-button');
-            if (filterButton) filterButton.style.display = 'none';
+
+            const filterButtons = document.querySelectorAll('.filter-button');
+            if (filterButtons.length > 1) {
+                // Mantem apenas o botao de atualizar e imprimir visiveis.
+                const botaoFiltrar = Array.from(filterButtons).find((btn) => btn.textContent.includes('Filtrar'));
+                if (botaoFiltrar) botaoFiltrar.style.display = 'none';
+            }
         } else {
             select.innerHTML = '<option value="">Todos os Profissionais</option>';
-            medicosFiltro.forEach(medico => {
+            medicosFiltro.forEach((medico) => {
                 const option = document.createElement('option');
-                option.value = medico.id;
-                option.textContent = `${medico.nome} ${medico.sobrenome} - ${medico.especificacaoMedica?.area || ''}`;
+                const nome = `${medico.nome || ''} ${medico.sobrenome || ''}`.trim();
+                option.value = nome;
+                option.textContent = `${nome}${medico.especificacaoMedica?.area ? ` - ${medico.especificacaoMedica.area}` : ''}`.trim();
                 select.appendChild(option);
             });
         }
     } catch (erro) {
-        console.error('Erro ao carregar médicos:', erro);
+        console.error('Erro ao carregar medicos:', erro);
     }
 }
 
-// Carrega consultas do dia atual
 async function carregarConsultas() {
     try {
-        const resposta = await fetch(`${API_BASE}/mc/consultas`);
-        if (!resposta.ok) throw new Error('Erro ao carregar consultas');
-        
-        const consultas = await resposta.json();
-        
-        // Filtra apenas consultas de hoje (usando horário local, não UTC)
-        const hoje = new Date();
-        const ano = hoje.getFullYear();
-        const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-        const dia = String(hoje.getDate()).padStart(2, '0');
-        const dataHoje = `${ano}-${mes}-${dia}`; // YYYY-MM-DD no horário local
-        
-        let consultasHoje = consultas.filter(consulta => {
-            const dataConsulta = consulta.datahoraConsulta.split('T')[0];
-            return dataConsulta === dataHoje;
-        });
-        
-        // Aplica filtro baseado no perfil do usuário
-        if (usuarioLogado.perfil === 'medico') {
-            // Médico vê apenas suas próprias consultas
-            consultasHoje = consultasHoje.filter(c => c.medico?.id === usuarioLogado.id);
-        } else if (usuarioLogado.perfil === 'supervisor') {
-            // Supervisor vê apenas consultas da sua área (comparação case-insensitive)
-            const areaUsuario = (usuarioLogado.especificacao || '').toLowerCase().trim();
-            consultasHoje = consultasHoje.filter(c => {
-                const areaConsulta = (c.especificacaoMedica?.area || '').toLowerCase().trim();
-                const areaMedico = (c.medico?.especificacaoMedica?.area || '').toLowerCase().trim();
-                return areaConsulta === areaUsuario || areaMedico === areaUsuario;
-            });
+        const dataHojeIso = formatarDataIsoLocal(new Date());
+        const query = new URLSearchParams();
+        query.set('data', dataHojeIso);
+        const medicoFiltroApi = obterNomeFiltroApiMedico(medicoSelecionadoNome);
+        if (medicoFiltroApi) query.set('medico', medicoFiltroApi);
+        query.set('duracao', String(obterDuracaoPorModo()));
+
+        const caminhos = [
+            `/mc/consultas/painel-dia?${query.toString()}`,
+            `/consultas/painel-dia?${query.toString()}`,
+            `/mc/painel-dia?${query.toString()}`,
+            `/painel-dia?${query.toString()}`
+        ];
+
+        let linhas = [];
+        let respondeu = false;
+
+        for (const path of caminhos) {
+            console.info('[AgendaDiaria] GET', path, 'bases:', API_BASES);
+            try {
+                const resposta = await apiFetch(path);
+                if (!resposta.ok) continue;
+                const data = await resposta.json();
+                if (!Array.isArray(data)) continue;
+                linhas = data;
+                respondeu = true;
+                break;
+            } catch (erro) {
+                console.warn('[AgendaDiaria] falha ao buscar painel do dia:', path, erro);
+            }
         }
-        // Admin vê todas (sem filtro adicional)
-        
-        todasConsultas = consultasHoje;
-        
-        // Ordena por horário
-        todasConsultas.sort((a, b) => {
-            return new Date(a.datahoraConsulta) - new Date(b.datahoraConsulta);
-        });
-        
-        consultasFiltradas = aplicarFiltroTerapia([...todasConsultas]);
-        aplicarFiltroMedico();
-        
+
+        if (!respondeu) throw new Error('Erro ao carregar consultas do dia.');
+
+        consultasPainel = normalizarLinhasPainel(linhas, dataHojeIso);
+
+        consultasFiltradas = aplicarFiltroTerapia(aplicarFiltroProfissional([...consultasPainel]));
+        exibirConsultas();
+        atualizarResumo();
     } catch (erro) {
-        console.error('Erro ao carregar consultas:', erro);
+        console.error('Erro ao carregar consultas do painel do dia:', erro);
         exibirMensagemErro();
     }
+}
+
+function normalizarLinhasPainel(linhas, dataIso) {
+    if (!Array.isArray(linhas)) return [];
+
+    return linhas.map((linha, idx) => {
+        const dataHoraOriginal = linha?.datahoraConsulta ? new Date(linha.datahoraConsulta) : null;
+        const horario = extrairHoraMinuto(linha?.datahoraConsulta || linha?.horario) || '00:00';
+        const datahoraConsulta = dataHoraOriginal && !isNaN(dataHoraOriginal.getTime())
+            ? linha.datahoraConsulta
+            : `${dataIso}T${horario}:00`;
+        return {
+            id: linha?.consultaId ?? linha?.id ?? linha?.consulta?.id ?? null,
+            _idx: idx,
+            datahoraConsulta: datahoraConsulta,
+            horario: horario,
+            pacienteNome: obterNomePaciente(linha),
+            profissionalNome: obterNomeProfissional(linha),
+            especialidadeNome: obterEspecialidade(linha),
+            convenioNome: linha?.convenio?.nome ?? linha?.convenioNome ?? linha?.convenio ?? null,
+            idade: linha?.idade ?? linha?.painelIdade ?? null,
+            statusId: linha?.statusId ?? linha?.statusConsulta?.idStatus ?? linha?.statusConsulta?.id ?? linha?.status?.id ?? null,
+            statusNome: String(
+                (linha?.statusConsulta?.nomeStatus ?? (typeof linha?.status === 'string' ? linha.status : '')) ||
+                statusNomePorId(linha?.statusId ?? linha?.statusConsulta?.idStatus ?? linha?.statusConsulta?.id ?? linha?.status?.id) ||
+                'Agendada'
+            ).trim(),
+            duracaoConsulta: linha?.duracaoConsulta ?? linha?.duracao ?? null,
+            tipoTerapia: linha?.tipoTerapia ?? null,
+            descricao: linha?.descricao ?? null
+        };
+    }).filter((consulta) => {
+        const dt = consulta?.datahoraConsulta ? new Date(consulta.datahoraConsulta) : null;
+        if (dt && !isNaN(dt.getTime())) {
+            return formatarDataIsoLocal(dt) === dataIso;
+        }
+        return true;
+    }).sort((a, b) => new Date(a.datahoraConsulta) - new Date(b.datahoraConsulta));
+}
+
+function aplicarFiltroProfissional(lista) {
+    if (!medicoSelecionadoNome) return lista;
+    const alvo = normalizarTexto(medicoSelecionadoNome);
+    return lista.filter((c) => normalizarTexto(c?.profissionalNome) === alvo);
+}
+
+function extrairHoraMinuto(valor) {
+    if (!valor) return '';
+    if (typeof valor === 'string') {
+        const m = valor.match(/(\d{2}):(\d{2})/);
+        return m ? `${m[1]}:${m[2]}` : '';
+    }
+    const d = new Date(valor);
+    if (isNaN(d.getTime())) return '';
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 function duracaoEmMinutos(consulta) {
@@ -172,14 +318,24 @@ function duracaoEmMinutos(consulta) {
 }
 
 function tipoTerapia(consulta) {
+    const tipoDaApi = normalizarTexto(consulta?.tipoTerapia);
+    if (tipoDaApi === 'aba') return 'ABA';
+    if (tipoDaApi.includes('convenc')) return 'Convencional';
+
     const mins = duracaoEmMinutos(consulta);
-    if (mins === 50) return 'ABA';
+    if (mins === 50 || mins === 60) return 'ABA';
     if (mins === 30) return 'Convencional';
-    return 'Outros';
+
+    // Sem informacao de tipo/duracao: nao forca exclusao no filtro.
+    return null;
 }
 
 function aplicarFiltroTerapia(lista) {
-    return lista.filter(c => tipoTerapia(c) === filtroTerapia);
+    return lista.filter((c) => {
+        const tipo = tipoTerapia(c);
+        if (!tipo) return filtroTerapia === 'ABA';
+        return tipo === filtroTerapia;
+    });
 }
 
 function configurarViewToggle() {
@@ -208,75 +364,79 @@ function configurarViewToggle() {
         }
     };
 
-    if (btnAba) btnAba.addEventListener('click', () => { filtroTerapia = 'ABA'; consultasFiltradas = aplicarFiltroTerapia([...todasConsultas]); atualizarUI(); exibirConsultas(); atualizarResumo(); });
-    if (btnConv) btnConv.addEventListener('click', () => { filtroTerapia = 'Convencional'; consultasFiltradas = aplicarFiltroTerapia([...todasConsultas]); atualizarUI(); exibirConsultas(); atualizarResumo(); });
+    if (btnAba) {
+        btnAba.addEventListener('click', async () => {
+            filtroTerapia = 'ABA';
+            atualizarUI();
+            await carregarConsultas();
+        });
+    }
+
+    if (btnConv) {
+        btnConv.addEventListener('click', async () => {
+            filtroTerapia = 'Convencional';
+            atualizarUI();
+            await carregarConsultas();
+        });
+    }
 
     atualizarUI();
 }
 
-// Aplica filtro por médico
-function aplicarFiltroMedico() {
-    const medicoId = document.getElementById('filtroMedico').value;
-    
-    if (medicoId) {
-        consultasFiltradas = todasConsultas.filter(c => c.medico?.id == medicoId);
-    } else {
-        consultasFiltradas = [...todasConsultas];
-    }
-    
-    exibirConsultas();
-    atualizarResumo();
+async function aplicarFiltroMedico() {
+    const select = document.getElementById('filtroMedico');
+    medicoSelecionadoNome = select?.value || '';
+    await carregarConsultas();
     fecharModalFiltro();
 }
 
-// Limpa filtros
-function limparFiltros() {
-    document.getElementById('filtroMedico').value = '';
-    consultasFiltradas = [...todasConsultas];
-    exibirConsultas();
-    atualizarResumo();
+async function limparFiltros() {
+    const select = document.getElementById('filtroMedico');
+    if (select) select.value = '';
+    medicoSelecionadoNome = '';
+    await carregarConsultas();
     fecharModalFiltro();
 }
 
-// Abre modal de filtro
 function abrirModalFiltro() {
-    document.getElementById('modalFiltro').style.display = 'flex';
+    const modal = document.getElementById('modalFiltro');
+    if (modal) modal.style.display = 'flex';
 }
 
-// Fecha modal de filtro
 function fecharModalFiltro() {
-    document.getElementById('modalFiltro').style.display = 'none';
+    const modal = document.getElementById('modalFiltro');
+    if (modal) modal.style.display = 'none';
 }
 
-// Exibe consultas na timeline
 function exibirConsultas() {
     const timeline = document.getElementById('agendaTimeline');
     const empty = document.getElementById('agendaEmpty');
-    
-    if (consultasFiltradas.length === 0) {
+    if (!timeline || !empty) return;
+
+    const lista = aplicarFiltroTerapia(consultasFiltradas);
+
+    if (!lista.length) {
         timeline.style.display = 'none';
         empty.style.display = 'block';
         return;
     }
-    
+
     timeline.style.display = 'flex';
     empty.style.display = 'none';
-    
-    const lista = aplicarFiltroTerapia(consultasFiltradas);
-    timeline.innerHTML = lista.map(consulta => {
+
+    timeline.innerHTML = lista.map((consulta) => {
         const dataHora = new Date(consulta.datahoraConsulta);
         const hora = dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        const status = consulta.statusConsulta?.nomeStatus || 'Agendada';
-        const statusClass = status.toLowerCase().replace(/\s+/g, '');
-        const isAgendada = status.toLowerCase() === 'agendada';
-        
-        const paciente = `${consulta.paciente?.nome || ''} ${consulta.paciente?.sobrenome || ''}`.trim();
-        const medico = `${consulta.medico?.nome || ''} ${consulta.medico?.sobrenome || ''}`.trim();
-        const area = consulta.especificacaoMedica?.area || consulta.medico?.especificacaoMedica?.area || '';
-        const duracao = formatarDuracao(consulta.duracaoConsulta);
-        
+        const status = consulta.statusNome || 'Agendada';
+        const statusClass = normalizarTexto(status).replace(/\s+/g, '');
+
+        const paciente = consulta.pacienteNome || 'Nao informado';
+        const medico = consulta.profissionalNome || 'Nao informado';
+        const convenio = consulta.convenioNome || 'Nao informado';
+        const idade = consulta.idade !== null && consulta.idade !== undefined ? `${consulta.idade} anos` : 'Nao informada';
+
         return `
-            <div class="task ${statusClass}" onclick="abrirDetalhes(${consulta.id})">
+            <div class="task ${statusClass}">
                 <div class="task-header">
                     <div class="task-time">
                         <i class="fas fa-clock"></i>
@@ -284,7 +444,7 @@ function exibirConsultas() {
                     </div>
                     <span class="task-status ${statusClass}">${status}</span>
                 </div>
-                
+
                 <div class="task-info">
                     <div class="task-detail">
                         <i class="fas fa-user"></i>
@@ -295,188 +455,63 @@ function exibirConsultas() {
                         <span><strong>Profissional:</strong> ${medico}</span>
                     </div>
                     <div class="task-detail">
-                        <i class="fas fa-stethoscope"></i>
-                        <span><strong>Área:</strong> ${area}</span>
+                        <i class="fas fa-id-card"></i>
+                        <span><strong>Idade:</strong> ${idade}</span>
                     </div>
                     <div class="task-detail">
-                        <i class="fas fa-hourglass-half"></i>
-                        <span><strong>Duração:</strong> ${duracao}</span>
+                        <i class="fas fa-hospital"></i>
+                        <span><strong>Convenio:</strong> ${convenio}</span>
                     </div>
                 </div>
-                
+
                 ${consulta.descricao ? `
                     <div class="task-description">
                         <i class="fas fa-comment-dots"></i> ${consulta.descricao}
                     </div>
-                ` : ''}
-                ${isAgendada ? `
-                <div class="task-actions" style="margin-top:8px; display:flex; gap:6px;">
-                    <button class="filter-button" onclick="mudarStatus(${consulta.id}, 'Atendida', event)"><i class="fas fa-check"></i> Atendida</button>
-                    <button class="filter-button" onclick="mudarStatus(${consulta.id}, 'Cancelada', event)"><i class="fas fa-ban"></i> Cancelada</button>
-                    <button class="filter-button" onclick="mudarStatus(${consulta.id}, 'Faltou', event)"><i class="fas fa-user-slash"></i> Faltou</button>
-                </div>
                 ` : ''}
             </div>
         `;
     }).join('');
 }
 
-async function mudarStatus(consultaId, novoStatus, event) {
-    if (event) event.stopPropagation();
-    // Só permite alterar se o status atual for 'Agendada'
-    const consultaAtual = (todasConsultas.find(c => c.id === consultaId) || consultasFiltradas.find(c => c.id === consultaId));
-    const statusAtual = (consultaAtual?.statusConsulta?.nomeStatus || 'Agendada').toLowerCase();
-    if (statusAtual !== 'agendada') {
-        alert('Esta consulta não pode mais ser alterada.');
-        return;
-    }
-    try {
-        const resposta = await fetch(`${API_BASE}/mc/consultas/${consultaId}/status?status=${encodeURIComponent(novoStatus)}`, {
-            method: 'PATCH'
-        });
-        if (!resposta.ok) throw new Error('Erro ao atualizar status');
-        // Atualiza localmente
-        [todasConsultas, consultasFiltradas].forEach(lista => {
-            const idx = lista.findIndex(c => c.id === consultaId);
-            if (idx >= 0) {
-                lista[idx].statusConsulta = lista[idx].statusConsulta || {};
-                lista[idx].statusConsulta.nomeStatus = novoStatus;
-            }
-        });
-        exibirConsultas();
-        atualizarResumo();
-    } catch (erro) {
-        console.error('Falha ao mudar status:', erro);
-        alert('Não foi possível atualizar o status da consulta.');
-    }
-}
-
-// Atualiza resumo do dia
 function atualizarResumo() {
-    const total = consultasFiltradas.length;
-    const agendadas = consultasFiltradas.filter(c => 
-        c.statusConsulta?.nomeStatus?.toLowerCase() === 'agendada'
-    ).length;
-    const realizadas = consultasFiltradas.filter(c => 
-        c.statusConsulta?.nomeStatus?.toLowerCase() === 'realizada' ||
-        c.statusConsulta?.nomeStatus?.toLowerCase() === 'concluída'
-    ).length;
-    const canceladas = consultasFiltradas.filter(c => 
-        c.statusConsulta?.nomeStatus?.toLowerCase() === 'cancelada'
-    ).length;
-    
-    document.getElementById('totalConsultas').textContent = total;
-    document.getElementById('consultasAgendadas').textContent = agendadas;
-    document.getElementById('consultasRealizadas').textContent = realizadas;
-    document.getElementById('consultasCanceladas').textContent = canceladas;
+    const lista = aplicarFiltroTerapia(consultasFiltradas);
+
+    const total = lista.length;
+    const agendadas = lista.filter((c) => normalizarTexto(c.statusNome) === 'agendada').length;
+    const realizadas = lista.filter((c) => {
+        const s = normalizarTexto(c.statusNome);
+        return s === 'realizada' || s === 'concluida' || s === 'atendida';
+    }).length;
+    const canceladas = lista.filter((c) => normalizarTexto(c.statusNome) === 'cancelada').length;
+
+    const elTotal = document.getElementById('totalConsultas');
+    const elAg = document.getElementById('consultasAgendadas');
+    const elReal = document.getElementById('consultasRealizadas');
+    const elCanc = document.getElementById('consultasCanceladas');
+
+    if (elTotal) elTotal.textContent = String(total);
+    if (elAg) elAg.textContent = String(agendadas);
+    if (elReal) elReal.textContent = String(realizadas);
+    if (elCanc) elCanc.textContent = String(canceladas);
 }
 
-// Formata duração da consulta
-function formatarDuracao(duracao) {
-    if (!duracao) return 'Não definida';
-    
-    // Se for string no formato HH:MM:SS
-    if (typeof duracao === 'string' && duracao.includes(':')) {
-        const partes = duracao.split(':');
-        const horas = parseInt(partes[0]);
-        const minutos = parseInt(partes[1]);
-        
-        if (horas > 0) {
-            return `${horas}h ${minutos}min`;
-        }
-        return `${minutos} min`;
-    }
-    
-    // Se for número (minutos)
-    if (typeof duracao === 'number') {
-        return `${duracao} min`;
-    }
-    
-    return duracao;
-}
-
-// Abre modal com detalhes da consulta
-function abrirDetalhes(consultaId) {
-    const consulta = consultasFiltradas.find(c => c.id === consultaId);
-    if (!consulta) return;
-    
-    const dataHora = new Date(consulta.datahoraConsulta);
-    const dataFormatada = dataHora.toLocaleDateString('pt-BR');
-    const horaFormatada = dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    
-    const paciente = `${consulta.paciente?.nome || ''} ${consulta.paciente?.sobrenome || ''}`.trim();
-    const medico = `${consulta.medico?.nome || ''} ${consulta.medico?.sobrenome || ''}`.trim();
-    const area = consulta.especificacaoMedica?.area || consulta.medico?.especificacaoMedica?.area || '';
-    const status = consulta.statusConsulta?.nomeStatus || 'Agendada';
-    const duracao = formatarDuracao(consulta.duracaoConsulta);
-    
-    const detalhesHTML = `
-        <div class="detalhe-item">
-            <strong><i class="fas fa-calendar"></i> Data</strong>
-            <span>${dataFormatada}</span>
-        </div>
-        <div class="detalhe-item">
-            <strong><i class="fas fa-clock"></i> Horário</strong>
-            <span>${horaFormatada}</span>
-        </div>
-        <div class="detalhe-item">
-            <strong><i class="fas fa-user"></i> Paciente</strong>
-            <span>${paciente}</span>
-        </div>
-        <div class="detalhe-item">
-            <strong><i class="fas fa-id-card"></i> CPF do Paciente</strong>
-            <span>${consulta.paciente?.cpf || 'Não informado'}</span>
-        </div>
-        <div class="detalhe-item">
-            <strong><i class="fas fa-user-md"></i> Profissional</strong>
-            <span>${medico}</span>
-        </div>
-        <div class="detalhe-item">
-            <strong><i class="fas fa-stethoscope"></i> Área</strong>
-            <span>${area}</span>
-        </div>
-        <div class="detalhe-item">
-            <strong><i class="fas fa-hourglass-half"></i> Duração</strong>
-            <span>${duracao}</span>
-        </div>
-        <div class="detalhe-item">
-            <strong><i class="fas fa-info-circle"></i> Status</strong>
-            <span>${status}</span>
-        </div>
-        ${consulta.descricao ? `
-            <div class="detalhe-item">
-                <strong><i class="fas fa-comment-dots"></i> Descrição</strong>
-                <span>${consulta.descricao}</span>
-            </div>
-        ` : ''}
-    `;
-    
-    document.getElementById('detalhesConsulta').innerHTML = detalhesHTML;
-    document.getElementById('modalDetalhes').style.display = 'flex';
-}
-
-// Fecha modal
 function fecharModal() {
-    document.getElementById('modalDetalhes').style.display = 'none';
+    const modal = document.getElementById('modalDetalhes');
+    if (modal) modal.style.display = 'none';
 }
 
-// Atualiza agenda (recarrega)
 function atualizarAgenda() {
     const btnRefresh = document.querySelector('.filter-button i');
-    if (btnRefresh) {
-        btnRefresh.classList.add('fa-spin');
-    }
-    
-    carregarConsultas().then(() => {
+    if (btnRefresh) btnRefresh.classList.add('fa-spin');
+
+    carregarConsultas().finally(() => {
         setTimeout(() => {
-            if (btnRefresh) {
-                btnRefresh.classList.remove('fa-spin');
-            }
+            if (btnRefresh) btnRefresh.classList.remove('fa-spin');
         }, 500);
     });
 }
 
-// Imprime agenda
 function imprimirAgenda() {
     const timeline = document.getElementById('agendaTimeline');
     const vazio = document.getElementById('agendaEmpty');
@@ -484,16 +519,16 @@ function imprimirAgenda() {
 
     const temConsultas = timeline.innerHTML.trim().length > 0 && (!vazio || vazio.style.display !== 'block');
 
-    // Cabeçalho: data + modo + contexto do profissional/área
     const dataCabecalho = (document.getElementById('dataAtual')?.textContent || '').trim();
-    const modo = (typeof filtroTerapia === 'string' ? filtroTerapia : 'ABA');
+    const modo = typeof filtroTerapia === 'string' ? filtroTerapia : 'ABA';
+
     let contexto = '';
     const sel = document.getElementById('filtroMedico');
     if (usuarioLogado?.perfil === 'admin') {
         const textoSel = sel && sel.options && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : 'Todos os Profissionais';
         contexto = textoSel || 'Todos os Profissionais';
     } else if (usuarioLogado?.perfil === 'supervisor') {
-        contexto = usuarioLogado?.especificacao ? `Área: ${usuarioLogado.especificacao}` : 'Minha área';
+        contexto = usuarioLogado?.especificacao ? `Area: ${usuarioLogado.especificacao}` : 'Minha area';
     } else {
         contexto = 'Meu painel';
     }
@@ -510,7 +545,6 @@ function imprimirAgenda() {
         .task-info { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
         .task-detail { display: flex; gap: 6px; align-items: center; }
         .task-description { margin-top: 6px; color: #333; }
-        .task-actions { display: none !important; }
         i { display: none; }
         @page { margin: 12mm; }
         @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
@@ -518,17 +552,27 @@ function imprimirAgenda() {
 
     const w = window.open('', '_blank');
     if (!w) return;
-    w.document.write('<html><head><title>Agenda Diária</title>');
+
+    w.document.write('<html><head><title>Agenda Diaria</title>');
     w.document.write(`<style>${css}</style>`);
     w.document.write('</head><body>');
-    const titulo = dataCabecalho || new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
-    w.document.write(`<h1>Agenda Diária</h1>`);
+
+    const titulo = dataCabecalho || new Date().toLocaleDateString('pt-BR', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+    });
+
+    w.document.write('<h1>Agenda Diaria</h1>');
     w.document.write(`<h2>${titulo} • Modo: ${modo} • ${contexto}</h2>`);
+
     if (temConsultas) {
         w.document.write(`<div class="timeline">${timeline.innerHTML}</div>`);
     } else {
         w.document.write('<p>Sem consultas para imprimir.</p>');
     }
+
     w.document.write('</body></html>');
     w.document.close();
     w.focus();
@@ -536,23 +580,23 @@ function imprimirAgenda() {
     w.close();
 }
 
-// Exibe mensagem de erro
 function exibirMensagemErro() {
     const timeline = document.getElementById('agendaTimeline');
     const empty = document.getElementById('agendaEmpty');
-    
+    if (!timeline || !empty) return;
+
     timeline.style.display = 'none';
     empty.innerHTML = `
         <i class="fas fa-exclamation-triangle"></i>
-        <p>Erro ao carregar consultas. Tente novamente.</p>
+        <p>Erro ao carregar consultas do painel do dia. Tente novamente.</p>
     `;
     empty.style.display = 'block';
 }
 
-// Fecha modal ao clicar fora
 window.onclick = function(event) {
     const modal = document.getElementById('modalDetalhes');
     const modalFiltro = document.getElementById('modalFiltro');
+
     if (event.target === modal) {
         fecharModal();
     }
@@ -560,4 +604,3 @@ window.onclick = function(event) {
         fecharModalFiltro();
     }
 };
-

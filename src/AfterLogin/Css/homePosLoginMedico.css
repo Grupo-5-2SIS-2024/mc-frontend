@@ -20,7 +20,7 @@ body {
     display: grid;
     grid-template-areas:
         'header header header'
-        'kpis grafico shortcuts'
+        'kpis shortcuts notificacoes'
         'agenda agenda notificacoes';
     grid-template-columns: 2fr 1fr 1fr;
     grid-template-rows: auto 1fr 2fr;
@@ -116,8 +116,7 @@ body {
 
 .shortcuts h2,
 .agenda h2,
-.notificacoes h2,
-.grafico h2 {
+.notificacoes h2 {
     color: #000;
     /* Títulos em preto */
     font-weight: bold;
@@ -875,7 +874,6 @@ td {
         grid-template-areas:
             'header'
             'kpis'
-            'grafico'
             'shortcuts'
             'agenda'
             'notificacoes';
