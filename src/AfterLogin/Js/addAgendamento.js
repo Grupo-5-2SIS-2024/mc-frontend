@@ -26,6 +26,7 @@ let procedimentoAtual = null;
 let procedimentosList = [];
 let consultas = []; // Variável global para armazenar as consultas
 let modoTerapia = 'ABA'; // ABA | Convencional
+let salasList = [];
 
 // Base da API: usa localhost em dev, vazio em produção
 const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
@@ -250,34 +251,55 @@ function setInitialState() {
     const selPaciente = document.getElementById('paciente');
     const inputDia = document.getElementById('dia');
     const selHora = document.getElementById('hora');
+    const selSala = document.getElementById('sala');
 
-    // disable downstream controls until prior selections are made
-    selMedico.disabled = true; selPaciente.disabled = true; inputDia.disabled = true; selHora.disabled = true;
+    selMedico.disabled = true;
+    selPaciente.disabled = true;
+    inputDia.disabled = true;
+    selHora.disabled = true;
+    selSala.disabled = true;
+
+    resetSalaSelect();
 
     selProcedimento.addEventListener('change', () => {
         procedimentoAtual = selProcedimento.value || null;
         selMedico.disabled = false;
         updateAvailableDoctors();
-        // reset downstream
-        selPaciente.disabled = true; inputDia.disabled = true; selHora.disabled = true;
-        selPaciente.innerHTML = ''; selHora.innerHTML = '';
+
+        selPaciente.disabled = true;
+        inputDia.disabled = true;
+        selHora.disabled = true;
+        selSala.disabled = true;
+
+        selPaciente.innerHTML = '';
+        selHora.innerHTML = '';
+        resetSalaSelect();
     });
 
     selMedico.addEventListener('change', () => {
         selPaciente.disabled = false;
-        updateAvailablePatients();
-        // permitir selecionar data após escolher profissional
         inputDia.disabled = false;
+        selSala.disabled = true;
+        updateAvailablePatients();
+        resetSalaSelect();
     });
 
     selPaciente.addEventListener('change', () => {
         inputDia.disabled = false;
+        selSala.disabled = true;
         updateAvailableHours();
+        resetSalaSelect();
     });
 
     inputDia.addEventListener('change', () => {
         selHora.disabled = false;
+        selSala.disabled = true;
         updateAvailableHours();
+        resetSalaSelect();
+    });
+
+    selHora.addEventListener('change', () => {
+        updateAvailableRooms();
     });
 }
 
@@ -491,6 +513,7 @@ async function agendarConsulta() {
     const procedimentoId = document.getElementById('procedimento').value;
     const recorrente = document.getElementById('recorrente').checked; // Verifica se o checkbox está marcado
     const btn = document.getElementById('agendar');
+    const salaId = document.getElementById('sala').value;
 
     // validações rápidas
     if (!procedimentoId) {
@@ -498,7 +521,7 @@ async function agendarConsulta() {
         return;
     }
 
-    if (!dia || !hora || !medicoId || !pacienteId) {
+    if (!dia || !hora || !medicoId || !pacienteId || !salaId) {
         Swal.fire({ icon: 'warning', title: 'Campos obrigatórios', text: 'Preencha data, hora, profissional e paciente.' });
         return;
     }
@@ -562,7 +585,8 @@ async function agendarConsulta() {
             especificacaoMedica: { id: especificacaoMedicaId },
             statusConsulta: { id: 1 },
             paciente: { id: pacienteId },
-            duracaoConsulta: duracaoConsulta
+            duracaoConsulta: duracaoConsulta,
+            sala: { id: salaId }
         });
 
         // Impede duplicidade por slot/profissional/paciente
@@ -600,6 +624,7 @@ async function agendarConsulta() {
                 especificacaoMedicaId: Number(procedimentoId),
                 statusConsultaId: 1,
                 duracaoMin: durMin,
+                salaId: Number(salaId),
                 descricao: descricao
             }
 
@@ -680,7 +705,8 @@ async function excluirConsulta(idConsulta) {
             especificacaoMedica: { id: consultaExistente.especificacaoMedica.id },
             medico: { id: consultaExistente.medico.id },
             paciente: { id: consultaExistente.paciente.id },
-            statusConsulta: { id: 3 } // Atualiza o status para "Cancelada" (ID = 3)
+            statusConsulta: { id: 3 }, // Atualiza o status para "Cancelada" (ID = 3)
+            sala: consultaExistente.sala ? { id: consultaExistente.sala.id } : null
         };
 
         console.log("Dados da consulta para atualizar:", consultaAtualizada);
@@ -759,13 +785,15 @@ async function alterarConsulta(idConsulta) {
         const [medicos, pacientes, especializacoes] = await Promise.all([
             fetch(`${API_BASE}/mc/medicos`).then(res => res.json()),
             fetch(`${API_BASE}/mc/pacientes`).then(res => res.json()),
-            fetch(`${API_BASE}/mc/especificacoes`).then(res => res.json())
+            fetch(`${API_BASE}/mc/especificacoes`).then(res => res.json()),
+            fetch(`${API_BASE}/mc/salas`).then(res => res.json())
         ]);
 
         // Preencher selects com opções
         const medicoOptions = medicos.map(medico => `<option value="${medico.id}" ${medico.id === consultaExistente.medico.id ? 'selected' : ''}>${medico.nome} ${medico.sobrenome}</option>`).join('');
         const pacienteOptions = pacientes.map(paciente => `<option value="${paciente.id}" ${paciente.id === consultaExistente.paciente.id ? 'selected' : ''}>${paciente.nome} ${paciente.sobrenome}</option>`).join('');
         const especializacaoOptions = especializacoes.map(especializacao => `<option value="${especializacao.id}" ${especializacao.id === consultaExistente.especificacaoMedica.id ? 'selected' : ''}>${especializacao.area}</option>`).join('');
+        const salaOptions = salas.map(sala => `<option value="${sala.id}" ${sala.id === consultaExistente.sala?.id ? 'selected' : ''}>${sala.nome}</option>`).join('');
 
         // Exibir popup de edição com os selects preenchidos
         const { value: consultaAtualizada } = await Swal.fire({
@@ -781,7 +809,8 @@ async function alterarConsulta(idConsulta) {
                     <option value="1" ${consultaExistente.statusConsulta.id === 1 ? 'selected' : ''}>Agendada</option>
                     <option value="2" ${consultaExistente.statusConsulta.id === 2 ? 'selected' : ''}>Concluída</option>
                     <option value="3" ${consultaExistente.statusConsulta.id === 3 ? 'selected' : ''}>Cancelada</option>
-                </select><br>`,
+                </select><br>`+
+                `<label for="sala">Sala:</label><br><select id="sala" class="swal2-select">${salaOptions}</select><br>`,
             focusConfirm: false,
             preConfirm: () => ({
                 datahoraConsulta: document.getElementById('datahoraConsulta').value || consultaExistente.datahoraConsulta,
@@ -790,7 +819,8 @@ async function alterarConsulta(idConsulta) {
                 especificacaoMedica: { id: document.getElementById('especificacaoMedica').value || consultaExistente.especificacaoMedica.id },
                 medico: { id: document.getElementById('medico').value || consultaExistente.medico.id },
                 paciente: { id: document.getElementById('paciente').value || consultaExistente.paciente.id },
-                statusConsulta: { id: parseInt(document.getElementById('statusConsulta').value) || consultaExistente.statusConsulta.id }
+                statusConsulta: { id: parseInt(document.getElementById('statusConsulta').value) || consultaExistente.statusConsulta.id },
+                sala: { id: parseInt(document.getElementById('sala').value) || consultaExistente.sala?.id }
             })
         });
 
@@ -831,6 +861,7 @@ async function alterarConsulta(idConsulta) {
     console.log("Iniciando página de agendamentos...");
     await buscarEspecificacoes();
     await buscarPacientesEMedicos();
+    await buscarSalas();
 })();
 
 document.getElementById('procedimento').addEventListener('change', () => {
@@ -868,6 +899,7 @@ async function baixarConsultaExcel(consultaId) {
             "Data e Hora": formatarData(consulta.datahoraConsulta),
             Profissional: `${consulta.medico.nome} ${consulta.medico.sobrenome}`,
             Especialização: consulta.especificacaoMedica.area,
+            Sala: consulta.sala?.nome || '',
             Status: consulta.statusConsulta.nomeStatus,
             Descrição: consulta.descricao
         }];
@@ -1022,3 +1054,83 @@ function atualizarListagemConsultas() {
 function AnaliseConsultasx(consultaId) {
     window.location.href = `FeedbackConsulta.html?consultaId=${consultaId}`;
 }
+
+async function buscarSalas() {
+    try {
+        const resp = await fetch(`${API_BASE}/mc/salas`);
+        if (!resp.ok) throw new Error(`HTTP error! Status: ${resp.status}`);
+        salasList = await resp.json();
+        resetSalaSelect('Selecione data e hora primeiro');
+    } catch (error) {
+        console.error('Erro ao buscar salas:', error);
+        salasList = [];
+        resetSalaSelect('Nenhuma sala encontrada');
+    }
+}
+
+function resetSalaSelect(texto = 'Selecione data e hora primeiro') {
+    const select = document.getElementById('sala');
+    if (!select) return;
+
+    select.innerHTML = '';
+    const option = document.createElement('option');
+    option.textContent = texto;
+    option.value = '';
+    option.disabled = true;
+    option.selected = true;
+    select.appendChild(option);
+}
+
+async function updateAvailableRooms() {
+    const dia = document.getElementById('dia').value;
+    const hora = document.getElementById('hora').value;
+    const selectSala = document.getElementById('sala');
+
+    if (!selectSala) return;
+
+    if (!dia || !hora) {
+        selectSala.disabled = true;
+        resetSalaSelect('Selecione data e hora primeiro');
+        return;
+    }
+
+    const durMin = isNeuroSelecionado() ? 60 : (isTerapiaConvencional() ? 30 : 50);
+
+    try {
+        const url = apiUrl('/mc/consultas/salas-disponiveis');
+        url.searchParams.set('data', dia);
+        url.searchParams.set('hora', hora);
+        url.searchParams.set('duracaoMin', String(durMin));
+
+        const resp = await fetch(url.toString());
+        if (!resp.ok) throw new Error(`HTTP error! Status: ${resp.status}`);
+
+        const json = await resp.json();
+        const salas = json?.salas || [];
+
+        if (!Array.isArray(salas) || salas.length === 0) {
+            selectSala.disabled = true;
+            resetSalaSelect('Nenhuma sala disponível');
+            return;
+        }
+
+        selectSala.disabled = false;
+        populateSelect(
+            'sala',
+            [{ nome: 'Selecione uma sala', id: '' }, ...salas],
+            'nome',
+            'id'
+        );
+    } catch (error) {
+        console.error('Erro ao buscar salas disponíveis:', error);
+        selectSala.disabled = true;
+        resetSalaSelect('Erro ao carregar salas');
+    }
+}
+
+//final do arquivo
+document.getElementById('hora').addEventListener('change', updateAvailableRooms);
+document.getElementById('dia').addEventListener('change', () => {
+    resetSalaSelect();
+    document.getElementById('sala').disabled = true;
+});
