@@ -182,6 +182,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         return `${nome} ${sobrenome}`.trim();
     }
 
+    function nomeSalaLinha(consulta) {
+        return String(
+            consulta?.painelSala ||
+            consulta?.sala?.nome ||
+            consulta?.sala ||
+            ''
+        ).trim() || 'Sem sala';
+    }
+
     function nomeProfissionalLinha(consulta) {
         if (consulta?.profissionalNome) return consulta.profissionalNome;
         if (consulta?.medico && consulta?.medicoSobrenome) {
@@ -294,6 +303,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             painelConvenio: linha?.painelConvenio ?? linha?.convenio?.nome ?? linha?.convenio ?? null,
             painelStatus: status,
             painelTipoTerapia: linha?.painelTipoTerapia ?? linha?.tipoTerapia ?? null,
+            painelSala: String(
+                linha?.sala ??
+                linha?.salaNome ??
+                linha?.consulta?.sala?.nome ??
+                linha?.sala?.nome ??
+                ''
+            ).trim(),
             statusConsulta: linha?.statusConsulta || { idStatus: statusId, nomeStatus: status },
             paciente: linha?.paciente || { nome: pacienteNome, sobrenome: '' },
             medico: linha?.medico || { id: linha?.medicoId ?? null, nome: profissionalNome, sobrenome: '' },
@@ -557,7 +573,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (consultasHoje.length === 0) {
             const vazio = document.createElement('tr');
-            vazio.innerHTML = `<td colspan="4">Sem agendamentos para o dia selecionado.</td>`;
+            vazio.innerHTML = `<td colspan="5">Sem agendamentos para o dia selecionado.</td>`;
             agendaBody.appendChild(vazio);
             return;
         }
@@ -577,7 +593,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Linha separadora do horário
             const sep = document.createElement('tr');
             sep.className = 'time-separator';
-            sep.innerHTML = `<td colspan="4"><strong>${hora}</strong></td>`;
+            sep.innerHTML = `<td colspan="5"><strong>${hora}</strong></td>`;
             agendaBody.appendChild(sep);
 
             // Linhas das consultas do horário
@@ -590,6 +606,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const tdMedico = document.createElement('td');
                 tdMedico.textContent = nomeProfissionalLinha(consulta);
                 const tdStatus = document.createElement('td');
+                const tdSala = document.createElement('td');
+                tdSala.textContent = nomeSalaLinha(consulta);
                 // create a dedicated element for the status text and a separate container for action buttons
                 const spanStatusText = document.createElement('span');
                 spanStatusText.className = 'status-text';
@@ -672,6 +690,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 row.appendChild(tdPaciente);
                 row.appendChild(tdMedico);
                 row.appendChild(tdStatus);
+                row.appendChild(tdSala);
                 agendaBody.appendChild(row);
             }
         }
@@ -774,12 +793,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 grid.appendChild(empty);
             }
 
-            const today = new Date(); today.setHours(0,0,0,0);
+            const today = new Date(); today.setHours(0, 0, 0, 0);
             const isSameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
             for (let d = 1; d <= daysInMonth; d++) {
                 const cellDate = new Date(viewYear, viewMonth, d);
-                cellDate.setHours(0,0,0,0);
+                cellDate.setHours(0, 0, 0, 0);
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'mini-cal-day';
@@ -947,15 +966,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             const convenio = consulta?.painelConvenio || obterConvenio(consulta?.paciente);
             const profissional = nomeProfissionalLinha(consulta) || '—';
             const status = consulta?.statusConsulta?.nomeStatus ?? 'Agendada';
+            const sala = nomeSalaLinha(consulta);
 
             return `<tr>
-                <td>${hora}</td>
-                <td>${pacienteNome}</td>
-                <td>${idade}</td>
-                <td>${convenio}</td>
-                <td>${profissional}</td>
-                <td>${status}</td>
-            </tr>`;
+    <td>${hora}</td>
+    <td>${pacienteNome}</td>
+    <td>${idade}</td>
+    <td>${convenio}</td>
+    <td>${profissional}</td>
+    <td>${status}</td>
+    <td>${sala}</td>
+</tr>`;
         }).join('');
 
         const tabelaHtml = `
@@ -968,10 +989,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <th>Convênio</th>
                         <th>Profissional</th>
                         <th>Status</th>
+                        <th>Sala</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${linhasTabela || '<tr><td colspan="6">Sem agendamentos para o dia selecionado.</td></tr>'}
+                   ${linhasTabela || '<tr><td colspan="7">Sem agendamentos para o dia selecionado.</td></tr>'}
                 </tbody>
             </table>
         `;
@@ -1100,31 +1122,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function verificarAgendamentosVencendo(consultas) {
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
-        
+
         // Data daqui a 7 dias (janela de alerta)
         const umaSemana = new Date(hoje);
         umaSemana.setDate(hoje.getDate() + 7);
         umaSemana.setHours(23, 59, 59, 999);
-        
+
         // Filtrar apenas consultas futuras com status "Agendada"
         const consultasFuturas = consultas.filter(c => {
             const dataConsulta = new Date(c.datahoraConsulta);
             const status = c?.statusConsulta?.nomeStatus ?? 'Agendada';
             return status === 'Agendada' && dataConsulta >= hoje;
         });
-        
+
         // Agrupar consultas por PACIENTE + ESPECIALIDADE
         const consultasPorPacienteEspecialidade = {};
         consultasFuturas.forEach(c => {
             const pacienteId = c.paciente?.id;
             const especialidadeId = c.especificacaoMedica?.id || c.medico?.especificacaoMedica?.id;
             const especialidadeNome = c.especificacaoMedica?.area || c.medico?.especificacaoMedica?.area || 'Não especificada';
-            
+
             if (!pacienteId || !especialidadeId) return;
-            
+
             // Criar chave única: pacienteId + especialidadeId
             const chave = `${pacienteId}_${especialidadeId}`;
-            
+
             if (!consultasPorPacienteEspecialidade[chave]) {
                 consultasPorPacienteEspecialidade[chave] = {
                     pacienteNome: `${c.paciente?.nome || ''} ${c.paciente?.sobrenome || ''}`.trim(),
@@ -1134,20 +1156,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             consultasPorPacienteEspecialidade[chave].consultas.push(c);
         });
-        
+
         // Para cada combinação paciente+especialidade, pegar a ÚLTIMA consulta agendada
         const pacientesComUltimaConsultaProxima = [];
-        
+
         Object.values(consultasPorPacienteEspecialidade).forEach(grupo => {
             // Ordenar consultas por data (mais antiga primeiro)
-            grupo.consultas.sort((a, b) => 
+            grupo.consultas.sort((a, b) =>
                 new Date(a.datahoraConsulta) - new Date(b.datahoraConsulta)
             );
-            
+
             // Pegar a ÚLTIMA consulta (mais distante no futuro)
             const ultimaConsulta = grupo.consultas[grupo.consultas.length - 1];
             const dataUltimaConsulta = new Date(ultimaConsulta.datahoraConsulta);
-            
+
             // Verificar se a última consulta está dentro da próxima semana
             if (dataUltimaConsulta >= hoje && dataUltimaConsulta <= umaSemana) {
                 pacientesComUltimaConsultaProxima.push({
@@ -1159,12 +1181,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
         });
-        
+
         // Se houver pacientes com última consulta na próxima semana, mostrar alerta
         if (pacientesComUltimaConsultaProxima.length > 0) {
             // Ordenar por data (mais próximas primeiro)
             pacientesComUltimaConsultaProxima.sort((a, b) => a.dataUltima - b.dataUltima);
-            
+
             // Criar HTML para o popup
             let htmlConsultas = '<div style="text-align: left; max-height: 400px; overflow-y: auto;">';
             htmlConsultas += '<table style="width: 100%; border-collapse: collapse;">';
@@ -1174,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             htmlConsultas += '<th style="padding: 10px; border: 1px solid #ddd;">Última Consulta</th>';
             htmlConsultas += '<th style="padding: 10px; border: 1px solid #ddd;">Sessões Restantes</th>';
             htmlConsultas += '</tr></thead><tbody>';
-            
+
             pacientesComUltimaConsultaProxima.forEach(item => {
                 const dataFormatada = item.dataUltima.toLocaleDateString('pt-BR', {
                     day: '2-digit',
@@ -1185,7 +1207,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     hour: '2-digit',
                     minute: '2-digit'
                 });
-                
+
                 htmlConsultas += '<tr>';
                 htmlConsultas += `<td style="padding: 8px; border: 1px solid #ddd;"><strong>${item.pacienteNome}</strong></td>`;
                 htmlConsultas += `<td style="padding: 8px; border: 1px solid #ddd;">${item.especialidadeNome}</td>`;
@@ -1193,9 +1215,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 htmlConsultas += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.totalConsultas}</td>`;
                 htmlConsultas += '</tr>';
             });
-            
+
             htmlConsultas += '</tbody></table></div>';
-            
+
             // Exibir pop-up usando SweetAlert2
             if (window.Swal) {
                 Swal.fire({
