@@ -509,7 +509,6 @@ async function agendarConsulta() {
     const hora = document.getElementById('hora').value;
     const medicoId = document.getElementById('medico').value;
     const pacienteId = document.getElementById('paciente').value;
-    const descricao = document.getElementById('descricao').value || "Sem descrição";
     const procedimentoId = document.getElementById('procedimento').value;
     const recorrente = document.getElementById('recorrente').checked; // Verifica se o checkbox está marcado
     const btn = document.getElementById('agendar');
@@ -580,7 +579,6 @@ async function agendarConsulta() {
         // Função para criar o objeto da consulta
         const criarDadosConsulta = (dataConsulta) => ({
             datahoraConsulta: `${dataConsulta}T${hora}:00`,
-            descricao: descricao,
             medico: { id: medicoId },
             especificacaoMedica: { id: especificacaoMedicaId },
             statusConsulta: { id: 1 },
@@ -624,8 +622,7 @@ async function agendarConsulta() {
                 especificacaoMedicaId: Number(procedimentoId),
                 statusConsultaId: 1,
                 duracaoMin: durMin,
-                salaId: Number(salaId),
-                descricao: descricao
+                salaId: Number(salaId)
             }
 
             const r = await fetch(`${API_BASE}/mc/consultas/recorrentes`, {
@@ -700,7 +697,6 @@ async function excluirConsulta(idConsulta) {
         // Cria o objeto de consulta com os dados atualizados
         const consultaAtualizada = {
             datahoraConsulta: consultaExistente.datahoraConsulta,
-            descricao: consultaExistente.descricao,
             duracaoConsulta: consultaExistente.duracaoConsulta,
             especificacaoMedica: { id: consultaExistente.especificacaoMedica.id },
             medico: { id: consultaExistente.medico.id },
@@ -800,7 +796,6 @@ async function alterarConsulta(idConsulta) {
             title: 'Alterar Consulta',
             html:
                 `<label for="datahoraConsulta">Data e Hora:</label><br><input type="datetime-local" id="datahoraConsulta" value="${consultaExistente.datahoraConsulta}" class="swal2-input"><br>` +
-                `<label for="descricao">Descrição:</label><br><textarea id="descricao" class="swal2-textarea">${consultaExistente.descricao}</textarea><br>` +
                 `<label for="duracaoConsulta">Duração:</label><br><input type="time" id="duracaoConsulta" value="${consultaExistente.duracaoConsulta}" class="swal2-input"><br>` +
                 `<label for="especificacaoMedica">Especialização Médica:</label><br><select id="especificacaoMedica" class="swal2-select">${especializacaoOptions}</select><br>` +
                 `<label for="medico">Profissional:</label><br><select id="medico" class="swal2-select">${medicoOptions}</select><br>` +
@@ -814,7 +809,6 @@ async function alterarConsulta(idConsulta) {
             focusConfirm: false,
             preConfirm: () => ({
                 datahoraConsulta: document.getElementById('datahoraConsulta').value || consultaExistente.datahoraConsulta,
-                descricao: document.getElementById('descricao').value || consultaExistente.descricao,
                 duracaoConsulta: document.getElementById('duracaoConsulta').value || consultaExistente.duracaoConsulta,
                 especificacaoMedica: { id: document.getElementById('especificacaoMedica').value || consultaExistente.especificacaoMedica.id },
                 medico: { id: document.getElementById('medico').value || consultaExistente.medico.id },
@@ -900,8 +894,7 @@ async function baixarConsultaExcel(consultaId) {
             Profissional: `${consulta.medico.nome} ${consulta.medico.sobrenome}`,
             Especialização: consulta.especificacaoMedica.area,
             Sala: consulta.sala?.nome || '',
-            Status: consulta.statusConsulta.nomeStatus,
-            Descrição: consulta.descricao
+            Status: consulta.statusConsulta.nomeStatus
         }];
 
 

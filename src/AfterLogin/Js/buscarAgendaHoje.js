@@ -69,36 +69,3 @@ function formatarData(dataISO) {
 
 
 }
-
-
-
-
-
-
-
-
-// async function buscar() {
-//     console.log("passei por aqui");
-//     var idUser = 1
-
-//     try {
-//     const resposta = await fetch(`/mc/consultas/listarConsultasMedicoID/${idUser}`);
-//         if (!resposta.ok) {
-//             throw new Error(`HTTP error! Status: ${resposta.status}`);
-//         }
-//         const respostaDados = await resposta.json();
-// console.log(respostaDados);
-
-// const cards = document.getElementById("listaAgendaS");
-// cards.innerHTML = respostaDados.body.map((item) => {
-//     return `
-//             <div class="listaAgendaH">
-//                 <span class="horarioH">${item.datahoraConsulta}</span>
-//                 <span class="pacienteH">${item.paciente.nome} ${item.paciente.sobrenome}</span>
-//             </div>`;
-//         }).join('');
-//     } catch (error) {
-//         console.error('Failed to fetch:', error);
-//     }
-// }
-// buscar()

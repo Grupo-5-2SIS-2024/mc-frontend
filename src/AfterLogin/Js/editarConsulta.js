@@ -164,8 +164,6 @@ async function carregarConsulta() {
     const c = await res.json()
     consultaCarregada = c
 
-    $('#descricao').value = c.descricao || ''
-
     const dt = fDate(c.datahoraConsulta)
     $('#data').value = dt.date
     $('#hora').value = dt.time
@@ -232,7 +230,7 @@ function computeSeriesKeyFromConsulta(c) {
 }
 
 function validar() {
-    const obrig = ['descricao', 'data', 'hora', 'duracao', 'medico', 'paciente', 'status', 'especificacao', 'sala']
+    const obrig = ['data', 'hora', 'duracao', 'medico', 'paciente', 'status', 'especificacao', 'sala']
     let ok = true
 
     obrig.forEach(id => {
@@ -269,7 +267,6 @@ async function atualizar() {
 
         const payload = {
             id: Number(consultaId),
-            descricao: $('#descricao').value,
             datahoraConsulta: `${data}T${hora}:00`,
             duracaoConsulta: $('#duracao').value,
             medico: { id: Number($('#medico').value) },
@@ -352,7 +349,6 @@ async function atualizar() {
 
             const p2 = {
                 id: Number(c2.id),
-                descricao: $('#descricao').value,
                 datahoraConsulta: makeISO(d),
                 duracaoConsulta: $('#duracao').value,
                 medico: { id: Number($('#medico').value) },

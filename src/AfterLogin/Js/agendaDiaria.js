@@ -272,8 +272,7 @@ function normalizarLinhasPainel(linhas, dataIso) {
                 'Agendada'
             ).trim(),
             duracaoConsulta: linha?.duracaoConsulta ?? linha?.duracao ?? null,
-            tipoTerapia: linha?.tipoTerapia ?? null,
-            descricao: linha?.descricao ?? null
+            tipoTerapia: linha?.tipoTerapia ?? null
         };
     }).filter((consulta) => {
         const dt = consulta?.datahoraConsulta ? new Date(consulta.datahoraConsulta) : null;
@@ -463,12 +462,6 @@ function exibirConsultas() {
                         <span><strong>Convenio:</strong> ${convenio}</span>
                     </div>
                 </div>
-
-                ${consulta.descricao ? `
-                    <div class="task-description">
-                        <i class="fas fa-comment-dots"></i> ${consulta.descricao}
-                    </div>
-                ` : ''}
             </div>
         `;
     }).join('');
@@ -544,7 +537,6 @@ function imprimirAgenda() {
         .task-status { font-weight: 700; }
         .task-info { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
         .task-detail { display: flex; gap: 6px; align-items: center; }
-        .task-description { margin-top: 6px; color: #333; }
         i { display: none; }
         @page { margin: 12mm; }
         @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }

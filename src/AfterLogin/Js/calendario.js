@@ -33,7 +33,7 @@ function exportarSemanaCSV() {
     try {
         const start = new Date(dataInicioAtual);
         const rows = [];
-        rows.push(['Data', 'Hora', 'Paciente', 'CPF', 'Profissional', 'Área', 'Status', 'Descrição', 'Duração']);
+        rows.push(['Data', 'Hora', 'Paciente', 'CPF', 'Profissional', 'Área', 'Status', 'Duração']);
 
         for (let i = 0; i < 5; i++) {
             const d = new Date(start);
@@ -48,14 +48,13 @@ function exportarSemanaCSV() {
                 const medico = t.medico ? `${t.medico.nome || ''} ${t.medico.sobrenome || ''}`.trim() : '';
                 const area = t.medico?.especificacaoMedica?.area || t.especificacaoMedica?.area || '';
                 const status = t.statusConsulta?.nomeStatus || '';
-                const descricao = t.descricao ? String(t.descricao).replace(/\r?\n/g, ' ') : '';
                 let duracao = '';
                 const rawDur = t.duracaoConsulta ?? t.duracao ?? null;
                 if (rawDur) {
                     if (typeof rawDur === 'number') duracao = `${rawDur} min`;
                     else duracao = String(rawDur);
                 }
-                rows.push([dataStr, horaStr, paciente, cpf, medico, area, status, descricao, duracao]);
+                rows.push([dataStr, horaStr, paciente, cpf, medico, area, status, duracao]);
             });
         }
 
@@ -81,14 +80,14 @@ function exportarSemanaPDF() {
         const start = new Date(dataInicioAtual);
         let html = `<html><head><title>Agenda Semanal</title><style>body{font-family:Arial,Helvetica,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#f4f4f4}</style></head><body>`;
         html += `<h2>Agenda Semanal: ${document.getElementById('dias').innerText}</h2>`;
-        html += `<table><thead><tr><th>Data</th><th>Hora</th><th>Paciente</th><th>Profissional</th><th>Área</th><th>Status</th><th>Descrição</th><th>Duração</th></tr></thead><tbody>`;
+        html += `<table><thead><tr><th>Data</th><th>Hora</th><th>Paciente</th><th>Profissional</th><th>Área</th><th>Status</th><th>Duração</th></tr></thead><tbody>`;
 
         for (let i = 0; i < 5; i++) {
             const d = new Date(start);
             d.setDate(start.getDate() + i);
             const tarefas = obterTarefasParaData(d);
             if (tarefas.length === 0) {
-                html += `<tr><td>${d.toLocaleDateString('pt-BR')}</td><td colspan="7">Sem tarefas</td></tr>`;
+                html += `<tr><td>${d.toLocaleDateString('pt-BR')}</td><td colspan="6">Sem tarefas</td></tr>`;
             } else {
                 tarefas.forEach(t => {
                     const dataHora = new Date(t.datahoraConsulta);
@@ -98,11 +97,10 @@ function exportarSemanaPDF() {
                     const medico = t.medico ? `${t.medico.nome || ''} ${t.medico.sobrenome || ''}`.trim() : '';
                     const area = t.medico?.especificacaoMedica?.area || t.especificacaoMedica?.area || '';
                     const status = t.statusConsulta?.nomeStatus || '';
-                    const descricao = t.descricao ? String(t.descricao).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
                     const rawDur = t.duracaoConsulta ?? t.duracao ?? null;
                     let duracao = '';
                     if (rawDur) duracao = typeof rawDur === 'number' ? `${rawDur} min` : String(rawDur);
-                    html += `<tr><td>${dataStr}</td><td>${horaStr}</td><td>${paciente}</td><td>${medico}</td><td>${area}</td><td>${status}</td><td>${descricao}</td><td>${duracao}</td></tr>`;
+                    html += `<tr><td>${dataStr}</td><td>${horaStr}</td><td>${paciente}</td><td>${medico}</td><td>${area}</td><td>${status}</td><td>${duracao}</td></tr>`;
                 });
             }
         }
@@ -524,7 +522,7 @@ function atualizarColunasDeTarefas(startDate) {
             const pacienteNome = task?.paciente ? `${task.paciente.nome || ''} ${task.paciente.sobrenome || ''}`.trim() : 'Paciente —';
             const medicoNome = task?.medico ? `${task.medico.nome || ''} ${task.medico.sobrenome || ''}`.trim() : 'Profissional —';
             const statusNome = task?.statusConsulta?.nomeStatus || '—';
-            const descricao = task?.descricao || '';
+            const procedimentoNome = task?.especificacaoMedica?.area || task?.medico?.especificacaoMedica?.area || 'Procedimento';
             const salaNome = getSalaNome(task);
 
             const statusClass = 'status-' + String(statusNome)
@@ -534,7 +532,7 @@ function atualizarColunasDeTarefas(startDate) {
                 .replace(/\s+/g, '-');
 
             taskElement.innerHTML = `
-    <div class="task-title" title="${escapeHTML(descricao)}">${escapeHTML(descricao)}</div>
+            <div class="task-title" title="${escapeHTML(procedimentoNome)}">${escapeHTML(procedimentoNome)}</div>
     <div class="task-info">
         <div class="info-line"><i class="fa-regular fa-clock"></i><span>${escapeHTML(horaStr)}</span></div>
         <div class="info-line"><i class="fa-solid fa-user"></i><span>${escapeHTML(pacienteNome)}</span></div>
@@ -661,7 +659,6 @@ function abrirDetalhesTarefa(consulta) {
     const medicoNome = consulta?.medico ? `${consulta.medico.nome || ''} ${consulta.medico.sobrenome || ''}`.trim() : 'Desconhecido';
     const medicoArea = consulta?.medico?.especificacaoMedica?.area || 'Desconhecida';
     const statusNome = consulta?.statusConsulta?.nomeStatus || 'Desconhecido';
-    const descricao = consulta?.descricao || 'Sem descrição';
     const salaNome = getSalaNome(consulta);
     // Support different possible duration fields and format them for display
     const rawDur = consulta?.duracaoConsulta ?? consulta?.duracao ?? null;
@@ -688,7 +685,7 @@ function abrirDetalhesTarefa(consulta) {
     if (!detalhesDiv) return;
 
     detalhesDiv.innerHTML = `
-    <p><strong>Descrição:</strong> ${escapeHTML(descricao)}</p>
+    <p><strong>Procedimento:</strong> ${escapeHTML(medicoArea)}</p>
     <p><strong>Data e Hora:</strong> ${escapeHTML(dataFormatada)} às ${escapeHTML(horaFormatada)}</p>
     <p><strong>Paciente:</strong> ${escapeHTML(pacienteNome)}</p>
     <p><strong>Profissional:</strong> ${escapeHTML(medicoNome)} - ${escapeHTML(medicoArea)}</p>

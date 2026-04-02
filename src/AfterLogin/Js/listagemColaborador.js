@@ -1089,7 +1089,7 @@ function atualizarDisplayCalendarioColab(consultas) {
       tarefas.forEach(consulta => {
         const taskElement = document.createElement('div');
         taskElement.className = 'task';
-        taskElement.innerText = consulta.descricao || 'Consulta';
+        taskElement.innerText = consulta?.especificacaoMedica?.area || consulta?.medico?.especificacaoMedica?.area || 'Procedimento';
 
         taskElement.onclick = () => abrirDetalhesTarefaColab(consulta);
 
@@ -1198,7 +1198,7 @@ function abrirDetalhesTarefaColab(consulta) {
         <button id="btnFecharDetalhesColab" class="icon-btn close" title="Fechar">×</button>
       </div>
     </div>
-    <p><strong>Descrição:</strong> ${consulta?.descricao || 'Sem descrição'}</p>
+    <p><strong>Procedimento:</strong> ${area}</p>
     <p><strong>Data e Hora:</strong> ${dataFormatada} às ${horaFormatada}</p>
     <p><strong>Paciente:</strong> ${pacienteNome}</p>
     <p><strong>Profissional:</strong> ${medicoNome} - ${area}</p>

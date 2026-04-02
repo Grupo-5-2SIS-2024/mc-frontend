@@ -696,7 +696,7 @@ function atualizarDisplayCalendario(consultasCliente) {
             consultasDoDia.forEach(consulta => {
                 const taskElement = document.createElement('div');
                 taskElement.className = 'task';
-                taskElement.innerText = consulta.descricao;
+                taskElement.innerText = consulta?.especificacaoMedica?.area || consulta?.medico?.especificacaoMedica?.area || 'Procedimento';
 
                 taskElement.onclick = () => abrirDetalhesTarefa(consulta);
 
@@ -752,7 +752,7 @@ function exportarSemanaPacienteCSV(pacienteId) {
     try {
         const start = new Date(dataInicioAtual);
         const rows = [];
-        rows.push(['Data', 'Hora', 'Paciente', 'CPF', 'Profissional', 'Área', 'Status', 'Descrição', 'Duração']);
+        rows.push(['Data', 'Hora', 'Paciente', 'CPF', 'Profissional', 'Área', 'Status', 'Duração']);
 
         for (let i = 0; i < 5; i++) {
             const d = new Date(start);
@@ -767,11 +767,10 @@ function exportarSemanaPacienteCSV(pacienteId) {
                 const medico = t.medico ? `${t.medico.nome || ''} ${t.medico.sobrenome || ''}`.trim() : '';
                 const area = t.medico?.especificacaoMedica?.area || t.especificacaoMedica?.area || '';
                 const status = t.statusConsulta?.nomeStatus || '';
-                const descricao = t.descricao ? String(t.descricao).replace(/\r?\n/g, ' ') : '';
                 const rawDur = t.duracaoConsulta ?? t.duracao ?? null;
                 let duracao = '';
                 if (rawDur) duracao = typeof rawDur === 'number' ? `${rawDur} min` : String(rawDur);
-                rows.push([dataStr, horaStr, paciente, cpf, medico, area, status, descricao, duracao]);
+                rows.push([dataStr, horaStr, paciente, cpf, medico, area, status, duracao]);
             });
         }
 
@@ -798,14 +797,14 @@ function exportarSemanaPacientePDF(pacienteId) {
         const start = new Date(dataInicioAtual);
         let html = `<html><head><title>Agenda Semanal do Paciente</title><style>body{font-family:Arial,Helvetica,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#f4f4f4}</style></head><body>`;
         html += `<h2>Agenda Semanal: ${document.getElementById('dias')?.innerText || ''}</h2>`;
-        html += `<table><thead><tr><th>Data</th><th>Hora</th><th>Paciente</th><th>Profissional</th><th>Área</th><th>Status</th><th>Descrição</th><th>Duração</th></tr></thead><tbody>`;
+        html += `<table><thead><tr><th>Data</th><th>Hora</th><th>Paciente</th><th>Profissional</th><th>Área</th><th>Status</th><th>Duração</th></tr></thead><tbody>`;
 
         for (let i = 0; i < 5; i++) {
             const d = new Date(start);
             d.setDate(start.getDate() + i);
             const tarefas = bancoDeDadosFiltrado.filter(t => t.datahoraConsulta.startsWith(formatarData(d)));
             if (tarefas.length === 0) {
-                html += `<tr><td>${d.toLocaleDateString('pt-BR')}</td><td colspan="7">Sem tarefas</td></tr>`;
+                html += `<tr><td>${d.toLocaleDateString('pt-BR')}</td><td colspan="6">Sem tarefas</td></tr>`;
             } else {
                 tarefas.forEach(t => {
                     const dataHora = new Date(t.datahoraConsulta);
@@ -815,11 +814,10 @@ function exportarSemanaPacientePDF(pacienteId) {
                     const medico = t.medico ? `${t.medico.nome || ''} ${t.medico.sobrenome || ''}`.trim() : '';
                     const area = t.medico?.especificacaoMedica?.area || t.especificacaoMedica?.area || '';
                     const status = t.statusConsulta?.nomeStatus || '';
-                    const descricao = t.descricao ? String(t.descricao).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
                     const rawDur = t.duracaoConsulta ?? t.duracao ?? null;
                     let duracao = '';
                     if (rawDur) duracao = typeof rawDur === 'number' ? `${rawDur} min` : String(rawDur);
-                    html += `<tr><td>${dataStr}</td><td>${horaStr}</td><td>${paciente}</td><td>${medico}</td><td>${area}</td><td>${status}</td><td>${descricao}</td><td>${duracao}</td></tr>`;
+                    html += `<tr><td>${dataStr}</td><td>${horaStr}</td><td>${paciente}</td><td>${medico}</td><td>${area}</td><td>${status}</td><td>${duracao}</td></tr>`;
                 });
             }
         }
@@ -861,7 +859,7 @@ function abrirDetalhesTarefa(consulta) {
                 <button id="btnFecharDetalhes" class="icon-btn close" title="Fechar">×</button>
             </div>
         </div>
-        <p><strong>Descrição:</strong> ${consulta.descricao || 'Sem descrição'}</p>
+        <p><strong>Procedimento:</strong> ${medicoArea}</p>
         <p><strong>Data e Hora:</strong> ${dataFormatada} às ${horaFormatada}</p>
         <p><strong>Paciente:</strong> ${pacienteNome}</p>
         <p><strong>Profissional:</strong> ${medicoNome} - ${medicoArea}</p>
@@ -885,6 +883,72 @@ function fecharModalDetalhes() {
     document.getElementById('modalDetalhesTarefa').style.display = 'none';
 }
 
+function mostrarSwalEmPrimeiroPlano(opcoes) {
+    return Swal.fire({
+        ...opcoes,
+        didOpen: () => {
+            const container = Swal.getContainer();
+            const popup = Swal.getPopup();
+            if (container) container.style.zIndex = '2147483647';
+            if (popup) popup.style.zIndex = '2147483647';
+            if (typeof opcoes?.didOpen === 'function') {
+                opcoes.didOpen();
+            }
+        }
+    });
+}
+
+function getDuracaoMinutos(entry) {
+    const raw = entry?.duracaoConsulta ?? entry?.duracao;
+    if (raw == null) return null;
+
+    if (typeof raw === 'number' && isFinite(raw)) return raw;
+
+    if (typeof raw === 'string') {
+        const s = raw.trim();
+
+        let m = s.match(/^([0-9]{1,2}):([0-9]{2}):([0-9]{2})$/);
+        if (m) {
+            const hh = Number(m[1]);
+            const mm = Number(m[2]);
+            return (hh * 60) + mm;
+        }
+
+        m = s.match(/^([0-9]{1,2}):([0-9]{2})$/);
+        if (m) {
+            const hh = Number(m[1]);
+            const mm = Number(m[2]);
+            return (hh * 60) + mm;
+        }
+
+        const n = Number(s);
+        if (!Number.isNaN(n) && isFinite(n)) return n;
+    }
+
+    return null;
+}
+
+function timeHHMMFromISO(iso) {
+    try {
+        const d = new Date(iso);
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+    } catch {
+        return '';
+    }
+}
+
+function computeSeriesKeyFromConsulta(c) {
+    const medicoId = c?.medico?.id ?? '';
+    const pacienteId = c?.paciente?.id ?? '';
+    const especId = c?.especificacaoMedica?.id ?? '';
+    const durMin = getDuracaoMinutos(c);
+    const hhmm = timeHHMMFromISO(c?.datahoraConsulta);
+
+    return `${medicoId}|${pacienteId}|${especId}|${durMin ?? ''}|${hhmm}`;
+}
+
 // Redireciona para a página de edição da consulta
 function redirecionarAtualizarConsulta(idConsulta) {
     if (!idConsulta) return;
@@ -894,15 +958,17 @@ function redirecionarAtualizarConsulta(idConsulta) {
 // Cancela (exclui logicamente) a consulta do paciente
 async function cancelarConsulta(idConsulta) {
     try {
-        const confirmar = await Swal.fire({
-            title: 'Excluir consulta?',
-            text: 'Esta ação marcará a consulta como cancelada.',
+        const escolha = await mostrarSwalEmPrimeiroPlano({
+            title: 'Excluir recorrência?',
+            text: 'Deseja excluir somente esta consulta ou todas as recorrentes deste dia em diante?',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Sim, excluir',
+            showDenyButton: true,
+            confirmButtonText: 'Somente esta',
+            denyButtonText: 'Recorrentes a partir desta',
             cancelButtonText: 'Cancelar'
         });
-        if (!confirmar.isConfirmed) return;
+        if (escolha.isDismissed) return;
 
         // Recupera consultas e encontra a selecionada
         const resp = await fetch(`${API_BASE}/mc/consultas`);
@@ -911,9 +977,76 @@ async function cancelarConsulta(idConsulta) {
         const consultaExistente = (todas || []).find(c => Number(c.id) === Number(idConsulta));
         if (!consultaExistente) throw new Error('Consulta não encontrada.');
 
+        if (escolha.isDenied) {
+            const confirmaRecorrentes = await mostrarSwalEmPrimeiroPlano({
+                title: 'Excluir recorrentes?',
+                text: 'Isto irá excluir todas as consultas recorrentes deste dia em diante.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sim, excluir todas',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#d33'
+            });
+
+            if (!confirmaRecorrentes.isConfirmed) return;
+
+            const key = computeSeriesKeyFromConsulta(consultaExistente);
+            const dataInicio = new Date(consultaExistente.datahoraConsulta);
+            const alvo = (todas || []).filter(c => {
+                const dataConsulta = new Date(c.datahoraConsulta);
+                return Number(c?.id) !== Number(idConsulta) &&
+                    computeSeriesKeyFromConsulta(c) === key &&
+                    dataConsulta >= dataInicio;
+            });
+
+            Swal.fire({
+                title: 'Excluindo recorrências...',
+                text: 'Removendo consultas futuras.',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    const container = Swal.getContainer();
+                    const popup = Swal.getPopup();
+                    if (container) container.style.zIndex = '2147483647';
+                    if (popup) popup.style.zIndex = '2147483647';
+                    Swal.showLoading();
+                }
+            });
+
+            const deletions = alvo.map(c => fetch(`${API_BASE}/mc/consultas/${c.id}`, {
+                method: 'DELETE',
+                headers: { 'Accept': 'application/json' }
+            }));
+
+            const results = await Promise.allSettled(deletions);
+            const failed = results.filter(r => r.status === 'rejected' || (r.value && !r.value.ok));
+
+            fecharModalDetalhes();
+            try { await buscarConsultasCliente(currentPacienteId); } catch {}
+            Swal.close();
+
+            if (failed.length === 0) {
+                await mostrarSwalEmPrimeiroPlano({
+                    icon: 'success',
+                    title: 'Consultas excluídas!',
+                    text: `Consultas recorrentes excluídas (${alvo.length}).`,
+                    showConfirmButton: false,
+                    timer: 1400
+                });
+            } else {
+                await mostrarSwalEmPrimeiroPlano({
+                    icon: 'warning',
+                    title: 'Exclusão parcial',
+                    text: `Algumas não puderam ser excluídas (${failed.length}).`,
+                    showConfirmButton: true
+                });
+            }
+
+            return;
+        }
+
         const payload = {
             datahoraConsulta: consultaExistente.datahoraConsulta,
-            descricao: consultaExistente.descricao,
             duracaoConsulta: consultaExistente.duracaoConsulta,
             especificacaoMedica: { id: consultaExistente.especificacaoMedica.id },
             medico: { id: consultaExistente.medico.id },
@@ -931,13 +1064,13 @@ async function cancelarConsulta(idConsulta) {
             throw new Error(txt || 'Não foi possível cancelar a consulta.');
         }
 
-        Swal.fire({ icon: 'success', title: 'Consulta cancelada!', timer: 1400, showConfirmButton: false });
+        await mostrarSwalEmPrimeiroPlano({ icon: 'success', title: 'Consulta cancelada!', timer: 1400, showConfirmButton: false });
         fecharModalDetalhes();
         // Atualiza calendário do paciente
         try { await buscarConsultasCliente(currentPacienteId); } catch {}
     } catch (erro) {
         console.error('Erro ao cancelar consulta:', erro);
-        Swal.fire({ icon: 'error', title: 'Erro ao excluir', text: erro.message || 'Falha ao cancelar a consulta.' });
+        await mostrarSwalEmPrimeiroPlano({ icon: 'error', title: 'Erro ao excluir', text: erro.message || 'Falha ao cancelar a consulta.' });
     }
 }
 
@@ -995,7 +1128,7 @@ function atualizarColunasDeTarefas(startDate) {
         tasks.forEach(task => {
             const taskElement = document.createElement('div');
             taskElement.className = 'task';
-            taskElement.innerText = task.descricao;
+            taskElement.innerText = task?.especificacaoMedica?.area || task?.medico?.especificacaoMedica?.area || 'Procedimento';
 
             // Adiciona o evento de clique para abrir os detalhes
             taskElement.onclick = () => abrirDetalhesTarefa(task);
