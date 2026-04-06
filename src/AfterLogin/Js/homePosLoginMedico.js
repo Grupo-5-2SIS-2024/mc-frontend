@@ -144,12 +144,41 @@ document.addEventListener('DOMContentLoaded', async () => {
         const d = c?.duracaoConsulta;
         if (typeof d === 'number') return d;
         if (typeof d === 'string') {
-            const partes = d.split(':');
-            if (partes.length >= 2) {
-                const horas = parseInt(partes[0], 10) || 0;
-                const minutos = parseInt(partes[1], 10) || 0;
+            // Tenta parsear formato "HH:MM" (ex: "01:00")
+            if (d.includes(':')) {
+                const partes = d.split(':');
+                if (partes.length >= 2) {
+                    const horas = parseInt(partes[0], 10) || 0;
+                    const minutos = parseInt(partes[1], 10) || 0;
+                    return horas * 60 + minutos;
+                }
+            }
+
+            // Tenta parsear formato legível como "1h 0m", "1h0m", "1 h 0 m", etc
+            const regexHorasMinutos = /(\d+)\s*h(?:ora)?s?\s+(\d+)\s*m(?:in)?s?/i;
+            const matchHM = d.match(regexHorasMinutos);
+            if (matchHM) {
+                const horas = parseInt(matchHM[1], 10) || 0;
+                const minutos = parseInt(matchHM[2], 10) || 0;
                 return horas * 60 + minutos;
             }
+
+            // Tenta parsear apenas horas "1h", "1 hora", "1 horas"
+            const regexHoras = /(\d+)\s*h(?:ora)?s?/i;
+            const matchH = d.match(regexHoras);
+            if (matchH) {
+                const horas = parseInt(matchH[1], 10) || 0;
+                return horas * 60;
+            }
+
+            // Tenta parsear apenas minutos "60 min", "60m", "60 minutos"
+            const regexMinutos = /(\d+)\s*m(?:in)?(?:uto)?s?/i;
+            const matchM = d.match(regexMinutos);
+            if (matchM) {
+                return parseInt(matchM[1], 10) || 0;
+            }
+
+            // Fallback: tenta converter direto para número
             const m = parseInt(d, 10);
             return isNaN(m) ? 0 : m;
         }

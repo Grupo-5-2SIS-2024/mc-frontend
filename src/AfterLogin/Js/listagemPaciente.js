@@ -1,6 +1,27 @@
 // Base da API: usa localhost em dev, vazio em produção
 const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
 
+// Função auxiliar para tentar múltiplas rotas de API (fallback)
+async function apiFetch(path, options = {}) {
+    const bases = window.location.origin.includes('localhost')
+        ? ['http://localhost:8080', window.location.origin, '']
+        : [''];
+
+    let ultimoErro = null;
+    for (const base of bases) {
+        const url = `${base}${path}`;
+        try {
+            const resp = await fetch(url, options);
+            if (resp.status !== 404) return resp;
+        } catch (erro) {
+            ultimoErro = erro;
+        }
+    }
+
+    if (ultimoErro) throw ultimoErro;
+    throw new Error('Não foi possível conectar a nenhuma base da API.');
+}
+
 // Função para formatar CPF
 function formatarCPF(cpf) {
     return cpf ? cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '';
@@ -971,9 +992,20 @@ async function cancelarConsulta(idConsulta) {
         if (escolha.isDismissed) return;
 
         // Recupera consultas e encontra a selecionada
-        const resp = await fetch(`${API_BASE}/mc/consultas`);
-        if (!resp.ok) throw new Error(`Falha ao buscar consultas (status ${resp.status})`);
-        const todas = await resp.json();
+        const caminhos = ['/mc/consultas', '/consultas'];
+        let todasResp = null;
+        for (const path of caminhos) {
+            try {
+                todasResp = await apiFetch(path);
+                if (todasResp.ok) break;
+            } catch (e) {
+                console.warn('Erro ao buscar consultas em', path, e);
+            }
+        }
+        
+        if (!todasResp || !todasResp.ok) throw new Error('Não foi possível buscar as consultas.');
+        
+        const todas = await todasResp.json();
         const consultaExistente = (todas || []).find(c => Number(c.id) === Number(idConsulta));
         if (!consultaExistente) throw new Error('Consulta não encontrada.');
 
@@ -994,8 +1026,7 @@ async function cancelarConsulta(idConsulta) {
             const dataInicio = new Date(consultaExistente.datahoraConsulta);
             const alvo = (todas || []).filter(c => {
                 const dataConsulta = new Date(c.datahoraConsulta);
-                return Number(c?.id) !== Number(idConsulta) &&
-                    computeSeriesKeyFromConsulta(c) === key &&
+                return computeSeriesKeyFromConsulta(c) === key &&
                     dataConsulta >= dataInicio;
             });
 
@@ -1013,10 +1044,12 @@ async function cancelarConsulta(idConsulta) {
                 }
             });
 
-            const deletions = alvo.map(c => fetch(`${API_BASE}/mc/consultas/${c.id}`, {
-                method: 'DELETE',
-                headers: { 'Accept': 'application/json' }
-            }));
+            const deletions = alvo.map(c => 
+                apiFetch(`/mc/consultas/${c.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Accept': 'application/json' }
+                }).catch(() => null)
+            );
 
             const results = await Promise.allSettled(deletions);
             const failed = results.filter(r => r.status === 'rejected' || (r.value && !r.value.ok));
@@ -1045,32 +1078,53 @@ async function cancelarConsulta(idConsulta) {
             return;
         }
 
-        const payload = {
-            datahoraConsulta: consultaExistente.datahoraConsulta,
-            duracaoConsulta: consultaExistente.duracaoConsulta,
-            especificacaoMedica: { id: consultaExistente.especificacaoMedica.id },
-            medico: { id: consultaExistente.medico.id },
-            paciente: { id: consultaExistente.paciente.id },
-            statusConsulta: { id: 3 }
-        };
-
-        const put = await fetch(`${API_BASE}/mc/consultas/${idConsulta}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify(payload)
+        // Somente esta: faz DELETE real com múltiplas tentativas
+        Swal.fire({
+            title: 'Excluindo consulta...',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
         });
-        if (!put.ok) {
-            const txt = await put.text().catch(() => '');
-            throw new Error(txt || 'Não foi possível cancelar a consulta.');
+
+        const caminhosDel = ['/mc/consultas', '/consultas'];
+        let deleteResp = null;
+        for (const path of caminhosDel) {
+            try {
+                deleteResp = await apiFetch(`${path}/${idConsulta}`, {
+                    method: 'DELETE',
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (deleteResp.ok) break;
+            } catch (e) {
+                console.warn('Erro ao deletar em', path, e);
+            }
+        }
+        
+        if (!deleteResp || !deleteResp.ok) {
+            const txt = deleteResp ? await deleteResp.text().catch(() => '') : '';
+            throw new Error(txt || 'Não foi possível excluir a consulta.');
         }
 
-        await mostrarSwalEmPrimeiroPlano({ icon: 'success', title: 'Consulta cancelada!', timer: 1400, showConfirmButton: false });
+        Swal.close();
+        await mostrarSwalEmPrimeiroPlano({ 
+            icon: 'success', 
+            title: 'Consulta excluída!', 
+            timer: 1400, 
+            showConfirmButton: false 
+        });
         fecharModalDetalhes();
         // Atualiza calendário do paciente
         try { await buscarConsultasCliente(currentPacienteId); } catch {}
     } catch (erro) {
-        console.error('Erro ao cancelar consulta:', erro);
-        await mostrarSwalEmPrimeiroPlano({ icon: 'error', title: 'Erro ao excluir', text: erro.message || 'Falha ao cancelar a consulta.' });
+        console.error('Erro ao excluir consulta:', erro);
+        Swal.close();
+        await mostrarSwalEmPrimeiroPlano({ 
+            icon: 'error', 
+            title: 'Erro ao excluir', 
+            text: erro.message || 'Falha ao excluir a consulta.' 
+        });
     }
 }
 

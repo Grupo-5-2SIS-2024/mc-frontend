@@ -726,12 +726,21 @@ function abrirDetalhesTarefa(consulta) {
                     });
                     if (!result.isConfirmed) return;
 
-                    const resp = await fetch(`${API_BASE_LOCAL}/mc/consultas/${consulta.id}`, { method: 'DELETE', headers: { 'Accept': 'application/json' } });
-                    if (!resp.ok) {
-                        const msg = await resp.text();
-                        await Swal.fire({ icon: 'error', title: 'Erro', text: `Erro ao excluir a consulta: ${msg || resp.status}` });
+                    Swal.fire({
+                        title: 'Excluindo consulta...',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    const excluiu = await excluirConsultaPorId(consulta.id);
+                    if (!excluiu) {
+                        Swal.close();
+                        await Swal.fire({ icon: 'error', title: 'Erro', text: 'Erro ao excluir a consulta.' });
                         return;
                     }
+
+                    Swal.close();
                     fecharModalDetalhes();
                     await buscarConsultas();
                     atualizarDisplayData(dataInicioAtual);
@@ -751,10 +760,15 @@ function abrirDetalhesTarefa(consulta) {
                 });
                 if (!confirmSeries.isConfirmed) return;
 
-                // Show loading without awaiting; proceed with deletions
-                Swal.fire({ title: 'Excluindo recorrências...', text: 'Removendo consultas futuras.', allowOutsideClick: false, showConfirmButton: false, didOpen: () => { Swal.showLoading(); } });
-                const allRes = await fetch(`${API_BASE_LOCAL}/mc/consultas`);
-                const todas = allRes.ok ? await allRes.json() : [];
+                Swal.fire({
+                    title: 'Excluindo recorrências...',
+                    text: 'Removendo a consulta selecionada e as futuras da mesma série.',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                const todas = await carregarTodasConsultas();
                 const startDate = new Date(consulta.datahoraConsulta);
                 const key = computeSeriesKeyFromConsulta(consulta);
                 const alvo = (todas || []).filter(c => {
@@ -762,15 +776,15 @@ function abrirDetalhesTarefa(consulta) {
                     return computeSeriesKeyFromConsulta(c) === key && d >= startDate;
                 });
 
-                const dels = alvo.map(c2 => fetch(`${API_BASE_LOCAL}/mc/consultas/${c2.id}`, { method: 'DELETE', headers: { 'Accept': 'application/json' } }));
-                const results = await Promise.allSettled(dels);
-                const failed = results.filter(r => r.status === 'rejected' || (r.value && !r.value.ok));
+                const uniqueIds = [...new Set(alvo.map(c => c?.id).filter(Boolean))];
+                const results = await Promise.allSettled(uniqueIds.map(id => excluirConsultaPorId(id)));
+                const failed = results.filter(r => r.status === 'rejected' || r.value !== true);
                 fecharModalDetalhes();
                 await buscarConsultas();
                 atualizarDisplayData(dataInicioAtual);
                 if (failed.length === 0) {
                     Swal.close();
-                    await Swal.fire({ icon: 'success', title: 'Excluídas', text: `Consultas recorrentes excluídas (${alvo.length}).` });
+                    await Swal.fire({ icon: 'success', title: 'Excluídas', text: `Consultas excluídas (${uniqueIds.length}).` });
                 } else {
                     Swal.close();
                     await Swal.fire({ icon: 'warning', title: 'Exclusão parcial', text: `Algumas não puderam ser excluídas (${failed.length}).` });
@@ -801,6 +815,43 @@ function escapeHTML(s) {
 
 function getSalaNome(consulta) {
     return consulta?.sala?.nome || 'Sem sala';
+}
+
+async function excluirConsultaPorId(idConsulta) {
+    const caminhos = [`/mc/consultas/${idConsulta}`, `/consultas/${idConsulta}`];
+
+    for (const path of caminhos) {
+        try {
+            const resp = await fetch(`${API_BASE_LOCAL}${path}`, {
+                method: 'DELETE',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (resp.ok) return true;
+        } catch (erro) {
+            console.warn('Falha ao excluir consulta em', path, erro);
+        }
+    }
+
+    return false;
+}
+
+async function carregarTodasConsultas() {
+    const caminhos = ['/mc/consultas', '/consultas'];
+
+    for (const path of caminhos) {
+        try {
+            const resp = await fetch(`${API_BASE_LOCAL}${path}`);
+            if (!resp.ok) continue;
+
+            const data = await resp.json();
+            if (Array.isArray(data)) return data;
+        } catch (erro) {
+            console.warn('Falha ao carregar consultas em', path, erro);
+        }
+    }
+
+    return [];
 }
 
 // Função para alternar entre modos ABA e Terapia Convencional
