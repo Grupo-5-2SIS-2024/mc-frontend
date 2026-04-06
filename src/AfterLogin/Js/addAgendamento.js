@@ -520,7 +520,7 @@ async function agendarConsulta() {
         return;
     }
 
-    if (!dia || !hora || !medicoId || !pacienteId || !salaId) {
+    if (!dia || !hora || !medicoId || !pacienteId) {
         Swal.fire({ icon: 'warning', title: 'Campos obrigatórios', text: 'Preencha data, hora, profissional e paciente.' });
         return;
     }
@@ -584,7 +584,7 @@ async function agendarConsulta() {
             statusConsulta: { id: 1 },
             paciente: { id: pacienteId },
             duracaoConsulta: duracaoConsulta,
-            sala: { id: salaId }
+            sala: salaId ? { id: Number(salaId) } : null
         });
 
         // Impede duplicidade por slot/profissional/paciente
@@ -622,7 +622,7 @@ async function agendarConsulta() {
                 especificacaoMedicaId: Number(procedimentoId),
                 statusConsultaId: 1,
                 duracaoMin: durMin,
-                salaId: Number(salaId)
+                salaId: salaId ? Number(salaId) : null
             }
 
             const r = await fetch(`${API_BASE}/mc/consultas/recorrentes`, {
@@ -789,7 +789,10 @@ async function alterarConsulta(idConsulta) {
         const medicoOptions = medicos.map(medico => `<option value="${medico.id}" ${medico.id === consultaExistente.medico.id ? 'selected' : ''}>${medico.nome} ${medico.sobrenome}</option>`).join('');
         const pacienteOptions = pacientes.map(paciente => `<option value="${paciente.id}" ${paciente.id === consultaExistente.paciente.id ? 'selected' : ''}>${paciente.nome} ${paciente.sobrenome}</option>`).join('');
         const especializacaoOptions = especializacoes.map(especializacao => `<option value="${especializacao.id}" ${especializacao.id === consultaExistente.especificacaoMedica.id ? 'selected' : ''}>${especializacao.area}</option>`).join('');
-        const salaOptions = salas.map(sala => `<option value="${sala.id}" ${sala.id === consultaExistente.sala?.id ? 'selected' : ''}>${sala.nome}</option>`).join('');
+        const salaOptions = [
+            `<option value="">Sem sala</option>`,
+            ...salas.map(sala => `<option value="${sala.id}" ${sala.id === consultaExistente.sala?.id ? 'selected' : ''}>${sala.nome}</option>`)
+        ].join('');
 
         // Exibir popup de edição com os selects preenchidos
         const { value: consultaAtualizada } = await Swal.fire({
@@ -814,7 +817,9 @@ async function alterarConsulta(idConsulta) {
                 medico: { id: document.getElementById('medico').value || consultaExistente.medico.id },
                 paciente: { id: document.getElementById('paciente').value || consultaExistente.paciente.id },
                 statusConsulta: { id: parseInt(document.getElementById('statusConsulta').value) || consultaExistente.statusConsulta.id },
-                sala: { id: parseInt(document.getElementById('sala').value) || consultaExistente.sala?.id }
+                sala: document.getElementById('sala').value
+                    ? { id: parseInt(document.getElementById('sala').value) }
+                    : null
             })
         });
 

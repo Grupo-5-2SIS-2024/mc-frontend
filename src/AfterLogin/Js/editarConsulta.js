@@ -230,7 +230,7 @@ function computeSeriesKeyFromConsulta(c) {
 }
 
 function validar() {
-    const obrig = ['data', 'hora', 'duracao', 'medico', 'paciente', 'status', 'especificacao', 'sala']
+    const obrig = ['data', 'hora', 'duracao', 'medico', 'paciente', 'status', 'especificacao']
     let ok = true
 
     obrig.forEach(id => {
@@ -252,16 +252,6 @@ async function atualizar() {
     try {
         if (!validar()) return
 
-        const salaEl = $('#sala')
-        if (!salaEl) {
-            await Swal.fire({
-                icon: 'error',
-                title: 'Erro',
-                text: 'Campo de sala não encontrado na tela.'
-            })
-            return
-        }
-
         const data = $('#data').value
         const hora = $('#hora').value
 
@@ -273,7 +263,7 @@ async function atualizar() {
             paciente: { id: Number($('#paciente').value) },
             statusConsulta: { id: Number($('#status').value) },
             especificacaoMedica: { id: Number($('#especificacao').value) },
-            sala: { id: Number($('#sala').value) }
+            sala: $('#sala')?.value ? { id: Number($('#sala').value) } : null
         }
 
         console.log('Payload de atualização:', payload)
@@ -355,7 +345,7 @@ async function atualizar() {
                 paciente: { id: Number($('#paciente').value) },
                 statusConsulta: { id: Number($('#status').value) },
                 especificacaoMedica: { id: Number($('#especificacao').value) },
-                sala: { id: Number($('#sala').value) }
+                sala: $('#sala')?.value ? { id: Number($('#sala').value) } : null
             }
 
             return fetch(`${API_BASE}/mc/consultas/${c2.id}`, {
