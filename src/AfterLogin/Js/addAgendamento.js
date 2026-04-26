@@ -778,7 +778,7 @@ async function alterarConsulta(idConsulta) {
         }
 
         // Buscar dados para preencher selects de Profissionais, Pacientes e Especializações Médicas
-        const [medicos, pacientes, especializacoes] = await Promise.all([
+        const [medicos, pacientes, especializacoes, salas] = await Promise.all([
             fetch(`${API_BASE}/mc/medicos`).then(res => res.json()),
             fetch(`${API_BASE}/mc/pacientes`).then(res => res.json()),
             fetch(`${API_BASE}/mc/especificacoes`).then(res => res.json()),
@@ -1106,16 +1106,11 @@ async function updateAvailableRooms() {
         const json = await resp.json();
         const salas = json?.salas || [];
 
-        if (!Array.isArray(salas) || salas.length === 0) {
-            selectSala.disabled = true;
-            resetSalaSelect('Nenhuma sala disponível');
-            return;
-        }
-
         selectSala.disabled = false;
+
         populateSelect(
             'sala',
-            [{ nome: 'Selecione uma sala', id: '' }, ...salas],
+            [{ nome: 'Sem sala', id: '' }, ...salas],
             'nome',
             'id'
         );
