@@ -220,6 +220,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         ).trim() || 'Sem sala';
     }
 
+    function nomeConvenioLinha(consulta) {
+        return String(
+            consulta?.painelConvenio ||
+            consulta?.paciente?.convenio?.nome ||
+            consulta?.paciente?.convenioNome ||
+            consulta?.paciente?.nomeConvenio ||
+            (typeof consulta?.paciente?.convenio === 'string' ? consulta.paciente.convenio : '') ||
+            ''
+        ).trim() || 'Sem convênio';
+    }
+
     function nomeProfissionalLinha(consulta) {
         if (consulta?.profissionalNome) return consulta.profissionalNome;
         if (consulta?.medico && consulta?.medicoSobrenome) {
@@ -602,7 +613,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (consultasHoje.length === 0) {
             const vazio = document.createElement('tr');
-            vazio.innerHTML = `<td colspan="5">Sem agendamentos para o dia selecionado.</td>`;
+            vazio.innerHTML = `<td colspan="6">Sem agendamentos para o dia selecionado.</td>`;
             agendaBody.appendChild(vazio);
             return;
         }
@@ -622,7 +633,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Linha separadora do horário
             const sep = document.createElement('tr');
             sep.className = 'time-separator';
-            sep.innerHTML = `<td colspan="5"><strong>${hora}</strong></td>`;
+            sep.innerHTML = `<td colspan="6"><strong>${hora}</strong></td>`;
             agendaBody.appendChild(sep);
 
             // Linhas das consultas do horário
@@ -637,6 +648,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const tdStatus = document.createElement('td');
                 const tdSala = document.createElement('td');
                 tdSala.textContent = nomeSalaLinha(consulta);
+                const tdConvenio = document.createElement('td');
+                tdConvenio.textContent = nomeConvenioLinha(consulta);
                 // create a dedicated element for the status text and a separate container for action buttons
                 const spanStatusText = document.createElement('span');
                 spanStatusText.className = 'status-text';
@@ -720,6 +733,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 row.appendChild(tdMedico);
                 row.appendChild(tdStatus);
                 row.appendChild(tdSala);
+                row.appendChild(tdConvenio);
                 agendaBody.appendChild(row);
             }
         }
