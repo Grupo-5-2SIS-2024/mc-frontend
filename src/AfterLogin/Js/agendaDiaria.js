@@ -264,6 +264,7 @@ function normalizarLinhasPainel(linhas, dataIso) {
             profissionalNome: obterNomeProfissional(linha),
             especialidadeNome: obterEspecialidade(linha),
             convenioNome: linha?.convenio?.nome ?? linha?.convenioNome ?? linha?.convenio ?? null,
+            salaNome: linha?.sala?.nome ?? linha?.salaNome ?? linha?.sala ?? null,
             idade: linha?.idade ?? linha?.painelIdade ?? null,
             statusId: linha?.statusId ?? linha?.statusConsulta?.idStatus ?? linha?.statusConsulta?.id ?? linha?.status?.id ?? null,
             statusNome: String(
@@ -432,6 +433,7 @@ function exibirConsultas() {
         const paciente = consulta.pacienteNome || 'Nao informado';
         const medico = consulta.profissionalNome || 'Nao informado';
         const convenio = consulta.convenioNome || 'Nao informado';
+        const sala = consulta.salaNome || 'Nao informada';
         const idade = consulta.idade !== null && consulta.idade !== undefined ? `${consulta.idade} anos` : 'Nao informada';
 
         return `
@@ -460,6 +462,10 @@ function exibirConsultas() {
                     <div class="task-detail">
                         <i class="fas fa-hospital"></i>
                         <span><strong>Convenio:</strong> ${convenio}</span>
+                    </div>
+                    <div class="task-detail">
+                        <i class="fas fa-door-open"></i>
+                        <span><strong>Sala:</strong> ${sala}</span>
                     </div>
                 </div>
             </div>

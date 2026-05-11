@@ -223,7 +223,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     function nomeConvenioLinha(consulta) {
         return String(
             consulta?.painelConvenio ||
+            consulta?.convenioNome ||
             consulta?.paciente?.convenio?.nome ||
+            consulta?.paciente?.plano?.convenio?.nome ||
+            consulta?.paciente?.plano?.nome ||
             consulta?.paciente?.convenioNome ||
             consulta?.paciente?.nomeConvenio ||
             (typeof consulta?.paciente?.convenio === 'string' ? consulta.paciente.convenio : '') ||
@@ -340,7 +343,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ''
             ).trim(),
             painelIdade: linha?.painelIdade ?? linha?.idade ?? null,
-            painelConvenio: linha?.painelConvenio ?? linha?.convenio?.nome ?? linha?.convenio ?? null,
+            painelConvenio: linha?.painelConvenio ?? linha?.convenioNome ?? linha?.convenio?.nome ?? linha?.convenio ?? null,
             painelStatus: status,
             painelTipoTerapia: linha?.painelTipoTerapia ?? linha?.tipoTerapia ?? null,
             painelSala: String(
