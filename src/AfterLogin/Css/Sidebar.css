@@ -23,7 +23,6 @@ main {
     align-items: center;
     overflow-y: auto;
     margin-left: 5.125rem;
-    /* Start with sidebar collapsed */
 }
 
 #sidebar {
@@ -31,13 +30,12 @@ main {
     flex-direction: column;
     justify-content: space-between;
     background-color: #0D47A1;
-    /* azul escuro */
     height: 100vh;
-    border-radius: 0px 1.125rem 1.125rem 0px;
+    border-radius: 0 1.125rem 1.125rem 0;
     position: fixed;
     transition: width 0.5s;
     width: 5.125rem;
-
+    z-index: 1000;
 }
 
 #sidebar.open-sidebar {
@@ -71,7 +69,6 @@ main {
 
 #user_infos span:last-child {
     color: #BBDEFB;
-    /* azul muito claro */
     font-size: 0.75rem;
 }
 
@@ -90,13 +87,11 @@ main {
 
 .side-item.active {
     background-color: #1565C0;
-    /* hover azul escuro */
 }
 
 .side-item:hover:not(.active),
 #logout_btn:hover {
     background-color: #1565C0;
-    /* hover azul escuro */
 }
 
 .side-item a {
@@ -104,11 +99,11 @@ main {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
+    color: #ffffff;
 }
 
 .side-item.active a {
-    color: #fff;
+    color: #ffffff;
 }
 
 .side-item a i {
@@ -135,7 +130,7 @@ main {
     text-align: start;
     cursor: pointer;
     background-color: transparent;
-    color: #fff;
+    color: #ffffff;
 }
 
 #open_btn {
@@ -143,9 +138,7 @@ main {
     top: 1.875rem;
     right: -0.625rem;
     background-color: #0D47A1;
-    /* azul escuro */
     color: #BBDEFB;
-    /* azul muito claro */
     border-radius: 100%;
     width: 1.25rem;
     height: 1.25rem;
@@ -172,7 +165,7 @@ main {
     transition: width 0.5s, opacity 0.5s;
     width: 0;
     opacity: 0;
-    color: #fff;
+    color: #ffffff;
 }
 
 #sidebar.open-sidebar .item-description {
@@ -188,7 +181,7 @@ main {
 a {
     list-style: none;
     text-decoration: none;
-    color: rgb(255, 255, 255);
+    color: #ffffff;
     font-weight: bold;
     transition: all 0.3s ease 0s;
     cursor: pointer;
@@ -196,79 +189,203 @@ a {
 
 main.expanded {
     margin-left: 15.625rem;
-    /* Adjust for expanded sidebar width */
 }
 
-/* Ícone do menu hambúrguer */
 #hamburger-menu {
     display: none;
-    font-size: 1.5rem;
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    z-index: 1000;
-    color: #0D47A1;
-    /* azul escuro */
-    cursor: pointer;
 }
 
-/* Estilo para o menu modal */
 .menu-overlay {
     display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    /* Fundo escuro com opacidade */
-    backdrop-filter: blur(5px);
-    /* Efeito de desfoque no fundo */
-    z-index: 999;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    color: #FFF;
 }
 
-.menu-overlay.open {
-    display: flex;
-}
+/* MOBILE E TABLET */
+@media screen and (max-width: 1200px) {
 
-/* Itens do menu */
-.menu-overlay ul {
-    list-style: none;
-    text-align: center;
-    padding: 0;
-}
-
-.menu-overlay li {
-    margin: 20px 0;
-    font-size: 1.5rem;
-}
-
-.menu-overlay li a {
-    text-decoration: none;
-    color: #FFF;
-    transition: color 0.3s ease;
-}
-
-.menu-overlay li a:hover {
-    color: #2196F3;
-    /* azul claro */
-}
-
-/* Ocultando a sidebar no modo mobile */
-@media (max-width: 768px) {
-    #sidebar {
-        display: none;
+    body {
+        display: block !important;
+        height: auto !important;
+        min-height: 100vh;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
     }
 
-    #hamburger-menu {
-        display: block;
+    #sidebar {
+        display: none !important;
     }
 
     main {
-        margin-left: 0;
+        margin-left: 0 !important;
+        width: 100vw !important;
+        display: block !important;
+        justify-content: unset !important;
+        align-items: unset !important;
+        overflow: visible !important;
+    }
+
+    main.expanded {
+        margin-left: 0 !important;
+    }
+
+    #hamburger-menu {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        position: fixed !important;
+        top: 16px !important;
+        left: 16px !important;
+        width: 56px !important;
+        height: 56px !important;
+        border-radius: 14px !important;
+        background-color: #ffffff !important;
+        color: #0D47A1 !important;
+        font-size: 2rem !important;
+        z-index: 5001 !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22) !important;
+        cursor: pointer !important;
+    }
+
+    .menu-overlay {
+        display: none !important;
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        z-index: 5000 !important;
+        padding: 0 24px !important;
+        background-color: rgba(0, 0, 0, 0.72) !important;
+        backdrop-filter: blur(6px) !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-direction: column !important;
+        color: #ffffff !important;
+    }
+
+    .menu-overlay.open {
+        display: flex !important;
+    }
+
+    .menu-overlay ul {
+        width: 100% !important;
+        max-width: 440px !important;
+        list-style: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        text-align: center !important;
+    }
+
+    .menu-overlay li {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .menu-overlay li a {
+        width: 100% !important;
+        min-height: 72px !important;
+        padding: 0 20px !important;
+        border-radius: 14px !important;
+        background-color: rgba(255, 255, 255, 0.18) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        color: #ffffff !important;
+        font-size: 1.45rem !important;
+        font-weight: 700 !important;
+        text-decoration: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 12px !important;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45) !important;
+    }
+
+    .menu-overlay li a i {
+        font-size: 1.45rem !important;
+    }
+
+    .menu-overlay li a:hover {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+        color: #ffffff !important;
+    }
+}
+
+
+
+/* FORÇAR MENU MOBILE IGUAL EM TODAS AS TELAS */
+@media screen and (max-width: 1200px) {
+
+    #hamburger-menu {
+        width: 56px !important;
+        height: 56px !important;
+        font-size: 2rem !important;
+        border-radius: 14px !important;
+    }
+
+    #menu-overlay.menu-overlay {
+        display: none !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        z-index: 5000 !important;
+        padding: 0 24px !important;
+        background-color: rgba(0, 0, 0, 0.72) !important;
+        backdrop-filter: blur(6px) !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-direction: column !important;
+    }
+
+    #menu-overlay.menu-overlay.open {
+        display: flex !important;
+    }
+
+    #menu-overlay.menu-overlay ul {
+        width: min(440px, calc(100vw - 48px)) !important;
+        max-width: none !important;
+        min-width: 320px !important;
+        padding: 0 !important;
+        margin: 0 auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        list-style: none !important;
+    }
+
+    #menu-overlay.menu-overlay li {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+    #menu-overlay.menu-overlay li a {
+        width: 100% !important;
+        min-width: 100% !important;
+        height: 72px !important;
+        min-height: 72px !important;
+        padding: 0 20px !important;
+        border-radius: 14px !important;
+        background-color: rgba(255, 255, 255, 0.18) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        color: #ffffff !important;
+        font-size: 1.45rem !important;
+        font-weight: 700 !important;
+        text-decoration: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 12px !important;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45) !important;
+        box-sizing: border-box !important;
+    }
+
+    #menu-overlay.menu-overlay li a i {
+        font-size: 1.45rem !important;
     }
 }

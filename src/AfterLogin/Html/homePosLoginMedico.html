@@ -19,12 +19,26 @@
 
     <div id="menu-overlay" class="menu-overlay">
         <ul>
-            <li><a href="homePosLoginAdm.html">Home</a></li>
-            <li><a href="calendario.html">Agendamento</a></li>
-            <li><a href="listagemColaborador.html">Colaborador</a></li>
-            <li><a href="listagemPaciente.html">Paciente</a></li>
-            <li><a href="dashboards.html">Dashboards</a></li>
-            <li><a href="listagemLead.html">Leads</a></li>
+            <li>
+                <a href="homePosLoginMedico.html">
+                    <i class="fa-solid fa-home"></i>
+                    Home
+                </a>
+            </li>
+
+            <li>
+                <a href="calendario.html">
+                    <i class="fa-solid fa-calendar"></i>
+                    Calendário
+                </a>
+            </li>
+
+            <li>
+                <a href="../../index.html" onclick="sairPreLogin(event)">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Sair
+                </a>
+            </li>
         </ul>
     </div>
     <nav id="sidebar">
@@ -151,7 +165,8 @@
                 <div class="falta-report-controls">
                     <label>De: <input type="date" id="faltaDataInicio"></label>
                     <label>Até: <input type="date" id="faltaDataFim"></label>
-                    <button id="btnBaixarRelatorioFaltas" class="small-btn" title="Baixar relatório de faltas" aria-label="Baixar relatório de faltas">
+                    <button id="btnBaixarRelatorioFaltas" class="small-btn" title="Baixar relatório de faltas"
+                        aria-label="Baixar relatório de faltas">
                         <i class="fa-solid fa-download"></i> Baixar
                     </button>
                 </div>
@@ -175,11 +190,13 @@
                         <select id="filtroMedicoSelect">
                             <option value="">Selecione…</option>
                         </select>
-                        <button id="btnImprimirPainel" class="small-btn" title="Imprimir painel do dia" aria-label="Imprimir painel do dia">
+                        <button id="btnImprimirPainel" class="small-btn" title="Imprimir painel do dia"
+                            aria-label="Imprimir painel do dia">
                             <i class="fa-solid fa-print"></i> Imprimir
                         </button>
                     </div>
-                    <button id="btnExpandirAgenda" class="expand-btn small-btn" title="Abrir Agenda Diária" aria-label="Abrir Agenda Diária">
+                    <button id="btnExpandirAgenda" class="expand-btn small-btn" title="Abrir Agenda Diária"
+                        aria-label="Abrir Agenda Diária">
                         <i class="fa-solid fa-up-right-and-down-left-from-center"></i> Expandir
                     </button>
                 </div>
@@ -202,9 +219,11 @@
             <div class="notificacoes mini-cal" aria-label="Mini calendário para escolher o dia do painel">
                 <h2 class="mini-cal-title">Mini Calendário</h2>
                 <div class="mini-cal-top">
-                    <button id="miniCalPrev" class="small-btn" title="Mês anterior" aria-label="Mês anterior"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button id="miniCalPrev" class="small-btn" title="Mês anterior" aria-label="Mês anterior"><i
+                            class="fa-solid fa-chevron-left"></i></button>
                     <span id="miniCalMonthLabel" class="mini-cal-month">Janeiro 2026</span>
-                    <button id="miniCalNext" class="small-btn" title="Próximo mês" aria-label="Próximo mês"><i class="fa-solid fa-chevron-right"></i></button>
+                    <button id="miniCalNext" class="small-btn" title="Próximo mês" aria-label="Próximo mês"><i
+                            class="fa-solid fa-chevron-right"></i></button>
                 </div>
                 <div id="miniCalDow" class="mini-cal-dow" aria-hidden="true">
                     <span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span>
@@ -227,6 +246,18 @@
     <script src="../Js/homePosLoginMedico.js"></script>
     <script src="../Js/sessao.js"></script>
     <script src="../Js/funcoesPadroes.js"></script>
+
+    <script>
+    function sairPreLogin(event) {
+        event.preventDefault();
+
+        sessionStorage.clear();
+        localStorage.clear();
+
+        window.location.href = "../../index.html";
+    }
+</script>
 </body>
 
 </html>
+
