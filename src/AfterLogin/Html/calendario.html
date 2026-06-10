@@ -2,12 +2,12 @@
 <html lang="pt">
 
 <head>
-    <meta charset="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
     <title>Multiclinics | Agenda</title>
     <link rel="stylesheet" href="../Css/calendario.css">
     <link rel="stylesheet" href="../Css/Sidebar.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="shortcut icon" href="../../Assets/logo_Multclinics_branca_sem_nome.png" type="image/x-icon">
 </head>
 
@@ -16,12 +16,26 @@
 
     <div id="menu-overlay" class="menu-overlay">
         <ul>
-            <li><a href="homePosLoginAdm.html">Home</a></li>
-            <li><a href="calendario.html">Agendamento</a></li>
-            <li><a href="listagemColaborador.html">Colaborador</a></li>
-            <li><a href="listagemPaciente.html">Paciente</a></li>
-            <li><a href="dashboards.html">Dashboards</a></li>
-            <li><a href="listagemLead.html">Leads</a></li>
+            <li>
+                <a href="homePosLoginMedico.html">
+                    <i class="fa-solid fa-home"></i>
+                    Home
+                </a>
+            </li>
+
+            <li>
+                <a href="calendario.html">
+                    <i class="fa-solid fa-calendar"></i>
+                    Calendário
+                </a>
+            </li>
+
+            <li>
+                <a href="../../index.html" onclick="sairPreLogin(event)">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Sair
+                </a>
+            </li>
         </ul>
     </div>
     <nav id="sidebar">
@@ -121,19 +135,20 @@
                                 class="fas fa-download"></i> Baixar Excel</button>
                     </div>
                 </div>
-                
+
                 <!-- Toggle para alternar entre ABA e Terapia Convencional -->
                 <div class="procedure-toggle" style="margin: 15px 0; display: flex; align-items: center; gap: 10px;">
                     <span style="font-weight: bold;">Modo de Visualização:</span>
-                    <button id="btnModoABA" class="toggle-btn active" onclick="alternarModoCalendario('ABA')" 
-                            style="padding: 8px 16px; border-radius: 5px; border: 2px solid #4CAF50; background: #4CAF50; color: white; cursor: pointer; transition: all 0.3s;">
+                    <button id="btnModoABA" class="toggle-btn active" onclick="alternarModoCalendario('ABA')"
+                        style="padding: 8px 16px; border-radius: 5px; border: 2px solid #4CAF50; background: #4CAF50; color: white; cursor: pointer; transition: all 0.3s;">
                         ABA (50min)
                     </button>
                     <button id="btnModoConvencional" class="toggle-btn" onclick="alternarModoCalendario('CONVENCIONAL')"
-                            style="padding: 8px 16px; border-radius: 5px; border: 2px solid #ccc; background: white; color: #666; cursor: pointer; transition: all 0.3s;">
+                        style="padding: 8px 16px; border-radius: 5px; border: 2px solid #ccc; background: white; color: #666; cursor: pointer; transition: all 0.3s;">
                         Terapia Convencional (30min)
                     </button>
-                    <span id="modoAtualLabel" style="margin-left: 10px; padding: 5px 12px; background: #e8f5e9; border-radius: 5px; font-weight: bold; color: #2e7d32;">
+                    <span id="modoAtualLabel"
+                        style="margin-left: 10px; padding: 5px 12px; background: #e8f5e9; border-radius: 5px; font-weight: bold; color: #2e7d32;">
                         Modo: ABA
                     </span>
                 </div>
@@ -230,6 +245,38 @@
     <script src="../Js/funcoesPadroes.js"></script>
     <script src="../Js/calendario.js"></script>
     <script src="../Js/sessao.js"></script>
+
+    <script>
+    const hamburgerMenu = document.getElementById("hamburger-menu");
+    const menuOverlay = document.getElementById("menu-overlay");
+
+    if (hamburgerMenu && menuOverlay) {
+        hamburgerMenu.addEventListener("click", () => {
+            menuOverlay.classList.toggle("open");
+
+            hamburgerMenu.classList.toggle("fa-bars");
+            hamburgerMenu.classList.toggle("fa-xmark");
+        });
+
+        menuOverlay.querySelectorAll("a").forEach((link) => {
+            link.addEventListener("click", () => {
+                menuOverlay.classList.remove("open");
+
+                hamburgerMenu.classList.add("fa-bars");
+                hamburgerMenu.classList.remove("fa-xmark");
+            });
+        });
+    }
+
+    function sairPreLogin(event) {
+        event.preventDefault();
+
+        sessionStorage.clear();
+        localStorage.clear();
+
+        window.location.href = "../../index.html";
+    }
+</script>
 </body>
 
 </html>

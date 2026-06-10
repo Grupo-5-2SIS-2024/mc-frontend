@@ -1,11 +1,24 @@
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background-color: #f4f4f9;
+    background-color: #BBDEFB;
     height: 100vh;
     display: flex;
     flex-direction: column;
 }
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+}
+
+/* Estrutura principal */
 
 .container {
     display: flex;
@@ -13,44 +26,13 @@ body {
     width: 100%;
 }
 
-.sidebar {
-    background-color: #0D47A1;
-    /* azul escuro */
-    width: 250px;
-    padding: 20px;
-    color: white;
-    display: flex;
-    flex-direction: column;
-}
-
-.logo {
-    font-size: 1.4em;
-    margin-bottom: 40px;
-}
-
-.menu {
-    list-style-type: none;
-    padding: 0;
-    flex-grow: 1;
-}
-
-.menu li {
-    padding: 15px 0;
-    cursor: pointer;
-}
-
-.menu li.active {
-    background-color: #1565C0;
-    /* hover azul escuro */
-    border-radius: 5px;
-}
-
 .main-content {
     flex: 1;
     padding: 20px;
-    background-color: #fff;
+    background-color: #ffffff;
     display: flex;
     flex-direction: column;
+    border-radius: 14px;
 }
 
 .header {
@@ -61,9 +43,13 @@ body {
     flex-wrap: wrap;
 }
 
+.header h2 {
+    color: #000000;
+    font-weight: 700;
+}
+
 .header .highlight {
     color: #1976D2;
-    /* azul médio */
 }
 
 .buttons {
@@ -74,8 +60,7 @@ body {
 
 .filter-button {
     background-color: #1976D2;
-    /* azul médio */
-    color: white;
+    color: #ffffff;
     border: none;
     padding: 10px 20px;
     cursor: pointer;
@@ -83,53 +68,28 @@ body {
     transition: background-color 0.3s;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
+    font-weight: 700;
 }
 
 .filter-button:hover {
     background-color: #1565C0;
-    /* hover azul escuro */
 }
 
-.filter-group {
-    margin-bottom: 20px;
+.filter-button a {
+    color: #ffffff;
+    text-decoration: none;
 }
 
-.filter-group label {
-    font-weight: bold;
-    color: #333;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.filter-group select,
-.filter-group input {
-    width: 100%;
-    padding: 10px;
-    margin-top: 5px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    background-color: #f9f9f9;
-}
-
-.filtro-duplo {
-    display: flex;
-    gap: 5px;
-}
-
-#filtroIdade,
-#filtroGenero,
-#filtroDataInicio,
-#filtroDataFim {
-    width: 100px;
-}
+/* Calendário */
 
 .calendar {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    overflow-y: scroll;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .count-dias {
@@ -149,13 +109,13 @@ body {
 }
 
 .nav-button:hover {
-    color: #007744;
+    color: #1976D2;
 }
 
 #dias {
     font-size: 1.5em;
     font-weight: bold;
-    color: #333;
+    color: #333333;
     width: 600px;
     text-align: center;
     display: inline-block;
@@ -171,14 +131,14 @@ body {
 
 .day {
     background-color: #f8f9fa;
-    border: 1px solid #ddd;
+    border: 1px solid #dddddd;
     padding: 15px;
     text-align: center;
     flex: 1;
     border-radius: 10px;
     margin: 0 5px;
     font-weight: bold;
-    color: #555;
+    color: #555555;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -196,12 +156,9 @@ body {
 }
 
 .tasks-columns.is-loading::after {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     background: transparent;
 }
 
@@ -211,9 +168,9 @@ body {
 }
 
 .task {
-    background-color: #1E88E5; /* azul intermediário */
-    color: white;
-    padding: 12px 12px;
+    background-color: #1E88E5;
+    color: #ffffff;
+    padding: 12px;
     margin-bottom: 10px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -226,17 +183,15 @@ body {
 .task:hover {
     transform: translateY(-3px);
     background-color: #1976D2;
-    /* azul médio */
 }
 
 .task.inactive {
-    background-color: #ccc;
-    color: #666;
+    background-color: #cccccc;
+    color: #666666;
     cursor: default;
     text-align: center;
 }
 
-/* Card content inside task */
 .task .task-title {
     font-weight: 700;
     font-size: 0.95rem;
@@ -273,37 +228,181 @@ body {
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.02em;
-    background: rgba(255,255,255,0.15);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
-/* Status color accents */
-.status-agendada { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.4); }
-.status-confirmada { background: rgba(76, 175, 80, 0.25); border-color: rgba(76, 175, 80, 0.55); }
-.status-atendida { background: rgba(158, 158, 158, 0.25); border-color: rgba(158, 158, 158, 0.55); }
-.status-cancelada { background: rgba(229, 57, 53, 0.25); border-color: rgba(229, 57, 53, 0.55); }
-.status-faltou { background: rgba(255, 152, 0, 0.25); border-color: rgba(255, 152, 0, 0.55); }
+.status-agendada {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.status-confirmada {
+    background: rgba(76, 175, 80, 0.25);
+    border-color: rgba(76, 175, 80, 0.55);
+}
+
+.status-atendida {
+    background: rgba(158, 158, 158, 0.25);
+    border-color: rgba(158, 158, 158, 0.55);
+}
+
+.status-cancelada {
+    background: rgba(229, 57, 53, 0.25);
+    border-color: rgba(229, 57, 53, 0.55);
+}
+
+.status-faltou {
+    background: rgba(255, 152, 0, 0.25);
+    border-color: rgba(255, 152, 0, 0.55);
+}
+
+/* Toggle ABA e Convencional */
+
+.procedure-toggle {
+    background: linear-gradient(to right, #f8f9fa, #ffffff);
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin: 15px 0;
+}
+
+.procedure-toggle > span:first-child {
+    font-weight: 600;
+    color: #333333;
+    font-size: 1.05em;
+}
+
+.toggle-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 2px solid #cccccc;
+    background: #ffffff;
+    color: #666666;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-btn.active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#btnModoABA.active {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: #ffffff;
+    border-color: #4CAF50;
+}
+
+#btnModoConvencional.active {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    color: #ffffff;
+    border-color: #2196F3;
+}
+
+#modoAtualLabel {
+    margin-left: 10px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Filtros */
+
+.filter-group {
+    margin-bottom: 20px;
+}
+
+.filter-group label {
+    font-weight: bold;
+    color: #333333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-group select,
+.filter-group input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 5px;
+    border: 1px solid #cccccc;
+    background-color: #f9f9f9;
+}
+
+.filtro-duplo {
+    display: flex;
+    gap: 5px;
+}
+
+#filtroIdade,
+#filtroGenero,
+#filtroDataInicio,
+#filtroDataFim {
+    width: 100px;
+}
+
+.filter-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.filter-buttons button {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.filter-buttons .limpar-button {
+    background-color: #ff6666;
+    color: #ffffff;
+}
+
+.filter-buttons .limpar-button:hover {
+    background-color: #cc0000;
+}
+
+/* Modal */
 
 .modal {
     display: none;
     position: fixed;
-    z-index: 1;
+    z-index: 6000;
     left: 0;
     top: 0;
     width: 100%;
-    height: 100%;
+    height: 100dvh;
     background-color: rgba(0, 0, 0, 0.4);
     justify-content: center;
     align-items: center;
+    padding: 16px;
 }
 
 .modal-content {
-    background-color: white;
+    background-color: #ffffff;
     padding: 20px;
     border-radius: 10px;
     width: 80%;
     max-width: 500px;
+    max-height: 90dvh;
+    overflow-y: auto;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     position: relative;
     animation: animacaoModal 0.3s ease-out;
@@ -324,7 +423,6 @@ body {
 .modal-content h3 {
     margin-top: 0;
     color: #1976D2;
-    /* azul médio */
     text-align: center;
 }
 
@@ -333,7 +431,7 @@ body {
     margin-top: 15px;
     margin-bottom: 5px;
     font-weight: bold;
-    color: #333;
+    color: #333333;
 }
 
 .modal-content select,
@@ -343,40 +441,18 @@ body {
     padding: 10px;
     margin-top: 10px;
     border-radius: 5px;
-    border: 1px solid #ccc;
+    border: 1px solid #cccccc;
 }
 
 .modal-content button {
     background-color: #1976D2;
-    /* azul médio */
-    color: white;
+    color: #ffffff;
     cursor: pointer;
     font-weight: bold;
 }
 
 .modal-content button:hover {
     background-color: #1565C0;
-    /* hover azul escuro */
-}
-
-.filter-buttons {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 20px;
-}
-
-.filter-buttons button {
-    flex: 1;
-    margin-right: 10px;
-}
-
-.filter-buttons .limpar-button {
-    background-color: #ff6666;
-    color: white;
-}
-
-.filter-buttons .limpar-button:hover {
-    background-color: #cc0000;
 }
 
 .close {
@@ -384,12 +460,12 @@ body {
     top: 10px;
     right: 15px;
     font-size: 1.5em;
-    color: #aaa;
+    color: #aaaaaa;
     cursor: pointer;
 }
 
 .close:hover {
-    color: #000;
+    color: #000000;
 }
 
 .edit-button {
@@ -402,7 +478,6 @@ body {
     font-size: 1.2em;
     color: #1976D2;
 }
-
 
 .modal-content .edit-button {
     position: absolute;
@@ -429,12 +504,24 @@ body {
     box-shadow: none !important;
 }
 
-/* Export buttons (patient calendar) */
+#btnDeletarConsulta.edit-button {
+    right: 85px;
+    border: 2px solid #e53935;
+    border-radius: 6px;
+    color: #e53935;
+}
+
+#btnDeletarConsulta.edit-button:hover {
+    background: #ffebee !important;
+}
+
+/* Exportação */
+
 .export-week-btn,
 #btn-export-week-csv-paciente,
 #btn-export-week-pdf-paciente {
     background: linear-gradient(180deg, #2E86DE 0%, #1976D2 100%);
-    color: #fff;
+    color: #ffffff;
     border: 0;
     padding: 8px 14px;
     border-radius: 6px;
@@ -458,104 +545,291 @@ body {
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
 }
 
-/* Keep main calendar header compact: hide patient export buttons if somehow injected there */
 #download-week-csv,
 #download-week-pdf {
     display: none !important;
 }
 
-/* Estilos para Toggle de Modo ABA/Terapia Convencional */
+/* MOBILE E TABLET */
 
-/* Delete button (trash) outlined in red and positioned to the left of Edit */
-#btnDeletarConsulta.edit-button {
-    right: 85px; /* place left of the edit button */
-    border: 2px solid #e53935; /* red outline */
-    border-radius: 6px;
-    color: #e53935;
-}
+@media screen and (max-width: 1200px) {
 
-#btnDeletarConsulta.edit-button:hover {
-    background: #ffebee; /* light red background on hover */
-}
-.procedure-toggle {
-    background: linear-gradient(to right, #f8f9fa, #ffffff);
-    padding: 15px 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-    margin: 15px 0;
-}
+    html,
+    body {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        background-color: #BBDEFB;
+    }
 
-.procedure-toggle > span:first-child {
-    font-weight: 600;
-    color: #333;
-    font-size: 1.05em;
-}
+    body {
+        display: block !important;
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+    }
 
-.toggle-btn {
-    padding: 10px 20px;
-    border-radius: 8px;
-    border: 2px solid #ccc;
-    background: white;
-    color: #666;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 0.95em;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
+    main {
+        width: 100vw !important;
+        min-height: 100dvh !important;
+        margin-left: 0 !important;
+        padding: 64px 0 0 !important;
+        display: block !important;
+        justify-content: unset !important;
+        align-items: unset !important;
+        overflow: visible !important;
+        background-color: #BBDEFB;
+    }
 
-.toggle-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+    .container {
+        width: 100vw !important;
+        min-height: calc(100dvh - 64px);
+        height: auto !important;
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background-color: #BBDEFB;
+    }
 
-.toggle-btn.active {
-    transform: translateY(0);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-#btnModoABA.active {
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-    color: white;
-    border-color: #4CAF50;
-}
-
-#btnModoConvencional.active {
-    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
-    color: white;
-    border-color: #2196F3;
-}
-
-#modoAtualLabel {
-    margin-left: 10px;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.9em;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* Responsividade para toggle */
-@media (max-width: 768px) {
-    .procedure-toggle {
+    .main-content {
+        width: 100vw !important;
+        min-height: calc(100dvh - 64px);
+        padding: 14px !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        background-color: #ffffff;
+        display: flex;
         flex-direction: column;
+        overflow: hidden;
+    }
+
+    .header {
+        width: 100%;
+        margin-bottom: 14px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .header h2 {
+        width: 100%;
+        font-size: 1.25rem;
+        text-align: center;
+    }
+
+    .buttons {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .filter-button {
+        width: 100%;
+        min-height: 42px;
+        justify-content: center;
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+
+    .procedure-toggle {
+        width: 100% !important;
+        margin: 12px 0 !important;
+        padding: 12px !important;
+        border-radius: 10px;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    .procedure-toggle > span:first-child,
+    .procedure-toggle span {
+        text-align: center;
+    }
+
+    .toggle-btn {
+        width: 100% !important;
+        min-height: 40px;
+        font-size: 0.85rem !important;
+    }
+
+    #modoAtualLabel {
+        width: 100%;
+        margin-left: 0 !important;
+        font-size: 0.8rem !important;
+        text-align: center;
+    }
+
+    .calendar {
+        width: 100%;
+        flex: 1;
+        overflow-x: auto;
+        overflow-y: visible;
+        padding-bottom: 12px;
+    }
+
+    .count-dias {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        margin: 8px 0 14px;
+    }
+
+    .nav-button {
+        min-width: 36px;
+        height: 36px;
+        margin: 0;
+        font-size: 1.4rem;
+    }
+
+    #dias {
+        flex: 1;
+        width: auto;
+        font-size: 0.85rem;
+        line-height: 1.25;
+        text-align: center;
+        white-space: normal;
+    }
+
+    .week-days,
+    .tasks-columns {
+        min-width: 760px;
+    }
+
+    .day {
+        margin: 0 4px;
+        padding: 10px 6px;
+        font-size: 0.75rem;
+    }
+
+    .column {
+        margin: 0 4px;
+    }
+
+    .task {
+        padding: 9px;
+        font-size: 0.75rem;
+    }
+
+    .task .task-title {
+        font-size: 0.8rem;
+    }
+
+    .task .task-info {
+        font-size: 0.74rem;
+    }
+
+    .status-badge {
+        font-size: 0.68rem;
+        padding: 3px 6px;
+    }
+
+    .modal {
+        padding: 14px;
         align-items: flex-start;
+        overflow-y: auto;
+    }
+
+    .modal-content {
+        width: 100%;
+        max-width: 520px;
+        margin: 60px auto 24px;
+        max-height: none;
+        padding: 18px;
+    }
+
+    .filtro-duplo {
+        flex-direction: column;
         gap: 10px;
     }
-    
-    .toggle-btn {
+
+    #filtroIdade,
+    #filtroGenero,
+    #filtroDataInicio,
+    #filtroDataFim {
         width: 100%;
-        text-align: center;
     }
-    
-    #modoAtualLabel {
-        margin-left: 0;
+
+    .filter-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .filter-buttons button {
         width: 100%;
-        text-align: center;
+        margin-right: 0;
+        min-height: 42px;
+    }
+}
+
+
+
+/* CORREÇÃO FINAL: MENU MOBILE GRANDE EM QUALQUER TELA */
+@media screen and (max-width: 1200px) {
+
+    #hamburger-menu {
+        width: 56px !important;
+        height: 56px !important;
+        font-size: 2rem !important;
+        border-radius: 14px !important;
+        top: 16px !important;
+        left: 16px !important;
+    }
+
+    #menu-overlay.menu-overlay ul {
+        width: 86vw !important;
+        max-width: 440px !important;
+        min-width: 0 !important;
+        gap: 16px !important;
+    }
+
+    #menu-overlay.menu-overlay li a {
+        width: 100% !important;
+        height: 72px !important;
+        min-height: 72px !important;
+        font-size: 1.45rem !important;
+        font-weight: 700 !important;
+        border-radius: 14px !important;
+        gap: 12px !important;
+        padding: 0 20px !important;
+    }
+
+    #menu-overlay.menu-overlay li a i {
+        font-size: 1.45rem !important;
+    }
+}
+
+/* IMPEDIR QUE CELULAR PEQUENO DIMINUA O MENU */
+@media screen and (max-width: 480px) {
+
+    #hamburger-menu {
+        width: 56px !important;
+        height: 56px !important;
+        font-size: 2rem !important;
+        border-radius: 14px !important;
+        top: 16px !important;
+        left: 16px !important;
+    }
+
+    #menu-overlay.menu-overlay ul {
+        width: 86vw !important;
+        max-width: 440px !important;
+        gap: 16px !important;
+    }
+
+    #menu-overlay.menu-overlay li a {
+        height: 72px !important;
+        min-height: 72px !important;
+        font-size: 1.45rem !important;
+        border-radius: 14px !important;
+    }
+
+    #menu-overlay.menu-overlay li a i {
+        font-size: 1.45rem !important;
     }
 }

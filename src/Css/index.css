@@ -1008,5 +1008,431 @@ font-weight: 100;
     margin: 4px 2px;
     cursor: pointer; 
 }
+* {
+    box-sizing: border-box;
+}
 
+html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+img,
+video {
+    max-width: 100%;
+}
+
+/* MOBILE */
+@media screen and (max-width: 768px) {
+
+    .paiCabecalho {
+        height: auto;
+        min-height: 82px;
+        padding: 12px 0;
+    }
+
+    .filhoCabecalho {
+        width: 92%;
+        height: auto;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .esquerdaCabecalho {
+        width: 100%;
+        height: auto;
+        justify-content: center;
+    }
+
+    .imgEsquerdaCabecalho {
+        width: 56px;
+        height: 56px;
+        top: 0;
+        object-fit: contain;
+    }
+
+    .esquerdaCabecalho span {
+        font-size: 1.55rem;
+    }
+
+    .direitaCabecalho {
+        width: 100%;
+        height: auto;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .pCabecalho {
+        font-size: 0.78rem;
+    }
+
+    .registrar {
+        width: auto;
+        min-width: 110px;
+        height: 38px;
+        padding: 0 14px;
+        font-size: 0.9rem;
+    }
+
+    .espacamento {
+        height: 140px;
+    }
+
+    .paiBanner {
+        height: calc(100vh - 140px);
+        min-height: 560px;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .paiBanner video {
+        top: 50%;
+        min-width: 100%;
+        min-height: 100%;
+        object-fit: cover;
+    }
+
+    .divBoxTextoBanner {
+        position: static;
+        width: 88%;
+        height: auto;
+        align-items: flex-end;
+        justify-content: center;
+        padding-top: 120px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .tituloBanner {
+        width: 100%;
+    }
+
+    .pTituloBannerc,
+    .pTituloBannerv {
+        font-size: 2.7rem;
+        line-height: 1.05;
+    }
+
+    .textoBanner {
+        position: static;
+        width: 100%;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-top: 18px;
+    }
+
+    .divBoxBotaoBanner {
+        justify-content: flex-end;
+        margin-top: 24px;
+    }
+
+    .wrapper a {
+        width: 170px;
+        height: 42px;
+        line-height: 42px;
+        font-size: 15px;
+    }
+
+    .Div_servicos {
+        height: auto;
+        padding: 48px 0;
+    }
+
+    .Tit_servicos {
+        height: auto;
+        top: 0;
+        padding: 0 20px;
+    }
+
+    .Tit_servicos h1 {
+        width: 100%;
+        padding-top: 0;
+        font-size: 1.6rem;
+    }
+
+    .Cards_servicos {
+        height: auto;
+        bottom: 0;
+        flex-direction: column;
+        gap: 24px;
+        margin-top: 36px;
+    }
+
+    .Cards_servicos .card_servicos {
+        width: 88%;
+        max-width: 360px;
+        height: auto;
+        min-height: 310px;
+        padding: 24px 18px;
+    }
+
+    .foto {
+        height: auto;
+        padding-top: 0;
+        gap: 12px;
+    }
+
+    .nomes span {
+        display: block;
+        font-size: 1.25rem;
+        text-align: center;
+    }
+
+    .card_servicos p {
+        position: static;
+        width: 100%;
+        margin-top: 22px;
+        line-height: 1.5;
+    }
+
+    .sobrenos {
+        height: auto;
+        flex-direction: column;
+        align-items: center;
+        padding: 48px 0;
+    }
+
+    .nos1 {
+        width: 88%;
+        order: 2;
+    }
+
+    .nos {
+        width: 88%;
+        padding-top: 0;
+        justify-content: center;
+        order: 1;
+    }
+
+    .icon_nos {
+        width: 80%;
+        height: auto;
+        max-height: 280px;
+        object-fit: contain;
+    }
+
+    .titulo_about,
+    .titulo_about_verde,
+    .subtitulo_about,
+    .desc_nos,
+    .sobrev,
+    .sobrec {
+        width: 100%;
+        padding-left: 0;
+    }
+
+    .titulo_about {
+        padding-top: 24px;
+        font-size: 2rem;
+    }
+
+    .titulo_about_verde {
+        font-size: 2rem;
+    }
+
+    .subtitulo_about {
+        font-size: 1.15rem;
+    }
+
+    .desc_nos,
+    .sobrec {
+        line-height: 1.55;
+        text-align: left;
+    }
+
+    .Div_beneficios {
+        height: auto;
+        padding: 48px 0 80px;
+    }
+
+    .Tit_beneficios {
+        height: auto;
+        top: 0;
+        padding: 0 20px;
+    }
+
+    .Tit_beneficios h1 {
+        width: 100%;
+        padding-top: 0;
+        font-size: 1.7rem;
+    }
+
+    .Tit_beneficios span {
+        width: 100%;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .Cards_beneficios,
+    .Cards_beneficios2 {
+        height: auto;
+        bottom: 0;
+        flex-direction: column;
+        align-items: center;
+        gap: 54px;
+        margin-top: 54px;
+    }
+
+    .card_beneficios1,
+    .card_beneficios2,
+    .card_beneficios3,
+    .card_beneficios4,
+    .card_beneficios5,
+    .card_beneficios6 {
+        width: 88%;
+        max-width: 360px;
+        height: 220px;
+        background-position: center;
+    }
+
+    .boxTexto {
+        width: 82%;
+        height: auto;
+        min-height: 96px;
+        padding: 14px;
+        top: 38px;
+    }
+
+    .boxTexto span {
+        width: 100%;
+        font-size: 0.95rem;
+        line-height: 1.35;
+    }
+
+    .faleconosco {
+        height: auto;
+        padding: 48px 0;
+    }
+
+    .fc_banner {
+        width: 90%;
+        height: auto;
+        flex-direction: column;
+        padding-bottom: 0;
+        border-radius: 0;
+    }
+
+    .fundo_faleconosco {
+        width: 100%;
+        height: auto;
+        gap: 16px;
+    }
+
+    .fc_labels {
+        width: 100%;
+        height: auto;
+        padding: 0 0 20px;
+    }
+
+    .fc_titulo {
+        font-size: 2.3rem;
+    }
+
+    .fc_desc {
+        font-size: 1rem;
+        line-height: 1.45;
+        text-align: left;
+    }
+
+    .dados {
+        width: 100%;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .dado,
+    .identidade,
+    .mensagem {
+        width: 100%;
+        height: 46px;
+    }
+
+    .mensagem {
+        height: 130px;
+    }
+
+    input {
+        padding-left: 14px;
+        font-size: 1rem;
+    }
+
+    .formulario {
+        width: 100%;
+        height: auto;
+        padding: 40px 0 0;
+        gap: 22px;
+    }
+
+    .fc_imagem {
+        width: 80%;
+        height: 260px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    .icons {
+        width: 100%;
+    }
+
+    .end_tel {
+        width: 100%;
+        height: auto;
+        gap: 14px;
+        justify-content: flex-start;
+        margin-bottom: 18px;
+    }
+
+    .icon1,
+    .icon2 {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+    }
+
+    .end_tel span {
+        width: auto;
+        line-height: 1.4;
+    }
+
+    .footer {
+        height: auto;
+        padding: 38px 20px 24px;
+    }
+
+    .content {
+        height: auto;
+        flex-direction: column;
+        gap: 28px;
+        padding-bottom: 24px;
+    }
+
+    .brand,
+    .footer-nav,
+    .contact {
+        width: 100%;
+    }
+
+    .brand img {
+        width: 120px;
+        height: auto;
+    }
+
+    .footer-nav ul {
+        height: auto;
+        gap: 10px;
+    }
+
+    .contact {
+        height: auto;
+        align-items: center;
+        gap: 10px;
+    }
+}
 
