@@ -1,5 +1,58 @@
-// Base da API: usa localhost em dev, vazio em produção
-const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+// Base da API: usa o mesmo origin do frontend para evitar CORS
+const API_BASE = '';
+
+function getFeedbackEndpoints() {
+    return [
+        `${API_BASE}/mc/notas`,
+        `${API_BASE}/mc/acompanhamentos`
+    ];
+}
+
+async function buscarFeedbacks() {
+    const caminhos = getFeedbackEndpoints();
+    let ultimoErro = null;
+
+    for (const path of caminhos) {
+        try {
+            const resposta = await fetch(path);
+            if (resposta.ok) {
+                return await resposta.json();
+            }
+            ultimoErro = new Error(`HTTP ${resposta.status}`);
+        } catch (erro) {
+            ultimoErro = erro;
+        }
+    }
+
+    throw ultimoErro || new Error('Não foi possível buscar os registros de feedback.');
+}
+
+async function salvarFeedback(payload, method = 'POST', id = null) {
+    const caminhos = id == null
+        ? getFeedbackEndpoints().map(path => ({ path, method: 'POST' }))
+        : getFeedbackEndpoints().map(path => ({ path: `${path}/${id}`, method: 'PUT' }));
+
+    let ultimoErro = null;
+
+    for (const item of caminhos) {
+        try {
+            const resposta = await fetch(item.path, {
+                method: item.method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (resposta.ok) {
+                return resposta;
+            }
+            ultimoErro = new Error(`HTTP ${resposta.status}`);
+        } catch (erro) {
+            ultimoErro = erro;
+        }
+    }
+
+    throw ultimoErro || new Error('Não foi possível salvar o feedback.');
+}
 
 const urlParams = new URLSearchParams(window.location.search);
 const consultaId = parseInt(urlParams.get('consultaId'), 10);  // Converte consultaId para número
@@ -68,16 +121,13 @@ let consultaAtual; async function carregarDadosConsulta() {
 // Função para buscar os dados do acompanhamento relacionado à consulta
 async function carregarDadosAcompanhamento() {
     try {
-        const resposta = await fetch(`${API_BASE}/mc/acompanhamentos`);
-        if (!resposta.ok) {
-            throw new Error(`Erro ao buscar dados dos acompanhamentos. Status: ${resposta.status}`);
-        }
+        const registrosFeedback = await buscarFeedbacks();
+        console.log("Dados de todos os registros de feedback recebidos:", registrosFeedback);
 
-        const acompanhamentos = await resposta.json();
-        console.log("Dados de todos os acompanhamentos recebidos:", acompanhamentos);
-
-        // Filtra o acompanhamento com o ID da consulta
-        const acompanhamentoAtual = acompanhamentos.find(a => a.consulta.id === consultaId);
+        // Filtra o registro de feedback com o ID da consulta
+        const acompanhamentoAtual = Array.isArray(registrosFeedback)
+            ? registrosFeedback.find(a => a?.consulta?.id === consultaId)
+            : null;
 
         if (acompanhamentoAtual) {
             document.getElementById("resumo").value = acompanhamentoAtual.resumo || "";
@@ -147,8 +197,8 @@ async function concluirConsultaEAdicionarFeedback(idConsulta) {
 
         console.log("Status da consulta atualizado para 'Concluída'.");
 
-        // Após o sucesso do PUT, chama a função para adicionar o acompanhamento
-        adicionarAcompanhamento(idConsulta);
+        // Após o sucesso do PUT, chama a função para adicionar o feedback
+        await adicionarAcompanhamento(idConsulta);
     } catch (error) {
         console.error('Erro ao concluir a consulta:', error);
         alert("Ocorreu um erro ao concluir a consulta. Tente novamente.");
@@ -171,13 +221,7 @@ async function adicionarAcompanhamento(idConsulta) {
     console.log("Dados de feedback a serem enviados:", dadosFeedback);
 
     try {
-        const respostaFeedback = await fetch(`${API_BASE}/mc/acompanhamentos`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(dadosFeedback),
-        });
+        const respostaFeedback = await salvarFeedback(dadosFeedback, 'POST');
 
         if (!respostaFeedback.ok) {
             const erroTexto = await respostaFeedback.text();

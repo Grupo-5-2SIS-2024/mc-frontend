@@ -1,5 +1,58 @@
-// Base da API: usa localhost em dev, vazio em produção
-const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+// Base da API: usa o mesmo origin do frontend para evitar CORS
+const API_BASE = '';
+
+function getFeedbackEndpoints() {
+    return [
+        `${API_BASE}/mc/notas`,
+        `${API_BASE}/mc/acompanhamentos`
+    ];
+}
+
+async function buscarFeedbacks() {
+    const caminhos = getFeedbackEndpoints();
+    let ultimoErro = null;
+
+    for (const path of caminhos) {
+        try {
+            const resposta = await fetch(path);
+            if (resposta.ok) {
+                return await resposta.json();
+            }
+            ultimoErro = new Error(`HTTP ${resposta.status}`);
+        } catch (erro) {
+            ultimoErro = erro;
+        }
+    }
+
+    throw ultimoErro || new Error('Não foi possível buscar os registros de feedback.');
+}
+
+async function salvarFeedback(payload, method = 'POST', id = null) {
+    const caminhos = id == null
+        ? getFeedbackEndpoints().map(path => ({ path, method: 'POST' }))
+        : getFeedbackEndpoints().map(path => ({ path: `${path}/${id}`, method: 'PUT' }));
+
+    let ultimoErro = null;
+
+    for (const item of caminhos) {
+        try {
+            const resposta = await fetch(item.path, {
+                method: item.method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (resposta.ok) {
+                return resposta;
+            }
+            ultimoErro = new Error(`HTTP ${resposta.status}`);
+        } catch (erro) {
+            ultimoErro = erro;
+        }
+    }
+
+    throw ultimoErro || new Error('Não foi possível salvar o feedback.');
+}
 
 // Função auxiliar para tentar múltiplas rotas de API (fallback)
 async function apiFetch(path, options = {}) {
@@ -64,6 +117,10 @@ let backendPageOffsetPaciente = 0;
 function resetPaginacaoPacientes() {
     paginaAtualPaciente = 1;
     hasNextPagePaciente = true;
+}
+
+function isPacienteAtivo(paciente) {
+    return paciente?.ativo === true || paciente?.ativo === 1 || String(paciente?.ativo).toLowerCase() === 'true';
 }
 
 function bindAcoesCardsPacientes(cardsPacientes, permissionamentoMedico) {
@@ -218,8 +275,6 @@ async function buscarPacientes(nomeFiltro = '', emailFiltro = '', cpfFiltro = ''
             dataNascimento: dataNascimentoFiltro || ''
         };
 
-        const endpoint = mostrarInativosPacientes ? `${API_BASE}/mc/pacientes/todos` : `${API_BASE}/mc/pacientes`;
-
         const params = new URLSearchParams();
         if (nomeFiltro) params.set('nome', nomeFiltro);
         if (emailFiltro) params.set('email', emailFiltro);
@@ -231,16 +286,46 @@ async function buscarPacientes(nomeFiltro = '', emailFiltro = '', cpfFiltro = ''
         params.set('page', String(paginaBackend));
         params.set('size', String(PAGE_SIZE_PACIENTE));
 
-        let resposta = await fetch(`${endpoint}?${params.toString()}`);
-        if (!resposta.ok) throw new Error(`Falha ao carregar pacientes: ${resposta.status}`);
-        let retorno = await resposta.json();
+        const endpoints = (mostrarInativosPacientes
+            ? [`${API_BASE}/mc/pacientes/todos`, `${API_BASE}/mc/pacientes`]
+            : [`${API_BASE}/mc/pacientes`, `${API_BASE}/mc/pacientes/todos`]
+        );
+
+        let resposta = null;
+        let retorno = null;
+        let ultimoErro = null;
+
+        for (const endpoint of endpoints) {
+            const urlsParaTentar = [
+                `${endpoint}?${params.toString()}`,
+                endpoint
+            ];
+
+            for (const url of urlsParaTentar) {
+                try {
+                    resposta = await fetch(url);
+                    if (!resposta.ok) continue;
+
+                    retorno = await resposta.json();
+                    break;
+                } catch (erro) {
+                    ultimoErro = erro;
+                }
+            }
+
+            if (retorno !== null) break;
+        }
+
+        if (!resposta || !resposta.ok || retorno === null) {
+            throw ultimoErro || new Error('Falha ao carregar pacientes.');
+        }
 
         // Fallback: se page=1 vier como não-primeira, backend é 0-based e precisamos page=0
         if (!append && paginaSolicitada === 1 && typeof retorno?.first === 'boolean' && retorno.first === false) {
             backendPageOffsetPaciente = 1;
             paginaBackend = 0;
             params.set('page', '0');
-            resposta = await fetch(`${endpoint}?${params.toString()}`);
+            resposta = await fetch(`${API_BASE}/mc/pacientes?${params.toString()}`);
             if (!resposta.ok) throw new Error(`Falha ao carregar pacientes: ${resposta.status}`);
             retorno = await resposta.json();
         } else if (!append && paginaSolicitada === 1 && typeof retorno?.first === 'boolean' && retorno.first === true) {
@@ -251,17 +336,22 @@ async function buscarPacientes(nomeFiltro = '', emailFiltro = '', cpfFiltro = ''
             ? retorno
             : (Array.isArray(retorno?.content) ? retorno.content : []);
 
+        const pacientesVisiveis = listaPacientes.filter((paciente) => {
+            const statusAtivo = isPacienteAtivo(paciente);
+            return mostrarInativosPacientes ? !statusAtivo : statusAtivo;
+        });
+
         const totalPages = Number(retorno?.totalPages);
         if (!Number.isNaN(totalPages) && totalPages > 0) {
             hasNextPagePaciente = paginaSolicitada < totalPages;
         } else if (typeof retorno?.last === 'boolean') {
             hasNextPagePaciente = !retorno.last;
         } else {
-            hasNextPagePaciente = listaPacientes.length >= PAGE_SIZE_PACIENTE;
+            hasNextPagePaciente = pacientesVisiveis.length >= PAGE_SIZE_PACIENTE;
         }
         paginaAtualPaciente = paginaSolicitada;
 
-        atualizarListagemPacientes(listaPacientes, { append });
+        atualizarListagemPacientes(pacientesVisiveis, { append });
     } catch (e) {
         console.error(e);
     } finally {
@@ -277,7 +367,7 @@ function atualizarListagemPacientes(listaPacientes, options = {}) {
         const responsavel = paciente.responsavel ? `${paciente.responsavel.nome} ${paciente.responsavel.sobrenome}` : 'Não informado';
         const dataNascimentoFormatada = new Date(paciente.dataNascimento).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const foto = paciente.foto || "../Assets/perfil.jpeg";
-        const statusAtivo = (paciente.ativo === true || paciente.ativo === 1 || String(paciente.ativo).toLowerCase() === 'true');
+        const statusAtivo = isPacienteAtivo(paciente);
 
         let acoes = '';
         if (permissionamentoMedico !== "Supervisor") {
@@ -1244,11 +1334,7 @@ async function listarConsultasRealizadas(consultasCliente, pacienteId) {
     }
 
     try {
-        const resposta = await fetch(`${API_BASE}/mc/acompanhamentos`);
-        if (!resposta.ok) {
-            throw new Error(`Erro ao buscar dados dos acompanhamentos. Status: ${resposta.status}`);
-        }
-        const acompanhamentos = await resposta.json();
+        const registrosFeedback = await buscarFeedbacks();
 
         consultasCliente.forEach((consulta, index) => {
             if (!consulta || !consulta.datahoraConsulta || !consulta.id) {
@@ -1259,7 +1345,9 @@ async function listarConsultasRealizadas(consultasCliente, pacienteId) {
             const dataConsulta = new Date(consulta.datahoraConsulta);
             const dataFormatada = dataConsulta.toLocaleDateString('pt-BR');
 
-            const acompanhamento = acompanhamentos.find(a => a.consulta.id === consulta.id);
+            const acompanhamento = Array.isArray(registrosFeedback)
+                ? registrosFeedback.find(a => a?.consulta?.id === consulta.id)
+                : null;
 
             const listItem = document.createElement('li');
             listItem.classList.add('evolucao-item');
@@ -1295,14 +1383,12 @@ async function listarConsultasRealizadas(consultasCliente, pacienteId) {
 // Função para abrir o modal de evolução com diferentes modos
 async function abrirModalEvolucao(consultaId, modo, pacienteId) {
     try {
-        const resposta = await fetch(`${API_BASE}/mc/acompanhamentos`);
-        if (!resposta.ok) {
-            throw new Error(`Erro ao buscar dados dos acompanhamentos. Status: ${resposta.status}`);
-        }
+        const registrosFeedback = await buscarFeedbacks();
         console.log("Paciente ID ao abrir modal:", pacienteId);
 
-        const acompanhamentos = await resposta.json();
-        const acompanhamentoAtual = acompanhamentos.find(a => a.consulta.id === consultaId);
+        const acompanhamentoAtual = Array.isArray(registrosFeedback)
+            ? registrosFeedback.find(a => a?.consulta?.id === consultaId)
+            : null;
 
         const resumoInput = document.getElementById("resumo");
         const relatorioInput = document.getElementById("relatorio");
@@ -1312,12 +1398,16 @@ async function abrirModalEvolucao(consultaId, modo, pacienteId) {
         const botaoSalvar = document.querySelector(".buttonEvolucao");
         const botaoFechar = document.getElementById("botao");
 
+        if (!resumoInput || !relatorioInput || !medicoInput || !especificacaoInput || !pacienteInput || !botaoSalvar || !botaoFechar) {
+            return;
+        }
+
         if (modo === "visualizar" && acompanhamentoAtual) {
             resumoInput.value = acompanhamentoAtual.resumo || "";
             relatorioInput.value = acompanhamentoAtual.relatorio || "";
-            medicoInput.value = acompanhamentoAtual.consulta.medico.nome || "Não informado";
-            especificacaoInput.value = acompanhamentoAtual.consulta.especificacaoMedica.area || "Não informada";
-            pacienteInput.value = acompanhamentoAtual.consulta.paciente.nome || "Não informado";
+            medicoInput.value = acompanhamentoAtual.consulta?.medico?.nome || "Não informado";
+            especificacaoInput.value = acompanhamentoAtual.consulta?.especificacaoMedica?.area || "Não informada";
+            pacienteInput.value = acompanhamentoAtual.consulta?.paciente?.nome || "Não informado";
 
             resumoInput.disabled = true;
             relatorioInput.disabled = true;
@@ -1326,15 +1416,14 @@ async function abrirModalEvolucao(consultaId, modo, pacienteId) {
         } else {
             resumoInput.value = acompanhamentoAtual?.resumo || "";
             relatorioInput.value = acompanhamentoAtual?.relatorio || "";
-            medicoInput.value = acompanhamentoAtual?.consulta?.medico.nome || "Não informado";
-            especificacaoInput.value = acompanhamentoAtual?.consulta?.especificacaoMedica.area || "Não informada";
-            pacienteInput.value = acompanhamentoAtual?.consulta?.paciente.nome || "Não informado";
+            medicoInput.value = acompanhamentoAtual?.consulta?.medico?.nome || "Não informado";
+            especificacaoInput.value = acompanhamentoAtual?.consulta?.especificacaoMedica?.area || "Não informada";
+            pacienteInput.value = acompanhamentoAtual?.consulta?.paciente?.nome || "Não informado";
 
             resumoInput.disabled = false;
             relatorioInput.disabled = false;
             botaoSalvar.style.display = "block";
 
-            // Corrigindo a chamada do método
             botaoSalvar.setAttribute(
                 "onclick",
                 `adicionarAcompanhamento(${consultaId}, '${modo}', ${acompanhamentoAtual?.id || null}, ${pacienteId})`
@@ -1351,26 +1440,21 @@ async function abrirModalEvolucao(consultaId, modo, pacienteId) {
 }
 
 async function adicionarAcompanhamento(idConsulta, modo, idAcompanhamento, pacienteId) {
-    const resumo = document.getElementById("resumo").value;
-    const relatorio = document.getElementById("relatorio").value;
+    const resumo = document.getElementById("resumo")?.value || "";
+    const relatorio = document.getElementById("relatorio")?.value || "";
 
     const dadosFeedback = {
         resumo: resumo,
         relatorio: relatorio,
         consulta: { id: idConsulta },
-        status_consulta: 2
+        consultaId: idConsulta,
+        statusConsulta: 2,
+        status_consulta: 2,
+        pacienteId: pacienteId
     };
 
-    const url = modo === "criar"
-        ? `${API_BASE}/mc/acompanhamentos`
-        : `${API_BASE}/mc/acompanhamentos/${idAcompanhamento}`;
-
     try {
-        const resposta = await fetch(url, {
-            method: modo === "criar" ? "POST" : "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dadosFeedback),
-        });
+        const resposta = await salvarFeedback(dadosFeedback, modo === "criar" ? "POST" : "PUT", modo === "criar" ? null : idAcompanhamento);
 
         if (!resposta.ok) {
             const erroTexto = await resposta.text();
@@ -1384,6 +1468,10 @@ async function adicionarAcompanhamento(idConsulta, modo, idAcompanhamento, pacie
         console.error('Erro ao salvar o feedback:', error);
         alert("Erro ao salvar o feedback. Tente novamente.");
     }
+}
+
+function concluirConsultaEAdicionarFeedback(idConsulta, pacienteId = null) {
+    adicionarAcompanhamento(idConsulta, 'criar', null, pacienteId);
 }
 
 
