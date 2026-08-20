@@ -54,6 +54,24 @@ a {
     gap: 1rem;
 }
 
+.adicionar-lead {
+    min-height: 7vh;
+    padding: 0.75rem 1rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: #1976D2;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.adicionar-lead:hover {
+    background: #1565C0;
+    transform: translateY(-0.15rem);
+    box-shadow: 0 0.35rem 0.7rem rgba(0, 0, 0, 0.2);
+}
+
 .filtro {
     width: 8vw;
     height: 7vh;
@@ -147,16 +165,16 @@ a {
     flex-direction: column;
     width: 78vw;
     height: 50vh;
-    gap: 2rem;
+    gap: 1rem;
     background-color: #ffffff;
     border-radius: 10px;
-    overflow-y: auto;
+    overflow: auto;
     align-items: center;
     justify-content: flex-start;
 }
 
 .cardLead {
-    width: 98%;
+    width: calc(100% - 1rem);
     border-radius: 15px;
     gap: 1rem;
     box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.1);
@@ -164,16 +182,25 @@ a {
     flex-direction: row;
     align-items: center;
     background-color: #fff;
-    padding: 1rem;
+    padding: 1rem 0.75rem;
     justify-content: space-between;
     margin-bottom: 1rem;
+    min-height: 78px;
+}
+
+.cardLead.empty-state {
+    justify-content: center;
+    color: #666;
+    font-weight: 600;
 }
 
 .cardLead .info {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 1rem;
+    grid-template-columns: 1.15fr 1.5fr 1.25fr 1.2fr 1.2fr 1.25fr 1.3fr 1.2fr;
+    gap: 0.6rem;
     flex-grow: 1;
+    width: 100%;
+    min-width: 1080px;
 }
 
 .cardLead .info .field {
@@ -212,6 +239,95 @@ a {
 .cardLead .actions button:hover {
     color: #1976D2;
     /* azul médio */
+}
+
+.cardLead .actions button.convert {
+    color: #2e7d32;
+}
+
+.cardLead .actions button.update {
+    color: #1976D2;
+}
+
+.cardLead .actions button.update:hover {
+    color: #0d47a1;
+}
+
+.cardLead .actions button.convert:hover {
+    color: #1b5e20;
+}
+
+.modal-conversao-lead {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.modal-conversao-conteudo {
+    position: relative;
+    width: min(92vw, 430px);
+    padding: 2rem;
+    border-radius: 12px;
+    background: #fff;
+    text-align: center;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+}
+
+.modal-conversao-fechar {
+    position: absolute;
+    top: 0.7rem;
+    right: 0.9rem;
+    border: 0;
+    background: transparent;
+    color: #555;
+    font-size: 1.6rem;
+    cursor: pointer;
+}
+
+.modal-conversao-icone {
+    color: #1976D2;
+    font-size: 2.4rem;
+}
+
+.modal-conversao-conteudo h2 {
+    margin: 1rem 0 0.5rem;
+    color: #17202a;
+}
+
+.modal-conversao-conteudo p {
+    margin: 0;
+    color: #555;
+}
+
+.modal-conversao-acoes {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.modal-conversao-acoes button {
+    min-width: 120px;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    border: 0;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.modal-conversao-depois {
+    background: #eceff1;
+    color: #37474f;
+}
+
+.modal-conversao-agora {
+    background: #1976D2;
+    color: #fff;
 }
 
 /* Modal de Cadastro de Área */
@@ -488,6 +604,12 @@ a {
     .cardLead .info {
         display: flex;
         flex-direction: column;
+        min-width: 0;
+    }
+
+    .cardLead .actions {
+        width: 100%;
+        justify-content: flex-end;
     }
 
     .cardLead img {

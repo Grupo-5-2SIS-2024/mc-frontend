@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="../Css/cadastroLead.css">
+    <link rel="stylesheet" href="../Css/Sidebar.css">
+    <title>Multiclinics | Cadastro de Lead</title>
+</head>
+<body>
+    <i id="hamburger-menu" class="fa-solid fa-bars"></i>
+
+    <nav id="sidebar">
+        <div id="sidebar_content">
+            <div id="user">
+                <img src="../Assets/perfil.jpeg" id="user_avatar" alt="Avatar">
+                <p id="user_infos">
+                    <span class="item-description">Silvia</span>
+                    <span class="item-description">ADM</span>
+                </p>
+            </div>
+            <ul id="side_items">
+                <li class="side-item"><a href="homePosLoginMedico.html"><i class="fa-solid fa-home"></i><span class="item-description">Home</span></a></li>
+                <li class="side-item"><a href="calendario.html"><i class="fa-solid fa-calendar"></i><span class="item-description">Agendamento</span></a></li>
+                <li class="side-item"><a href="listagemColaborador.html"><i class="fa-solid fa-user"></i><span class="item-description">Colaborador</span></a></li>
+                <li class="side-item"><a href="listagemPaciente.html"><i class="fa-solid fa-hospital-user"></i><span class="item-description">Paciente</span></a></li>
+                <li class="side-item"><a href="dashboards.html"><i class="fa-solid fa-chart-line"></i><span class="item-description">Dashboards</span></a></li>
+                <li class="side-item active"><a href="listagemLead.html"><i class="fa-solid fa-filter"></i><span class="item-description">Leads</span></a></li>
+            </ul>
+            <button id="open_btn"><i id="open_btn_icon" class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <div id="logout"><button onclick="deslogar()" id="logout_btn"><i class="fa-solid fa-right-from-bracket"></i><span class="item-description">Logout</span></button></div>
+    </nav>
+
+    <main>
+        <section class="cadastro-lead-container">
+            <div class="cadastro-lead-header">
+                <div>
+                    <p class="eyebrow">Área dos Leads</p>
+                    <h1 id="tituloCadastroLead">Adicionar <span>lead</span></h1>
+                </div>
+                <a class="voltar-leads" href="listagemLead.html"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+            </div>
+
+            <form id="formCadastroLead" novalidate>
+                <div class="cadastro-lead-grid">
+                    <div class="lead-field">
+                        <label for="nome">Nome</label>
+                        <input id="nome" name="nome" type="text" maxlength="45" required>
+                        <small id="error-nome"></small>
+                    </div>
+                    <div class="lead-field">
+                        <label for="sobrenome">Sobrenome</label>
+                        <input id="sobrenome" name="sobrenome" type="text" maxlength="45" required>
+                        <small id="error-sobrenome"></small>
+                    </div>
+                    <div class="lead-field lead-field-wide">
+                        <label for="email">E-mail</label>
+                        <input id="email" name="email" type="email" maxlength="45" required>
+                        <small id="error-email"></small>
+                    </div>
+                    <div class="lead-field">
+                        <label for="cpf">CPF</label>
+                        <input id="cpf" name="cpf" type="text" maxlength="14" placeholder="000.000.000-00" required>
+                        <small id="error-cpf"></small>
+                    </div>
+                    <div class="lead-field">
+                        <label for="telefone">Telefone</label>
+                        <input id="telefone" name="telefone" type="tel" maxlength="15" required>
+                        <small id="error-telefone"></small>
+                    </div>
+                    <div class="lead-field">
+                        <label for="dataNascimento">Data de nascimento</label>
+                        <input id="dataNascimento" name="dataNascimento" type="date" required>
+                        <small id="error-dataNascimento"></small>
+                    </div>
+                    <div class="lead-field">
+                        <label for="fase">Fase do lead</label>
+                        <input id="fase" name="fase" type="text" maxlength="45" placeholder="Ex.: Novo" required>
+                        <small id="error-fase"></small>
+                    </div>
+                    <div class="lead-field lead-field-wide">
+                        <label for="faseContato">Tipo de contato</label>
+                        <select id="faseContato" name="faseContato" required>
+                            <option value="">Selecione o tipo de contato</option>
+                            <option value="1">Telefone</option>
+                            <option value="2">Email</option>
+                            <option value="3">WhatsApp</option>
+                            <option value="4">Presencial</option>
+                        </select>
+                        <small id="error-faseContato"></small>
+                    </div>
+                </div>
+                <div class="cadastro-lead-actions">
+                    <a href="listagemLead.html" class="btn-cancelar">Cancelar</a>
+                    <button type="submit" class="btn-salvar" id="btnSalvarLead"><i class="fa-solid fa-check"></i> Salvar lead</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script src="../Js/cadastroLead.js"></script>
+    <script src="../Js/funcoesPadroes.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../Js/sessao.js"></script>
+</body>
+</html>

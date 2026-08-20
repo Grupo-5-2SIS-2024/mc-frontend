@@ -1,5 +1,139 @@
-// Base da API: usa localhost em dev, vazio em produção
+// Base da API: usa o mesmo origin do frontend para evitar CORS
 const API_BASE = window.location.origin.includes('localhost') ? 'http://localhost:8080' : '';
+
+function normalizarLead(lead) {
+    const nome = lead?.nome || '';
+    const sobrenome = lead?.sobrenome || '';
+    const email = lead?.email || '';
+    const telefone = lead?.telefone || '';
+    const fase = lead?.fase || '';
+    const dataEntrada = lead?.dataInsercao || null;
+
+    return {
+        ...lead,
+        id: lead?.id ?? lead?.idPossivelCliente,
+        nome,
+        sobrenome,
+        email,
+        cpf: lead?.cpf || '',
+        telefone,
+        dataNascimento: lead?.dataNascimento || null,
+        fase,
+        dataEntrada,
+        tipoDeContato: lead?.tipoDeContato || null
+    };
+}
+
+function formatarData(data, opcoes) {
+    if (!data) return 'Não informada';
+    const dataFormatada = new Date(data);
+    return Number.isNaN(dataFormatada.getTime())
+        ? 'Não informada'
+        : dataFormatada.toLocaleDateString('pt-BR', opcoes);
+}
+
+function obterTipoDeContato(tipoDeContato) {
+    if (!tipoDeContato) return 'Não informado';
+    if (typeof tipoDeContato === 'string') return tipoDeContato;
+
+    return tipoDeContato.faseContato ||
+        tipoDeContato.nome ||
+        tipoDeContato.descricao ||
+        tipoDeContato.tipo ||
+        (tipoDeContato.id ? `Tipo ${tipoDeContato.id}` : 'Não informado');
+}
+
+function abrirModalConversaoLead(leadId) {
+    const modal = document.getElementById('modalConversaoLead');
+    const lead = window.leadsAtuais?.find(item => String(item.id) === String(leadId));
+    if (!modal || !lead) return;
+
+    modal.dataset.leadId = leadId;
+    modal.style.display = 'flex';
+}
+
+function fecharModalConversaoLead() {
+    const modal = document.getElementById('modalConversaoLead');
+    if (modal) modal.style.display = 'none';
+}
+
+function somenteNumeros(valor) {
+    return valor ? String(valor).replace(/\D/g, '') : '';
+}
+
+async function cadastrarLeadDepois() {
+    const modal = document.getElementById('modalConversaoLead');
+    const lead = window.leadsAtuais?.find(item => String(item.id) === String(modal?.dataset.leadId));
+    if (!lead) return;
+
+    const dadosPaciente = {
+        nome: lead.nome,
+        sobrenome: lead.sobrenome,
+        email: lead.email,
+        telefone: somenteNumeros(lead.telefone),
+        cpf: somenteNumeros(lead.cpf) || null,
+        dataNascimento: lead.dataNascimento || null,
+        ativo: true
+    };
+
+    try {
+        const resposta = await fetch(`${API_BASE}/mc/pacientes/SemResponsavel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+            body: JSON.stringify(dadosPaciente)
+        });
+
+        if (!resposta.ok) {
+            throw new Error(`HTTP ${resposta.status}`);
+        }
+
+        try {
+            const exclusao = await fetch(`${API_BASE}/mc/possivel-cliente/${encodeURIComponent(lead.id)}`, {
+                method: 'DELETE'
+            });
+            if (!exclusao.ok) throw new Error(`HTTP ${exclusao.status}`);
+            window.leadsAtuais = window.leadsAtuais.filter(item => String(item.id) !== String(lead.id));
+            atualizarListagemLeads(window.leadsAtuais);
+        } catch (erroExclusao) {
+            console.error('Paciente criado, mas o lead não foi excluído:', erroExclusao);
+        }
+
+        fecharModalConversaoLead();
+        Swal.fire({
+            icon: 'success',
+            title: 'Paciente cadastrado',
+            text: 'Os dados disponíveis do lead foram cadastrados.',
+            timer: 1800,
+            showConfirmButton: false
+        });
+    } catch (erro) {
+        console.error('Erro ao cadastrar lead como paciente:', erro);
+        Swal.fire({
+            icon: 'error',
+            title: 'Não foi possível cadastrar',
+            text: 'O backend pode exigir campos adicionais para o cadastro do paciente.'
+        });
+    }
+}
+
+function iniciarCadastroDoLead() {
+    const modal = document.getElementById('modalConversaoLead');
+    const lead = window.leadsAtuais?.find(item => String(item.id) === String(modal?.dataset.leadId));
+    if (!lead) return;
+
+    sessionStorage.setItem('leadParaCadastroPaciente', JSON.stringify({
+        nome: lead.nome,
+        sobrenome: lead.sobrenome,
+        email: lead.email,
+        telefone: lead.telefone,
+        cpf: lead.cpf,
+        dataNascimento: lead.dataNascimento,
+        leadId: lead.id,
+        leadEmail: lead.email
+    }));
+
+    window.location.href = 'cadastroPaciente.html';
+}
 
 // Funções para abrir e fechar o modal de filtros
 function abrirModalFiltroLeads() {
@@ -65,18 +199,20 @@ function removerFiltroEspecifico(filtro) {
 // Função para buscar leads com filtros específicos
 async function buscarLeads(nomeFiltro = '', emailFiltro = '', dataEntradaFiltro = '', faseFiltro = '') {
     try {
-        const resposta = await fetch(`${API_BASE}/mc/leads`);
+        const resposta = await fetch(`${API_BASE}/mc/possivel-cliente`);
+        if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
         const listaLeads = await resposta.json();
-        console.log(listaLeads); // Adicione isto para verificar os dados recebidos
 
-        const leadsFiltrados = listaLeads.filter(lead => {
+        const leadsNormalizados = (Array.isArray(listaLeads) ? listaLeads : []).map(normalizarLead);
+
+        const leadsFiltrados = leadsNormalizados.filter(lead => {
             const nomeCompleto = `${lead.nome} ${lead.sobrenome}`.toLowerCase();
-            const dataEntrada = new Date(lead.dataEntrada).toISOString().split('T')[0];
+            const dataEntrada = lead.dataEntrada ? lead.dataEntrada.substring(0, 10) : '';
             return (
                 (nomeCompleto.includes(nomeFiltro) || nomeFiltro === '') &&
-                (lead.email.toLowerCase().includes(emailFiltro) || emailFiltro === '') &&
+                ((lead.email || '').toLowerCase().includes(emailFiltro) || emailFiltro === '') &&
                 (dataEntrada === dataEntradaFiltro || dataEntradaFiltro === '') &&
-                (lead.fase.toLowerCase().includes(faseFiltro) || faseFiltro === '')
+                ((lead.fase || '').toLowerCase().includes(faseFiltro) || faseFiltro === '')
             );
         });
 
@@ -89,38 +225,68 @@ async function buscarLeads(nomeFiltro = '', emailFiltro = '', dataEntradaFiltro 
 // Função para atualizar a listagem de leads
 function atualizarListagemLeads(listaLeads) {
     const cardsLeads = document.getElementById("listagemLeads");
+    if (!cardsLeads) return;
+
+    if (!Array.isArray(listaLeads) || listaLeads.length === 0) {
+        cardsLeads.innerHTML = '<div class="cardLead empty-state">Nenhum lead encontrado.</div>';
+        return;
+    }
+
+    window.leadsAtuais = listaLeads;
     cardsLeads.innerHTML = listaLeads.map(lead => {
-        const dataEntradaFormatada = new Date(lead.dataEntrada).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const formatarTelefone = (telefone) => telefone ? telefone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') : '';
+        const nomeCompleto = [lead.nome, lead.sobrenome].filter(Boolean).join(' ').trim() || 'Nome não informado';
+        const dataEntradaFormatada = formatarData(lead.dataEntrada, { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const dataNascimentoFormatada = formatarData(lead.dataNascimento, { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const formatarTelefone = (telefone) => telefone ? telefone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') : 'Não informado';
 
         return `
-           <div class="cardLead" data-lead-id="${lead.id}">
-                    <div class="info">
-                        <div class="field">
-                            <label for="nome">Nome</label>
-                            <p id="nome">${lead.nome} ${lead.sobrenome}</p>
-                        </div>
-                        <div class="field">
-                            <label for="email">Email</label>
-                            <p id="email">${lead.email}</p>
-                        </div>
-                        <div class="field">
-                            <label for="cpf">Data de Entrada</label>
-                            <p id="cpf">${dataEntradaFormatada}</p>
-                        </div>
-                        <div class="field">
-                            <label for="telefone">Telefone</label>
-                            <p id="telefone">${formatarTelefone(lead.telefone)}</p>
-                        </div>
-                        <div class="field">
-                            <label for="fase">Fase</label>
-                            <p id="fase">${lead.fase}</p>
-                        </div>
+            <div class="cardLead" data-lead-id="${lead.id ?? ''}">
+                <div class="info">
+                    <div class="field">
+                        <label>Nome</label>
+                        <p>${nomeCompleto}</p>
                     </div>
-                    <div class="actions">
-                        <button class="delete"><i class="fas fa-trash-alt"></i></button>
+                    <div class="field">
+                        <label>Email</label>
+                        <p>${lead.email || 'Não informado'}</p>
+                    </div>
+                    <div class="field">
+                        <label>CPF</label>
+                        <p>${lead.cpf || 'Não informado'}</p>
+                    </div>
+                    <div class="field">
+                        <label>Dt. de Entrada</label>
+                        <p>${dataEntradaFormatada}</p>
+                    </div>
+                    <div class="field">
+                        <label>Dt. de Nasc.</label>
+                        <p>${dataNascimentoFormatada}</p>
+                    </div>
+                    <div class="field">
+                        <label>Telefone</label>
+                        <p>${formatarTelefone(lead.telefone)}</p>
+                    </div>
+                    <div class="field">
+                        <label>Fase</label>
+                        <p>${lead.fase || 'Não informada'}</p>
+                    </div>
+                    <div class="field">
+                        <label>Contato</label>
+                        <p>${obterTipoDeContato(lead.tipoDeContato)}</p>
                     </div>
                 </div>
+                <div class="actions">
+                    <button class="convert" title="Converter em paciente" onclick="abrirModalConversaoLead('${lead.id ?? ''}')">
+                        <i class="fas fa-user-plus"></i>
+                    </button>
+                    
+                    <button class="update" title="Atualizar lead" onclick="window.location.href='cadastroLead.html?id=${encodeURIComponent(lead.id ?? '')}'">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    
+                    <button class="delete" title="Excluir lead"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </div>
         `;
     }).join('');
 
@@ -154,12 +320,10 @@ function atualizarListagemLeads(listaLeads) {
 
 async function deletarLead(id) {
     try {
-        const resposta = await fetch(`${API_BASE}/mc/leads/${id}`, {
+        const resposta = await fetch(`${API_BASE}/mc/possivel-cliente/${encodeURIComponent(id)}`, {
             method: 'DELETE'
         });
-        if (!resposta.ok) {
-            throw new Error(`Erro ao deletar lead: ${resposta.statusText}`);
-        }
+        if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
         console.log('Lead deletado com sucesso.');
         buscarLeads();
     } catch (erro) {
@@ -167,27 +331,56 @@ async function deletarLead(id) {
     }
 }
 
+async function buscarLeadPorId(id) {
+    const resposta = await fetch(`${API_BASE}/mc/possivel-cliente/${encodeURIComponent(id)}`);
+    if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+    return resposta.json();
+}
+
+async function criarLead(payload) {
+    const resposta = await fetch(`${API_BASE}/mc/possivel-cliente`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+    return resposta.json();
+}
+
+async function atualizarLead(id, payload) {
+    const resposta = await fetch(`${API_BASE}/mc/possivel-cliente/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+    return resposta.json();
+}
+
 // Chama a função para listar os leads ao carregar a página
 buscarLeads();
 
 async function buscarKPIsLeads() {
     try {
-        // Buscar o número total de leads
-        const respostaTotalLeads = await fetch(`${API_BASE}/mc/leads`);
-        const listaLeads = await respostaTotalLeads.json();
-        const totalLeads = listaLeads.length;
-
-        // Buscar a porcentagem de leads convertidos
-        const respostaPorcentagemConvertidos = await fetch(`${API_BASE}/mc/leads/percentual-convertidos`);
-        const porcentagemConvertidos = await respostaPorcentagemConvertidos.json();
+        const resposta = await fetch(`${API_BASE}/mc/possivel-cliente`);
+        if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+        const listaLeads = await resposta.json();
+        const leadsNormalizados = (Array.isArray(listaLeads) ? listaLeads : []).map(normalizarLead);
+        const totalLeads = leadsNormalizados.length;
+        const leadsConvertidos = leadsNormalizados.filter(lead =>
+            lead.fase.trim().toLowerCase() === 'convertido'
+        ).length;
+        const porcentagemConvertidos = totalLeads === 0
+            ? 0
+            : Math.round((leadsConvertidos / totalLeads) * 100);
 
         // Filtrar leads com mais de 6 meses de cadastro
         const seisMesesAtras = new Date();
         seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6);
 
-        const leadsMaisDeSeisMeses = listaLeads.filter(lead => {
-            const dataEntrada = new Date(lead.dataEntrada);
-            return dataEntrada < seisMesesAtras;
+        const leadsMaisDeSeisMeses = leadsNormalizados.filter(lead => {
+            const dataEntrada = lead.dataEntrada ? new Date(lead.dataEntrada) : null;
+            return dataEntrada && dataEntrada < seisMesesAtras;
         });
         const totalLeadsMaisDeSeisMeses = leadsMaisDeSeisMeses.length;
 

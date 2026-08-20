@@ -17,6 +17,8 @@ function proxyToBackend(req, res) {
   const targetPath = req.path;
   const targetUrl = new URL(`${BACKEND_URL}${targetPath}${req.url.includes("?") ? req.url.substring(req.url.indexOf("?")) : ""}`);
 
+  console.log(`Proxying ${req.method} ${req.originalUrl} -> ${targetUrl.toString()}`);
+
   const options = {
     protocol: targetUrl.protocol,
     hostname: targetUrl.hostname,
@@ -45,7 +47,18 @@ function proxyToBackend(req, res) {
 }
 
 app.use((req, res, next) => {
-  if (req.path.startsWith("/mc/") || req.path === "/notas" || req.path === "/acompanhamentos") {
+  if (
+    req.path === "/mc" ||
+    req.path.startsWith("/mc/") ||
+    req.path === "/api" ||
+    req.path.startsWith("/api/") ||
+    req.path === "/possivel-cliente" ||
+    req.path.startsWith("/possivel-cliente/") ||
+    req.path === "/leads" ||
+    req.path.startsWith("/leads/") ||
+    req.path === "/notas" ||
+    req.path === "/acompanhamentos"
+  ) {
     return proxyToBackend(req, res);
   }
   next();

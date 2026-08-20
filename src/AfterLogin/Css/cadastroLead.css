@@ -1,0 +1,162 @@
+body {
+    min-height: 100vh;
+    margin: 0;
+    background: #BBDEFB;
+    overflow-x: hidden;
+}
+
+main {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    box-sizing: border-box;
+}
+
+.cadastro-lead-container {
+    width: min(900px, 92vw);
+    padding: clamp(1.5rem, 4vw, 3rem);
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 8px 24px rgba(25, 118, 210, 0.16);
+}
+
+.cadastro-lead-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.eyebrow {
+    margin: 0 0 0.35rem;
+    color: #607d8b;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.cadastro-lead-header h1 {
+    margin: 0;
+    color: #111;
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+}
+
+.cadastro-lead-header h1 span {
+    color: #1976D2;
+}
+
+.voltar-leads,
+.btn-cancelar {
+    color: #1976D2;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.voltar-leads:hover,
+.btn-cancelar:hover {
+    color: #0d47a1;
+}
+
+.cadastro-lead-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.35rem 1.5rem;
+}
+
+.lead-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.lead-field-wide {
+    grid-column: span 2;
+}
+
+.lead-field label {
+    color: #263238;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.lead-field input,
+.lead-field select {
+    width: 100%;
+    min-height: 2.8rem;
+    box-sizing: border-box;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid #b0bec5;
+    border-radius: 6px;
+    background: #fff;
+    color: #17202a;
+    font: inherit;
+    outline: none;
+}
+
+.lead-field select {
+    cursor: pointer;
+}
+
+.lead-field input:focus,
+.lead-field select:focus {
+    border-color: #1976D2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.14);
+}
+
+.lead-field small {
+    min-height: 1rem;
+    color: #c62828;
+    font-size: 0.78rem;
+}
+
+.cadastro-lead-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1.25rem;
+    margin-top: 2rem;
+}
+
+.btn-salvar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.3rem;
+    border: 0;
+    border-radius: 6px;
+    background: #1976D2;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-salvar:hover {
+    background: #1565C0;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+    main {
+        align-items: flex-start;
+        padding-top: 5rem;
+    }
+
+    .cadastro-lead-header {
+        flex-direction: column;
+    }
+
+    .cadastro-lead-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .lead-field-wide {
+        grid-column: auto;
+    }
+
+    .cadastro-lead-actions {
+        justify-content: space-between;
+    }
+}

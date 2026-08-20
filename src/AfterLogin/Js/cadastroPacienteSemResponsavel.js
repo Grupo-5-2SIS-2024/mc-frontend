@@ -4,6 +4,61 @@ const API_BASE = window.location.origin.includes('localhost') ? 'http://localhos
 const inputFile = document.querySelector("#picture__input");
 const pictureImage = document.querySelector(".picture__image");
 const pictureImageTxt = "Choose an image";
+let leadEmConversaoId = null;
+let leadEmConversaoEmail = null;
+
+function somenteNumeros(valor) {
+    return valor ? String(valor).replace(/\D/g, '') : '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const leadJson = sessionStorage.getItem('leadParaCadastroPaciente');
+    if (!leadJson) return;
+
+    try {
+        const lead = JSON.parse(leadJson);
+        leadEmConversaoId = lead.leadId ?? null;
+        leadEmConversaoEmail = lead.leadEmail || lead.email || null;
+        ['nome', 'sobrenome', 'email', 'telefone', 'cpf', 'dataNascimento'].forEach(campo => {
+            const elemento = document.getElementById(campo);
+            if (!elemento || !lead[campo]) return;
+            elemento.value = campo === 'cpf' || campo === 'telefone'
+                ? somenteNumeros(lead[campo])
+                : lead[campo];
+        });
+    } catch (erro) {
+        console.error('Não foi possível carregar os dados do lead:', erro);
+        sessionStorage.removeItem('leadParaCadastroPaciente');
+    }
+});
+
+async function excluirLeadConvertido() {
+    try {
+        if (!leadEmConversaoId && leadEmConversaoEmail) {
+            const busca = await fetch(`${API_BASE}/mc/possivel-cliente`);
+            if (busca.ok) {
+                const leads = await busca.json();
+                const lead = (Array.isArray(leads) ? leads : []).find(item =>
+                    String(item.email || '').toLowerCase() === String(leadEmConversaoEmail).toLowerCase()
+                );
+                leadEmConversaoId = lead?.id ?? null;
+            }
+        }
+
+        if (!leadEmConversaoId) {
+            console.warn('Paciente criado, mas o ID do lead não foi encontrado para exclusão.');
+            return;
+        }
+
+        const resposta = await fetch(`${API_BASE}/mc/possivel-cliente/${encodeURIComponent(leadEmConversaoId)}`, {
+            method: 'DELETE'
+        });
+        if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+        sessionStorage.removeItem('leadParaCadastroPaciente');
+    } catch (erro) {
+        console.error('Paciente criado, mas o lead não foi excluído:', erro);
+    }
+}
 
 if (pictureImage) {
     pictureImage.innerHTML = pictureImageTxt;
@@ -318,8 +373,8 @@ async function cadastrarPacienteComResponsavel() {
             "nome": nomeDigitado,
             "sobrenome": sobrenomeDigitado,
             "email": emailDigitado,
-            "telefone": telefoneDigitado,
-            "cpf": cpfDigitado && cpfDigitado.trim() !== '' ? cpfDigitado : null,
+            "telefone": somenteNumeros(telefoneDigitado),
+            "cpf": somenteNumeros(cpfDigitado) || null,
             "genero": generoEscolhido,
             "dataNascimento": dataNascimentoDigitada,
             "cns": cnsDigitado,
@@ -346,6 +401,7 @@ async function cadastrarPacienteComResponsavel() {
         });
 
         if (respostaCadastro.status === 201 || respostaCadastro.status === 200) {
+            await excluirLeadConvertido();
             Swal.fire({
                 icon: 'success',
                 title: 'Paciente cadastrado com sucesso!',
@@ -400,8 +456,8 @@ async function cadastrarPacienteSemResponsavel() {
             "nome": nomeDigitado,
             "sobrenome": sobrenomeDigitado,
             "email": emailDigitado,
-            "telefone": telefoneDigitado,
-            "cpf": cpfDigitado && cpfDigitado.trim() !== '' ? cpfDigitado : null,
+            "telefone": somenteNumeros(telefoneDigitado),
+            "cpf": somenteNumeros(cpfDigitado) || null,
             "genero": generoEscolhido,
             "dataNascimento": dataNascimentoDigitada,
             "cns": cnsDigitado,
@@ -427,6 +483,7 @@ async function cadastrarPacienteSemResponsavel() {
             try { raw = await respostaCadastro.text(); } catch (_) { raw = ''; }
 
             if (respostaCadastro.status === 201 || respostaCadastro.status === 200) {
+                await excluirLeadConvertido();
                 Swal.fire({
                     icon: 'success',
                     title: 'Paciente cadastrado com sucesso!',

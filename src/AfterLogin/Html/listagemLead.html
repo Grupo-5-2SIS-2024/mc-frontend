@@ -114,6 +114,9 @@
             <div class="header">
                 <h1>Área dos <span>Leads</span></h1>
                 <div class="containerBotao">
+                    <button class="adicionar-lead" onclick="window.location.href='cadastroLead.html'">
+                        <i class="fas fa-user-plus"></i> Adicionar lead
+                    </button>
                     <button class="filtro" onclick="abrirModalFiltroLeads()"><i class="fas fa-filter"></i>
                         Filtrar</button>
                 </div>
@@ -162,7 +165,7 @@
                         <div class="kpiData">
                             <p class="kpiNumber"></p>
                             <p class="kpiText">Leads</p>
-                            <p class="kpiSubtext">Quantidade de leads dos ultimos 3 meses</p>
+                            <p class="kpiSubtext">Quantidade total de leads cadastrados</p>
                         </div>
                         <div class="kpiIcon">
                             <img src="../Assets/cruz.png" alt="Ícone">
@@ -196,6 +199,21 @@
             </div>
             <div class="listagemBox" id="listagemLeads"></div>
         </div>
+        </div>
+
+        <div id="modalConversaoLead" class="modal-conversao-lead" role="dialog" aria-modal="true"
+            aria-labelledby="tituloConversaoLead">
+            <div class="modal-conversao-conteudo">
+                <button class="modal-conversao-fechar" type="button" onclick="fecharModalConversaoLead()"
+                    aria-label="Fechar">&times;</button>
+                <i class="fas fa-user-plus modal-conversao-icone"></i>
+                <h2 id="tituloConversaoLead">Converter lead em paciente?</h2>
+                <p>Você pode completar o cadastro agora ou continuar depois.</p>
+                <div class="modal-conversao-acoes">
+                    <button type="button" class="modal-conversao-depois" onclick="cadastrarLeadDepois()">Depois</button>
+                    <button type="button" class="modal-conversao-agora" onclick="iniciarCadastroDoLead()">Completar agora</button>
+                </div>
+            </div>
         </div>
 
     </main>
